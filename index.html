@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Crypto Kings TestBed</title>
-  <meta name="description" content="TestBed form to simulate flash-loan arbitrage routing with live price checks and two‑leg quotes." />
+  <meta name="description" content="Flash‑loan arbitrage simulator with live pricing and two‑leg quotes." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -99,54 +99,52 @@
             <input type="number" id="loanAmount" name="loanAmount" min="0" step="any" placeholder="e.g., 1000" required />
             <span id="loanTokenSymbol" class="help"></span>
           </div>
-          <div class="help">Amount to borrow (denominated in base stablecoin for route quotes).</div>
+          <div class="help">Amount to borrow (USDC base for quotes).</div>
         </div>
       </div>
 
-      <!-- Token address / mint for price lookup -->
       <div class="row row-2">
         <div>
           <label for="tokenAddress">Token Contract / Mint Address</label>
           <input type="text" id="tokenAddress" placeholder="0x… (EVM) or mint (Solana)">
-          <div class="help">Used to fetch live prices & route quotes. For EVM, contract address. For Solana, mint.</div>
+          <div class="help">Auto-fills for common tokens. Used for prices & quotes.</div>
         </div>
         <div>
           <label for="platform">Field 1 — Flash Loan Platform</label>
           <select id="platform" name="platform" required>
-            <option value="" disabled selected>Select a platform</option>
+            <option value="" disabled selected>Select…</option>
           </select>
         </div>
       </div>
 
-      <!-- DEX routing -->
       <div class="row row-2">
         <div>
           <label for="buyDex">Field 3 — Purchase From DEX</label>
-          <select id="buyDex" name="buyDex" required></select>
+          <select id="buyDex" name="buyDex" required>
+            <option value="" disabled selected>Select…</option>
+          </select>
         </div>
         <div>
           <label for="sellDex">Field 4 — Sell To DEX</label>
-          <select id="sellDex" name="sellDex" required></select>
+          <select id="sellDex" name="sellDex" required>
+            <option value="" disabled selected>Select…</option>
+          </select>
         </div>
       </div>
 
-      <!-- Wallets & confirmations -->
       <div class="row row-2">
         <div>
           <label for="rewardWallet">Field 5 — Wallet Address for Reward</label>
           <input type="text" id="rewardWallet" name="rewardWallet" placeholder="0x… or Solana address" required/>
           <input type="text" id="rewardWalletConfirm" placeholder="Confirm reward wallet" />
-          <div class="help">Where any positive PnL should be paid.</div>
         </div>
         <div>
           <label for="feeWallet">Field 6 — Wallet Address for Fees</label>
           <input type="text" id="feeWallet" name="feeWallet" placeholder="0x… or Solana address" required/>
           <input type="text" id="feeWalletConfirm" placeholder="Confirm fee wallet" />
-          <div class="help">Wallet to deduct protocol or service fees.</div>
         </div>
       </div>
 
-      <!-- Gas / Slippage / Limits (EVM only shows gas) -->
       <div class="row row-4">
         <div id="gasPriceWrap">
           <label for="gasPrice">Field 7 — Gas Price (Gwei)</label>
@@ -182,7 +180,6 @@
         </div>
       </div>
 
-      <!-- Email + submission mode -->
       <div class="row row-3">
         <div>
           <label for="email">Notification Email</label>
@@ -221,7 +218,6 @@
 
     <footer>
       <p><strong>Disclaimer:</strong> This TestBed is a front‑end demonstration that collects parameters only and composes an email via <code>mailto:</code>. It does not execute trades or interact with blockchains or smart contracts.</p>
-      <p class="help">Tip: Replace the mailto flow with a backend endpoint (e.g., /api/submit) when you’re ready.</p>
     </footer>
 
     <div class="card" style="margin-top:16px">
@@ -239,22 +235,23 @@
         <span class="pill">Live Price</span>
         <small class="help">Based on token address/mint & selected network</small>
       </div>
-      <div id="priceOut" class="out">Set network + token + token address, then pick a DEX to fetch price…</div>
+      <div id="priceOut" class="out">Set network + token + token address to fetch price…</div>
     </div>
 
     <div class="card" style="margin-top:16px">
       <div class="inline" style="margin-bottom:8px">
         <span class="pill">Two‑Leg Quote (Buy → Sell)</span>
-        <small class="help">Estimates using public quote APIs (best available route on network)</small>
+        <small class="help">Best available route per public APIs</small>
       </div>
-      <div id="quoteOut" class="out">Provide loan amount, network, token address, and choose buy/sell DEX to estimate PnL…</div>
+      <div id="quoteOut" class="out">Provide loan amount, network, token, and choose buy/sell DEX to estimate PnL…</div>
     </div>
   </div>
 
   <script>
+  (function(){
     const $ = (id) => document.getElementById(id);
 
-    // --- Mappings ---
+    // --- Static maps ---
     const PLATFORMS = {
       ethereum: ["Aave v3", "Balancer", "Uniswap V3 (Uni Flash)", "DyDx (Perp Flash)", "Other / Custom"],
       arbitrum: ["Aave v3", "Radiant", "Balancer", "Other / Custom"],
@@ -275,57 +272,18 @@
 
     const EVM_NETWORKS = new Set(["ethereum", "arbitrum", "polygon", "bsc", "avalanche"]);
 
-    // Known token addresses/mints by network for quick price/quote when user picks a symbol
     const TOKENS = {
-      ethereum: {
-        WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-        WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-        USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-        USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-        DAI:  '0x6B175474E89094C44Da98b954EedeAC495271d0F'
-      },
-      arbitrum: {
-        WETH: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
-        WBTC: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
-        USDC: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
-        USDT: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
-        DAI:  '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
-        ARB:  '0x912CE59144191C1204E64559FE8253a0e49E6548'
-      },
-      polygon: {
-        WETH: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
-        WBTC: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6',
-        USDC: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
-        USDT: '0xc2132D05D31c914a87C6611C10748AaCB8fd03C8',
-        DAI:  '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
-        MATIC:'0x0000000000000000000000000000000000001010'
-      },
-      bsc: {
-        WBNB:'0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
-        WETH:'0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
-        WBTC:'0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c',
-        USDC:'0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
-        USDT:'0x55d398326f99059fF775485246999027B3197955',
-        DAI: '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3'
-      },
-      avalanche: {
-        WETH:'0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
-        WBTC:'0x50b7545627a5162F82A992c33b87aDc75187B218',
-        USDC:'0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
-        USDT:'0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
-        DAI: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70'
-      },
-      solana: {
-        SOL:  'So11111111111111111111111111111111111111112',
-        USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-        USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'
-      }
+      ethereum: { WETH:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', WBTC:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', USDC:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', USDT:'0xdAC17F958D2ee523a2206206994597C13D831ec7', DAI:'0x6B175474E89094C44Da98b954EedeAC495271d0F' },
+      arbitrum: { WETH:'0x82af49447d8a07e3bd95bd0d56f35241523fbab1', WBTC:'0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f', USDC:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831', USDT:'0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9', DAI:'0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', ARB:'0x912CE59144191C1204E64559FE8253a0e49E6548' },
+      polygon: { WETH:'0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', WBTC:'0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6', USDC:'0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', USDT:'0xc2132D05D31c914a87C6611C10748AaCB8fd03C8', DAI:'0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', MATIC:'0x0000000000000000000000000000000000001010' },
+      bsc: { WBNB:'0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', WETH:'0x2170Ed0880ac9A755fd29B2688956BD959F933F8', WBTC:'0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c', USDC:'0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', USDT:'0x55d398326f99059fF775485246999027B3197955', DAI:'0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3' },
+      avalanche: { WETH:'0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB', WBTC:'0x50b7545627a5162F82A992c33b87aDc75187B218', USDC:'0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', USDT:'0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7', DAI:'0xd586E7F844cEa2F87f50152665BCbc2C279D8d70' },
+      solana: { SOL:'So11111111111111111111111111111111111111112', USDC:'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', USDT:'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' }
     };
 
-    // Reference stable (base) addresses (USDC) per network for quote legs
     const USDC = {
       ethereum: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-      arbitrum: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // USDC.e (native) Arbitrum
+      arbitrum: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       polygon: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
       bsc: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
       avalanche: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
@@ -340,60 +298,11 @@
       avalanche: 'https://avalanche.api.0x.org',
     };
 
-    // --- Helpers ---
+    // --- Utilities ---
     function setOptions(select, items){
-      select.innerHTML = '<option value="" disabled selected>Select…</option>' + items.map(x=>`<option>${x}</option>`).join("");
-    }
-
-    function formatPreview(){
-      const data = collectData();
-      const symbol = data.token || "Token";
-      const symEl = document.getElementById("loanTokenSymbol");
-      if(symEl) symEl.textContent = symbol;
-      const lines = [
-        `Network: ${data.network}`,
-        `Platform: ${data.platform}`,
-        `Token: ${data.token}`,
-        `Loan Amount (base): ${data.loanAmount} ${EVM_NETWORKS.has(data.network)?'USDC':'USDC'}`,
-        `Token Address: ${data.tokenAddress}`,
-        `Buy On: ${data.buyDex}`,
-        `Sell To: ${data.sellDex}`,
-        `Reward Wallet: ${data.rewardWallet}`,
-        `Fee Wallet: ${data.feeWallet}`,
-        EVM_NETWORKS.has(data.network) ? `Gas Price (Gwei): ${data.gasPrice}` : `Gas Price: N/A (non‑EVM)`,
-        EVM_NETWORKS.has(data.network) ? `Gas Limit: ${data.gasLimit}` : `Gas Limit: N/A (non‑EVM)`,
-        EVM_NETWORKS.has(data.network) ? `Est. Gas Fee (ETH): ${data.gasFeeEth}` : `Est. Network Fee: —`,
-        `Max Gas Spend (ETH): ${data.maxGasEth}`,
-        `Slippage (%): ${data.slippage}`,
-        `Min Profit (Token): ${data.minProfitToken}`,
-        `Min Profit (£): ${data.minProfitGBP}`,
-        `Email: ${data.email}`,
-        `Notes: ${data.notes}`
-      ];
-      $("preview").textContent = lines.join("
-");
-      try { localStorage.setItem('ck-testbed-cache', JSON.stringify(data)); } catch(e){}
-    }`,
-        `Platform: ${data.platform}`,
-        `Token: ${data.token}`,
-        `Loan Amount (base): ${data.loanAmount} ${EVM_NETWORKS.has(data.network)?'USDC':'USDC'}`,
-        `Token Address: ${data.tokenAddress}`,
-        `Buy On: ${data.buyDex}`,
-        `Sell To: ${data.sellDex}`,
-        `Reward Wallet: ${data.rewardWallet}`,
-        `Fee Wallet: ${data.feeWallet}`,
-        EVM_NETWORKS.has(data.network) ? `Gas Price (Gwei): ${data.gasPrice}` : `Gas Price: N/A (non‑EVM)`,
-        EVM_NETWORKS.has(data.network) ? `Gas Limit: ${data.gasLimit}` : `Gas Limit: N/A (non‑EVM)`,
-        EVM_NETWORKS.has(data.network) ? `Est. Gas Fee (ETH): ${data.gasFeeEth}` : `Est. Network Fee: —`,
-        `Max Gas Spend (ETH): ${data.maxGasEth}`,
-        `Slippage (%): ${data.slippage}`,
-        `Min Profit (Token): ${data.minProfitToken}`,
-        `Min Profit (£): ${data.minProfitGBP}`,
-        `Email: ${data.email}`,
-        `Notes: ${data.notes}`
-      ];
-      $("preview").textContent = lines.join("\n");
-      try { localStorage.setItem('ck-testbed-cache', JSON.stringify(data)); } catch(e){}
+      if(!select) return;
+      const opts = (items && items.length ? items : []);
+      select.innerHTML = '<option value="" disabled selected>Select…</option>' + opts.map(x=>`<option>${x}</option>`).join("");
     }
 
     function collectData(){
@@ -423,16 +332,36 @@
       };
     }
 
-    // Gas fee calculator: (gwei * units) / 1e9 = ETH
+    function formatPreview(){
+      const d = collectData();
+      const symEl = $("loanTokenSymbol");
+      if(symEl) symEl.textContent = d.token || "Token";
+      const lines = [
+        `Network: ${d.network}`,
+        `Platform: ${d.platform}`,
+        `Token: ${d.token}`,
+        `Loan Amount (USDC): ${d.loanAmount}`,
+        `Token Address: ${d.tokenAddress}`,
+        `Buy On: ${d.buyDex}`,
+        `Sell To: ${d.sellDex}`,
+        `Gas Price (Gwei): ${d.gasPrice}`,
+        `Gas Limit: ${d.gasLimit}`,
+        `Est. Gas Fee (ETH): ${d.gasFeeEth}`,
+        `Max Gas Spend (ETH): ${d.maxGasEth}`,
+        `Slippage (%): ${d.slippage}`,
+        `Min Profit (Token): ${d.minProfitToken}`,
+        `Min Profit (£): ${d.minProfitGBP}`,
+        `Email: ${d.email}`,
+        `Notes: ${d.notes}`
+      ];
+      $("preview").textContent = lines.join("\n");
+      try{ localStorage.setItem('ck-testbed-cache', JSON.stringify(d)); }catch(e){}
+    }
+
     function calcGas(){
       const gp = parseFloat($("gasPrice").value);
       const gl = parseFloat($("gasLimit").value);
-      if (!isNaN(gp) && !isNaN(gl)) {
-        const eth = (gp * gl) / 1e9; // ETH
-        $("gasFeeEth").value = eth.toFixed(6);
-      } else {
-        $("gasFeeEth").value = "";
-      }
+      $("gasFeeEth").value = (!isNaN(gp) && !isNaN(gl)) ? ((gp*gl)/1e9).toFixed(6) : "";
       formatPreview();
     }
 
@@ -450,376 +379,141 @@
       if(!d.sellDex) msg += "• Select a sell DEX.\n";
       if(d.rewardWallet !== d.rewardWalletConfirm) msg += "• Reward wallet confirmation doesn’t match.\n";
       if(d.feeWallet !== d.feeWalletConfirm) msg += "• Fee wallet confirmation doesn’t match.\n";
-      if(d.rewardWallet && !(looksLikeEVM(d.rewardWallet) || looksLikeSol(d.rewardWallet))) msg += "• Reward wallet doesn’t look like a valid EVM or Solana address.\n";
-      if(d.feeWallet && !(looksLikeEVM(d.feeWallet) || looksLikeSol(d.feeWallet))) msg += "• Fee wallet doesn’t look like a valid EVM or Solana address.\n";
-      if(EVM_NETWORKS.has(d.network)){
-        if(!d.gasPrice || !d.gasLimit) msg += "• Provide gas price and gas limit for EVM networks.\n";
-        if(d.maxGasEth && d.gasFeeEth && Number(d.gasFeeEth) > Number(d.maxGasEth)) msg += "• Estimated gas exceeds your max gas spend.\n";
-      }
-      if(d.minProfitToken && Number(d.minProfitToken)<0) msg += "• Min profit (token) must be ≥ 0.\n";
-      if(d.minProfitGBP && Number(d.minProfitGBP)<0) msg += "• Min profit (£) must be ≥ 0.\n";
       if(!d.email) msg += "• Provide a notification email.\n";
       if(!d.agree) msg += "• You must accept the Terms & Disclaimer.\n";
-      $("validation").textContent = msg;
-      return msg === "";
+      $("validation").textContent = msg; return msg==="";
     }
 
-    function refreshForNetwork(){
-      const netSel = $("network");
-      if(!netSel){ return; }
-      const net = netSel.value;
-      // Always ensure selects exist
-      const plat = $("platform");
-      const buy = $("buyDex");
-      const sell = $("sellDex");
-      if(!plat || !buy || !sell){ return; }
-
-      if(!net){
-        // Reset to placeholder if no network selected
-        setOptions(plat, []);
-        setOptions(buy, []);
-        setOptions(sell, []);
-        ["gasPriceWrap","gasLimitWrap","gasFeeWrap"].forEach(id=>$(id)&&$(id).classList.add('hidden'));
-        formatPreview();
-        return;
-      }
-
-      // Populate options safely
-      const plats = PLATFORMS[net] || ["Other / Custom"];
-      const dexes = DEXES[net] || ["Other / Custom"];
-      setOptions(plat, plats);
-      setOptions(buy, dexes);
-      setOptions(sell, dexes);
-
-      // Toggle gas fields for EVM vs Solana
-      const showGas = EVM_NETWORKS.has(net);
-      ["gasPriceWrap","gasLimitWrap","gasFeeWrap"].forEach(id=>{
-        const el = $(id); if(!el) return; el.classList.toggle('hidden', !showGas);
-      });
-
-      formatPreview();
-      maybeFetchPrice();
-    }
-    // Expose a resilient global so even if event binding fails, inline onchange works
-    window.__ck_refreshForNetwork = function(){ try{ refreshForNetwork(); twoLegQuote && twoLegQuote(); } catch(e){ console.error('refresh error', e); } };
-      setOptions($("platform"), PLATFORMS[net] || ["Other / Custom"]);
-      const dexes = DEXES[net] || ["Other / Custom"];
-      setOptions($("buyDex"), dexes);
-      setOptions($("sellDex"), dexes);
-
-      // Toggle gas fields for EVM vs Solana
-      const showGas = EVM_NETWORKS.has(net);
-      ["gasPriceWrap","gasLimitWrap","gasFeeWrap"].forEach(id=>{
-        $(id).classList.toggle('hidden', !showGas);
-      });
-
-      formatPreview();
-      maybeFetchPrice();
-    }
-
-    function simulate(){
-      const d = collectData();
-      let score = 0; // 0..100
-      if(d.minProfitToken || d.minProfitGBP) score += 30; else score += 10;
-      if(d.slippage && Number(d.slippage) <= 1) score += 30; else if(d.slippage) score += 15;
-      if(EVM_NETWORKS.has(d.network)){
-        if(d.maxGasEth && d.gasFeeEth && Number(d.maxGasEth) >= Number(d.gasFeeEth)) score += 30;
-      } else { score += 30; }
-      if(d.buyDex && d.sellDex && d.buyDex !== d.sellDex) score += 10;
-      const pct = Math.max(5, Math.min(100, score));
-      const bar = $("profitBar");
-      bar.style.width = pct + "%";
-      bar.className = pct >= 60 ? "good" : "bad";
-      $("profitLabel").textContent = pct >= 60 ? "Pass (est.)" : "Fail (est.)";
-    }
-
-    function toJSONPayload(){
-      const d = collectData();
-      const subject = `CK TestBed | NET: ${d.network || 'N/A'} | TOKEN: ${d.token || 'N/A'}`;
-      return { subject, timestamp: new Date().toISOString(), ...d };
-    }
-
-    function copyJSON(){
-      const payload = JSON.stringify(toJSONPayload(), null, 2);
-      navigator.clipboard.writeText(payload).then(()=>{
-        $("validation").textContent = "JSON copied to clipboard.";
-      }).catch(()=>{
-        $("validation").textContent = "Couldn’t copy JSON (clipboard blocked).";
-      })
-    }
-
-    function downloadJSON(){
-      const payload = JSON.stringify(toJSONPayload(), null, 2);
-      const blob = new Blob([payload], {type: 'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'ck-testbed-request.json'; a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // --- Live price fetching ---
-    async function fetchWithTimeout(url, opts={}){
+    // --- Price helpers ---
+    async function fetchWithTimeout(url, ms=10000){
       const controller = new AbortController();
-      const id = setTimeout(()=>controller.abort(), opts.timeout || 10000);
-      try{
-        const res = await fetch(url, {signal: controller.signal});
-        clearTimeout(id);
-        return res;
-      } catch(e){ clearTimeout(id); throw e; }
+      const id = setTimeout(()=>controller.abort(), ms);
+      try{ const res = await fetch(url, {signal: controller.signal}); clearTimeout(id); return res; } finally{ clearTimeout(id); }
     }
-
     async function priceFromDexscreener(address){
-      const url = `https://api.dexscreener.com/latest/dex/tokens/${address}`;
-      const r = await fetchWithTimeout(url);
+      const r = await fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
       const j = await r.json();
-      if(j && j.pairs && j.pairs.length){
-        j.pairs.sort((a,b)=> (Number(b.liquidity?.usd||0)) - (Number(a.liquidity?.usd||0)) );
-        const p = j.pairs[0];
-        return { usd: Number(p.priceUsd||0), dex: p.dexId || p.url || 'dexscreener', source: 'Dexscreener' };
+      if(j?.pairs?.length){
+        j.pairs.sort((a,b)=>(Number(b.liquidity?.usd||0))-Number(a.liquidity?.usd||0));
+        const p=j.pairs[0];
+        return { usd:Number(p.priceUsd||0), source:'Dexscreener' };
       }
-      throw new Error('No pairs from Dexscreener');
+      throw new Error('No pairs');
     }
-
     async function priceFromJupiter(mint){
-      const url = `https://price.jup.ag/v6/price?ids=${encodeURIComponent(mint)}`;
-      const r = await fetchWithTimeout(url);
+      const r = await fetchWithTimeout(`https://price.jup.ag/v6/price?ids=${encodeURIComponent(mint)}`);
       const j = await r.json();
-      const data = j.data && (j.data[mint] || j.data[Object.keys(j.data)[0]]);
-      if(data && data.price){
-        return { usd: Number(data.price), dex: 'Jupiter', source: 'Jupiter' };
-      }
-      throw new Error('No price from Jupiter');
+      const data = j?.data && (j.data[mint] || j.data[Object.keys(j.data)[0]]);
+      if(data?.price){ return { usd:Number(data.price), source:'Jupiter' }; }
+      throw new Error('No price');
     }
-
     async function priceFromCoinGecko(network, address){
-      const platform = {
-        ethereum: 'ethereum', arbitrum: 'arbitrum-one', polygon: 'polygon-pos', bsc: 'binance-smart-chain', avalanche: 'avalanche'
-      }[network];
-      if(!platform) throw new Error('Unsupported CG platform');
-      const url = `https://api.coingecko.com/api/v3/simple/token_price/${platform}?contract_addresses=${address}&vs_currencies=usd`;
-      const r = await fetchWithTimeout(url);
+      const platform = {ethereum:'ethereum',arbitrum:'arbitrum-one',polygon:'polygon-pos',bsc:'binance-smart-chain',avalanche:'avalanche'}[network];
+      const r = await fetchWithTimeout(`https://api.coingecko.com/api/v3/simple/token_price/${platform}?contract_addresses=${address}&vs_currencies=usd`);
       const j = await r.json();
       const key = Object.keys(j)[0];
-      if(key && j[key] && j[key].usd){
-        return { usd: Number(j[key].usd), dex: 'CoinGecko', source: 'CoinGecko' };
-      }
-      throw new Error('No price from CoinGecko');
+      if(key && j[key]?.usd){ return { usd:Number(j[key].usd), source:'CoinGecko' }; }
+      throw new Error('No price');
     }
 
     async function maybeFetchPrice(){
       const d = collectData();
-      const out = $("priceOut");
-      if(!out) return;
-      out.textContent = 'Fetching price…';
+      const out = $("priceOut"); if(!out) return;
       if(!d.network){ out.textContent = 'Select a network.'; return; }
-      // If no address entered but a known token symbol is picked, auto-fill from TOKENS map
-      if(!d.tokenAddress && d.token && TOKENS[d.network] && TOKENS[d.network][d.token]){
-        const addr = TOKENS[d.network][d.token];
-        $("tokenAddress").value = addr;
-      }
-      const addrNow = $("tokenAddress").value.trim();
-      if(!addrNow){ out.textContent = 'Enter token contract/mint (auto-filled for common tokens).'; return; }
+      if(!d.tokenAddress && d.token && TOKENS[d.network]?.[d.token]){ $("tokenAddress").value = TOKENS[d.network][d.token]; }
+      const addr = ($("tokenAddress").value||"").trim();
+      if(!addr){ out.textContent = 'Enter token contract/mint.'; return; }
+      out.textContent = 'Fetching price…';
       try{
-        let quote;
-        if(d.network === 'solana'){
-          quote = await priceFromJupiter(addrNow);
-        } else if(looksLikeEVM(addrNow)){
-          try { quote = await priceFromDexscreener(addrNow); }
-          catch(e){ quote = await priceFromCoinGecko(d.network, addrNow); }
-        } else {
-          out.textContent = 'Token address format not recognised for this network.';
-          return;
-        }
-        out.textContent = `Price: $${quote.usd.toFixed(6)} USD  • Source: ${quote.source}`;
-      } catch(err){
-        out.textContent = 'Could not fetch price. Check address/mint and try again.';
-      }
-    }
-      try{
-        let quote;
-        if(d.network === 'solana'){
-          quote = await priceFromJupiter(d.tokenAddress);
-        } else if(looksLikeEVM(d.tokenAddress)){
-          try { quote = await priceFromDexscreener(d.tokenAddress); }
-          catch(e){ quote = await priceFromCoinGecko(d.network, d.tokenAddress); }
-        } else {
-          out.textContent = 'Token address format not recognised for this network.';
-          return;
-        }
-        out.textContent = `Price: $${quote.usd.toFixed(6)} USD  • Source: ${quote.source}`;
-      } catch(err){
-        out.textContent = 'Could not fetch price. Check address/mint and try again.';
-      }
+        let q;
+        if(d.network==='solana') q = await priceFromJupiter(addr);
+        else if(looksLikeEVM(addr)) { try{ q = await priceFromDexscreener(addr);} catch{ q = await priceFromCoinGecko(d.network, addr);} }
+        else { out.textContent='Address format not recognised for this network.'; return; }
+        out.textContent = `Price: $${q.usd.toFixed(6)} • Source: ${q.source}`;
+      }catch{ out.textContent='Could not fetch price.'; }
     }
 
-    // --- Two‑leg quote (Base→Token then Token→Base) ---
+    // --- Two‑leg quote ---
     async function twoLegQuote(){
       const d = collectData();
-      const out = $("quoteOut");
-      if(!d.network || !d.tokenAddress || !d.loanAmount){
-        out.textContent = 'Need network, token address/mint, and loan amount.';
-        return;
-      }
+      const out = $("quoteOut"); if(!out) return;
+      if(!d.network || !d.tokenAddress || !d.loanAmount){ out.textContent='Need network, token address, and loan amount.'; return; }
       out.textContent = 'Quoting route…';
+      const slippage = Math.max(0, Number(d.slippage||0))/100; // decimal
       try{
-        const slippage = Math.max(0, Number(d.slippage || 0))/100; // decimal
-        if(d.network === 'solana'){
-          const baseMint = USDC.solana;
-          const amountBase = Math.round(Number(d.loanAmount) * 1e6); // USDC 6 decimals
-          // Leg 1: USDC -> TOKEN
-          const leg1Url = `https://quote-api.jup.ag/v6/quote?inputMint=${baseMint}&outputMint=${d.tokenAddress}&amount=${amountBase}&slippageBps=${Math.round(slippage*10000)}`;
-          const r1 = await fetchWithTimeout(leg1Url);
-          const j1 = await r1.json();
-          if(!j1 || !j1.outAmount) throw new Error('Jupiter leg-1 failed');
-          const tokenOut = Number(j1.outAmount); // token in smallest units
-          const tokenDecimals = j1.otherAmountThreshold ? undefined : undefined; // not reliably present
-          // Leg 2: TOKEN -> USDC (sell back the amount received)
-          const leg2Url = `https://quote-api.jup.ag/v6/quote?inputMint=${d.tokenAddress}&outputMint=${baseMint}&amount=${tokenOut}&slippageBps=${Math.round(slippage*10000)}`;
-          const r2 = await fetchWithTimeout(leg2Url);
-          const j2 = await r2.json();
-          if(!j2 || !j2.outAmount) throw new Error('Jupiter leg-2 failed');
-          const usdcBack = Number(j2.outAmount); // in 6 decimals
-          const grossPnlUsdc = (usdcBack - amountBase) / 1e6;
-          // Net after gas: Solana gas negligible here; keep as gross
-          out.textContent = `SOLANA two‑leg estimate (USDC base):\nBuy on ${d.buyDex || 'best'} → Sell on ${d.sellDex || 'best'}\nStart: ${Number(d.loanAmount).toFixed(2)} USDC\nEnd: ${ (usdcBack/1e6).toFixed(2) } USDC\nGross PnL: ${grossPnlUsdc.toFixed(2)} USDC`;
+        if(d.network==='solana'){
+          const baseMint = USDC.solana; const amt = Math.round(Number(d.loanAmount)*1e6);
+          const l1 = await (await fetchWithTimeout(`https://quote-api.jup.ag/v6/quote?inputMint=${baseMint}&outputMint=${d.tokenAddress}&amount=${amt}&slippageBps=${Math.round(slippage*10000)}`)).json();
+          if(!l1?.outAmount) throw new Error('leg1');
+          const tokenOut = Number(l1.outAmount);
+          const l2 = await (await fetchWithTimeout(`https://quote-api.jup.ag/v6/quote?inputMint=${d.tokenAddress}&outputMint=${baseMint}&amount=${tokenOut}&slippageBps=${Math.round(slippage*10000)}`)).json();
+          if(!l2?.outAmount) throw new Error('leg2');
+          const usdcBack = Number(l2.outAmount)/1e6;
+          const pnl = usdcBack - Number(d.loanAmount);
+          out.textContent = `SOL two‑leg (USDC→Token→USDC)\nStart: ${Number(d.loanAmount).toFixed(2)} USDC\nEnd: ${usdcBack.toFixed(2)} USDC\nGross PnL: ${pnl.toFixed(2)} USDC`;
         } else if (EVM_NETWORKS.has(d.network)){
-          const host = ZEROX_HOST[d.network];
-          const base = USDC[d.network];
-          const amountBase = Math.round(Number(d.loanAmount) * 1e6); // USDC 6 decimals
-          // Leg 1: USDC -> TOKEN
-          const l1 = `${host}/swap/v1/price?sellToken=${base}&buyToken=${d.tokenAddress}&sellAmount=${amountBase}`;
-          const r1 = await fetchWithTimeout(l1);
-          const q1 = await r1.json();
-          if(!q1 || !q1.buyAmount) throw new Error('0x leg-1 failed');
+          const host = ZEROX_HOST[d.network]; const base = USDC[d.network]; const amt = Math.round(Number(d.loanAmount)*1e6);
+          const q1 = await (await fetchWithTimeout(`${host}/swap/v1/price?sellToken=${base}&buyToken=${d.tokenAddress}&sellAmount=${amt}`)).json();
+          if(!q1?.buyAmount) throw new Error('0x leg1');
           const tokenOut = BigInt(q1.buyAmount);
-          // Leg 2: TOKEN -> USDC
-          const l2 = `${host}/swap/v1/price?sellToken=${d.tokenAddress}&buyToken=${base}&sellAmount=${tokenOut.toString()}`;
-          const r2 = await fetchWithTimeout(l2);
-          const q2 = await r2.json();
-          if(!q2 || !q2.buyAmount) throw new Error('0x leg-2 failed');
-          const usdcBack = Number(q2.buyAmount) / 1e6;
-          const grossPnlUsdc = usdcBack - Number(d.loanAmount);
-          // subtract user‑entered gas estimate converted to USD via priceOut (rough):
-          let gasUsd = 0;
-          try{
+          const q2 = await (await fetchWithTimeout(`${host}/swap/v1/price?sellToken=${d.tokenAddress}&buyToken=${base}&sellAmount=${tokenOut.toString()}`)).json();
+          if(!q2?.buyAmount) throw new Error('0x leg2');
+          const usdcBack = Number(q2.buyAmount)/1e6;
+          const pnl = usdcBack - Number(d.loanAmount);
+          // gas rough USD using ETH price if provided
+          let gasUsd = 0; try{
             if($("gasFeeEth").value){
-              // naive ETH only; for non‑ETH EVM this is off
-              const ethPrice = await (await fetchWithTimeout('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')).json();
-              const ethUsd = (ethPrice.ethereum && ethPrice.ethereum.usd) ? Number(ethPrice.ethereum.usd) : 0;
-              gasUsd = Number($("gasFeeEth").value) * ethUsd;
+              const ep = await (await fetchWithTimeout('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')).json();
+              gasUsd = Number($("gasFeeEth").value) * Number(ep?.ethereum?.usd||0);
             }
-          } catch(e){}
-          const netUsd = grossPnlUsdc - gasUsd;
-          out.textContent = `EVM two‑leg estimate (USDC base via 0x):\nBuy on ${d.buyDex || 'best'} → Sell on ${d.sellDex || 'best'}\nStart: ${Number(d.loanAmount).toFixed(2)} USDC\nEnd: ${ usdcBack.toFixed(2) } USDC\nGross PnL: ${grossPnlUsdc.toFixed(2)} USDC\nEst. Gas (USD): ${gasUsd.toFixed(2)}\nNet PnL (USD): ${netUsd.toFixed(2)}`;
-        } else {
-          out.textContent = 'Network not supported for route quoting.';
-        }
-      } catch(err){
-        $("quoteOut").textContent = 'Could not fetch quotes (API limits or invalid token). Try again.';
-      }
+          }catch{}
+          out.textContent = `EVM two‑leg (USDC→Token→USDC via 0x)\nStart: ${Number(d.loanAmount).toFixed(2)} USDC\nEnd: ${usdcBack.toFixed(2)} USDC\nGross PnL: ${pnl.toFixed(2)} USDC\nEst. Gas (USD): ${gasUsd.toFixed(2)}\nNet PnL (USD): ${(pnl-gasUsd).toFixed(2)}`;
+        } else { out.textContent='Network not supported for quoting.'; }
+      }catch{ out.textContent='Could not fetch quotes.'; }
     }
 
-    // Event wiring
-    ["loanAmount","platform","token","tokenAddress","buyDex","sellDex","rewardWallet","rewardWalletConfirm","feeWallet","feeWalletConfirm","gasPrice","gasLimit","maxGasEth","slippage","minProfitToken","minProfitGBP","email","notes","submitMode"].forEach(id=>{
-      $(id).addEventListener("input", ()=>{ if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();} });
-      $(id).addEventListener("change", ()=>{ if(id==="buyDex"||id==="sellDex"||id==="tokenAddress"||id==="token"){ maybeFetchPrice(); twoLegQuote(); } if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();}});
-    });
-    $("network").addEventListener('change', ()=>{ refreshForNetwork(); twoLegQuote(); });
+    // --- Population + bindings ---
+    function refreshForNetwork(){
+      const net = $("network")?.value || "";
+      setOptions($("platform"), (PLATFORMS[net]||["Other / Custom"]) );
+      const dexes = (DEXES[net] || ["Other / Custom"]);
+      setOptions($("buyDex"), dexes);
+      setOptions($("sellDex"), dexes);
+      const showGas = EVM_NETWORKS.has(net);
+      ["gasPriceWrap","gasLimitWrap","gasFeeWrap"].forEach(id=>{ const el=$(id); if(el) el.classList.toggle('hidden', !showGas); });
+      formatPreview();
+      maybeFetchPrice();
+    }
 
-    $("simulateBtn").addEventListener('click', ()=>{ if(validate()) { simulate(); twoLegQuote(); } });
-    $("copyJsonBtn").addEventListener('click', copyJSON);
-    $("downloadJsonBtn").addEventListener('click', downloadJSON);
+    window.__ck_refreshForNetwork = function(){ try{ refreshForNetwork(); twoLegQuote(); }catch(e){ console.error('refresh error',e);} };
 
-    document.getElementById("testbedForm").addEventListener("submit", function(e){
-      e.preventDefault();
-      if(!validate()){ return; }
-      const data = collectData();
-      const subject = encodeURIComponent(`CK TestBed | NET: ${data.network} | TOKEN: ${data.token}`);
-      const body = encodeURIComponent($("preview").textContent + "\n\nSent from Crypto Kings TestBed");
-
-      if(data.submitMode === 'mailto'){
-        const href = `mailto:${data.email}?subject=${subject}&body=${body}`;
-        window.location.href = href;
-      } else {
-        downloadJSON();
-      }
-    });
-
-    // initial render + restore cache if any
-    try{
-      const cached = localStorage.getItem('ck-testbed-cache');
-      if(cached){
-        const d = JSON.parse(cached);
-        ["network","token","platform","loanAmount","tokenAddress","buyDex","sellDex","rewardWallet","rewardWalletConfirm","feeWallet","feeWalletConfirm","gasPrice","gasLimit","gasFeeEth","maxGasEth","slippage","minProfitToken","minProfitGBP","email","notes","submitMode"].forEach(id=>{ if(d[id]!==undefined && $(id)) $(id).value = d[id]; });
-        refreshForNetwork();
-        calcGas();
-        maybeFetchPrice();
-        twoLegQuote();
-      } else {
-        refreshForNetwork();
-        formatPreview();
-      }
-    } catch(e){ formatPreview(); }
-  // --- Robust bootstrapping: bind events after DOM is ready and guard missing nodes ---
     function bindEvents(){
       const ids = ["loanAmount","platform","token","tokenAddress","buyDex","sellDex","rewardWallet","rewardWalletConfirm","feeWallet","feeWalletConfirm","gasPrice","gasLimit","maxGasEth","slippage","minProfitToken","minProfitGBP","email","notes","submitMode"];
-      ids.forEach(id=>{
-        const el = $(id);
-        if(!el) return;
-        el.addEventListener("input", ()=>{ if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();} });
-        el.addEventListener("change", ()=>{
-          if(id==="buyDex"||id==="sellDex"||id==="tokenAddress"||id==="token"){ maybeFetchPrice(); twoLegQuote(); }
-          if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();}
-        });
+      ids.forEach(id=>{ const el=$(id); if(!el) return;
+        el.addEventListener('input', ()=>{ if(id==='gasPrice'||id==='gasLimit') calcGas(); else formatPreview(); });
+        el.addEventListener('change', ()=>{ if(['buyDex','sellDex','tokenAddress','token'].includes(id)){ maybeFetchPrice(); twoLegQuote(); } if(id==='gasPrice'||id==='gasLimit') calcGas(); else formatPreview(); });
       });
-      const netSel = $("network");
-      if(netSel){
-        netSel.addEventListener('change', ()=>{ refreshForNetwork(); twoLegQuote(); });
-      }
-      const sim = $("simulateBtn"); if(sim){ sim.addEventListener('click', ()=>{ if(validate()) { simulate(); twoLegQuote(); } }); }
-      const copyB = $("copyJsonBtn"); if(copyB){ copyB.addEventListener('click', copyJSON); }
-      const dlB = $("downloadJsonBtn"); if(dlB){ dlB.addEventListener('click', downloadJSON); }
-      const form = document.getElementById("testbedForm");
-      if(form){
-        form.addEventListener("submit", function(e){
-          e.preventDefault();
-          if(!validate()){ return; }
-          const data = collectData();
-          const subject = encodeURIComponent(`CK TestBed | NET: ${data.network} | TOKEN: ${data.token}`);
-          const body = encodeURIComponent($("preview").textContent + "
-
-Sent from Crypto Kings TestBed");
-          if(data.submitMode === 'mailto'){
-            const href = `mailto:${data.email}?subject=${subject}&body=${body}`;
-            window.location.href = href;
-          } else { downloadJSON(); }
-        });
-      }
+      const sim=$("simulateBtn"); if(sim) sim.addEventListener('click', ()=>{ if(validate()){ simulate(); twoLegQuote(); }});
+      const copy=$("copyJsonBtn"); if(copy) copy.addEventListener('click', ()=>{ const payload=JSON.stringify({subject:`CK TestBed | NET: ${($("network").value||'N/A')} | TOKEN: ${($("token").value||'N/A')}`, timestamp:new Date().toISOString(), ...collectData()},null,2); navigator.clipboard.writeText(payload).then(()=>$("validation").textContent='JSON copied.').catch(()=>$("validation").textContent='Clipboard blocked.'); });
+      const dl=$("downloadJsonBtn"); if(dl) dl.addEventListener('click', ()=>{ const payload=JSON.stringify({subject:`CK TestBed | NET: ${($("network").value||'N/A')} | TOKEN: ${($("token").value||'N/A')}`, timestamp:new Date().toISOString(), ...collectData()},null,2); const blob=new Blob([payload],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='ck-testbed-request.json'; a.click(); URL.revokeObjectURL(url); });
+      const form=$("testbedForm"); if(form) form.addEventListener('submit', (e)=>{ e.preventDefault(); if(!validate()) return; const d=collectData(); const subject=encodeURIComponent(`CK TestBed | NET: ${d.network} | TOKEN: ${d.token}`); const body=encodeURIComponent($("preview").textContent+"\n\nSent from Crypto Kings TestBed"); if(d.submitMode==='mailto'){ window.location.href=`mailto:${d.email}?subject=${subject}&body=${body}`; } else { const payload=JSON.stringify({subject:`CK TestBed | NET: ${d.network} | TOKEN: ${d.token}`, timestamp:new Date().toISOString(), ...d},null,2); const blob=new Blob([payload],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='ck-testbed-request.json'; a.click(); URL.revokeObjectURL(url); }});
     }
+
+    function simulate(){
+      const d = collectData(); let score=0; if(d.minProfitToken||d.minProfitGBP) score+=30; else score+=10; if(d.slippage && Number(d.slippage)<=1) score+=30; else if(d.slippage) score+=15; if(EVM_NETWORKS.has(d.network)){ if(d.maxGasEth && d.gasFeeEth && Number(d.maxGasEth)>=Number(d.gasFeeEth)) score+=30; } else { score+=30; } if(d.buyDex && d.sellDex && d.buyDex!==d.sellDex) score+=10; const pct=Math.max(5,Math.min(100,score)); const bar=$("profitBar"); bar.style.width=pct+"%"; bar.className=pct>=60?"good":"bad"; $("profitLabel").textContent=pct>=60?"Pass (est.)":"Fail (est.)"; }
 
     document.addEventListener('DOMContentLoaded', ()=>{
       try{
         bindEvents();
-        // Try to restore cached state then refresh
-        try{
-          const cached = localStorage.getItem('ck-testbed-cache');
-          if(cached){
-            const d = JSON.parse(cached);
-            ["network","token","platform","loanAmount","tokenAddress","buyDex","sellDex","rewardWallet","rewardWalletConfirm","feeWallet","feeWalletConfirm","gasPrice","gasLimit","gasFeeEth","maxGasEth","slippage","minProfitToken","minProfitGBP","email","notes","submitMode"].forEach(id=>{ if(d[id]!==undefined && $(id)) $(id).value = d[id]; });
-          }
-        } catch(e){}
-        refreshForNetwork();
+        // restore cache
+        try{ const cached=localStorage.getItem('ck-testbed-cache'); if(cached){ const d=JSON.parse(cached); ["network","token","platform","loanAmount","tokenAddress","buyDex","sellDex","rewardWallet","rewardWalletConfirm","feeWallet","feeWalletConfirm","gasPrice","gasLimit","gasFeeEth","maxGasEth","slippage","minProfitToken","minProfitGBP","email","notes","submitMode"].forEach(id=>{ if(d[id]!==undefined && $(id)) $(id).value=d[id]; }); } }catch{}
+        window.__ck_refreshForNetwork();
         calcGas();
         formatPreview();
-        // Fallback: delayed refresh in case fonts/layout block
-        setTimeout(()=>{ try{ refreshForNetwork(); }catch(e){} }, 50);
-      } catch(err){ console.error('Init error:', err); }
+        setTimeout(()=>{ window.__ck_refreshForNetwork(); }, 60);
+      }catch(err){ console.error('Init error:',err); }
     });
-        refreshForNetwork();
-        calcGas();
-        formatPreview();
-      } catch(err){ console.error('Init error:', err); }
-    });
+  })();
   </script>
 </body>
 </html>

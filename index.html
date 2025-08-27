@@ -53,8 +53,8 @@
         <div>
           <h1>Crypto Kings TestBed</h1>
           <div class="inline">
-            <span class="pill">Flash‑Loan Arbitrage Made Simple.</span>
-          
+            <span class="pill">Flash‑Loan Arbitrage Simulator</span>
+            <small class="help">UI only. No on‑chain execution.</small>
           </div>
         </div>
       </div>
@@ -274,6 +274,100 @@
     };
 
     const EVM_NETWORKS = new Set(["ethereum", "arbitrum", "polygon", "bsc", "avalanche"]);
+
+    // Known token addresses/mints by network for quick price/quote when user picks a symbol
+    const TOKENS = {
+      ethereum: {
+        WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+        USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+        DAI:  '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+      },
+      arbitrum: {
+        WETH: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+        WBTC: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
+        USDC: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+        USDT: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+        DAI:  '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+        ARB:  '0x912CE59144191C1204E64559FE8253a0e49E6548'
+      },
+      polygon: {
+        WETH: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+        WBTC: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6',
+        USDC: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+        USDT: '0xc2132D05D31c914a87C6611C10748AaCB8fd03C8',
+        DAI:  '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+        MATIC:'0x0000000000000000000000000000000000001010'
+      },
+      bsc: {
+        WBNB:'0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+        WETH:'0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
+        WBTC:'0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c',
+        USDC:'0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
+        USDT:'0x55d398326f99059fF775485246999027B3197955',
+        DAI: '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3'
+      },
+      avalanche: {
+        WETH:'0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
+        WBTC:'0x50b7545627a5162F82A992c33b87aDc75187B218',
+        USDC:'0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+        USDT:'0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
+        DAI: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70'
+      },
+      solana: {
+        SOL:  'So11111111111111111111111111111111111111112',
+        USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'
+      }
+    };
+
+    // Known token addresses/mints by network for quick price/quote when user picks a symbol
+    const TOKENS = {
+      ethereum: {
+        WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+        USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+        DAI:  '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+      },
+      arbitrum: {
+        WETH: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+        WBTC: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
+        USDC: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+        USDT: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+        DAI:  '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+        ARB:  '0x912CE59144191C1204E64559FE8253a0e49E6548'
+      },
+      polygon: {
+        WETH: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+        WBTC: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6',
+        USDC: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+        USDT: '0xc2132D05D31c914a87C6611C10748AaCB8fd03C8',
+        DAI:  '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+        MATIC:'0x0000000000000000000000000000000000001010'
+      },
+      bsc: {
+        WBNB:'0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+        WETH:'0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
+        WBTC:'0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c',
+        USDC:'0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
+        USDT:'0x55d398326f99059fF775485246999027B3197955',
+        DAI: '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3'
+      },
+      avalanche: {
+        WETH:'0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
+        WBTC:'0x50b7545627a5162F82A992c33b87aDc75187B218',
+        USDC:'0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+        USDT:'0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
+        DAI: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70'
+      },
+      solana: {
+        SOL:  'So11111111111111111111111111111111111111112',
+        USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'
+      }
+    };
 
     // Reference stable (base) addresses (USDC) per network for quote legs
     const USDC = {
@@ -504,11 +598,59 @@
     async function maybeFetchPrice(){
       const d = collectData();
       const out = $("priceOut");
+      if(!out) return;
       out.textContent = 'Fetching price…';
-      if(!d.network || !d.tokenAddress){
-        out.textContent = 'Set network and token address/mint to fetch price.';
-        return;
+      if(!d.network){ out.textContent = 'Select a network.'; return; }
+      // If no address entered but a known token symbol is picked, auto-fill
+      if(!d.tokenAddress && d.token && TOKENS[d.network] && TOKENS[d.network][d.token]){
+        const addr = TOKENS[d.network][d.token];
+        $("tokenAddress").value = addr;
       }
+      const addrNow = $("tokenAddress").value.trim();
+      if(!addrNow){ out.textContent = 'Enter token contract/mint (auto-filled for common tokens).'; return; }
+      (async()=>{
+        try{
+          let quote;
+          if(d.network === 'solana'){
+            quote = await priceFromJupiter(addrNow);
+          } else if(looksLikeEVM(addrNow)){
+            try { quote = await priceFromDexscreener(addrNow); }
+            catch(e){ quote = await priceFromCoinGecko(d.network, addrNow); }
+          } else {
+            out.textContent = 'Token address format not recognised for this network.';
+            return;
+          }
+          out.textContent = `Price: $${quote.usd.toFixed(6)} USD  • Source: ${quote.source}`;
+        } catch(err){
+          out.textContent = 'Could not fetch price. Check address/mint and try again.';
+        }
+      })();
+    }
+      // If no address entered but a known token symbol is picked, auto-fill
+      if(!d.tokenAddress && d.token && TOKENS[d.network] && TOKENS[d.network][d.token]){
+        const addr = TOKENS[d.network][d.token];
+        $("tokenAddress").value = addr;
+      }
+      const addrNow = $("tokenAddress").value.trim();
+      if(!addrNow){ out.textContent = 'Enter token contract/mint (auto-filled for common tokens).'; return; }
+      (async()=>{
+        try{
+          let quote;
+          if(d.network === 'solana'){
+            quote = await priceFromJupiter(addrNow);
+          } else if(looksLikeEVM(addrNow)){
+            try { quote = await priceFromDexscreener(addrNow); }
+            catch(e){ quote = await priceFromCoinGecko(d.network, addrNow); }
+          } else {
+            out.textContent = 'Token address format not recognised for this network.';
+            return;
+          }
+          out.textContent = `Price: $${quote.usd.toFixed(6)} USD  • Source: ${quote.source}`;
+        } catch(err){
+          out.textContent = 'Could not fetch price. Check address/mint and try again.';
+        }
+      })();
+    }
       try{
         let quote;
         if(d.network === 'solana'){

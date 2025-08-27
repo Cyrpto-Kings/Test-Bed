@@ -53,8 +53,8 @@
         <div>
           <h1>Crypto Kings</h1>
           <div class="inline">
-            <span class="pill">Flash‑Loan Arbitrage Bot</span>
-            <small class="help">Our code, your profit. Simple.</small>
+            <span class="pill">Flash‑Loan Arbitrage Made Simple</span>
+            <small class="help">Novice to Pro in one click</small>
           </div>
         </div>
       </div>
@@ -370,7 +370,8 @@
         `Email: ${data.email}`,
         `Notes: ${data.notes}`
       ];
-      $("preview").textContent = lines.join("\n");
+      $("preview").textContent = lines.join("
+");
       try { localStorage.setItem('ck-testbed-cache', JSON.stringify(data)); } catch(e){}
     }`,
         `Platform: ${data.platform}`,
@@ -724,7 +725,49 @@
         formatPreview();
       }
     } catch(e){ formatPreview(); }
+  // --- Robust bootstrapping: bind events after DOM is ready and guard missing nodes ---
+    function bindEvents(){
+      const ids = ["loanAmount","platform","token","tokenAddress","buyDex","sellDex","rewardWallet","rewardWalletConfirm","feeWallet","feeWalletConfirm","gasPrice","gasLimit","maxGasEth","slippage","minProfitToken","minProfitGBP","email","notes","submitMode"];
+      ids.forEach(id=>{
+        const el = $(id);
+        if(!el) return;
+        el.addEventListener("input", ()=>{ if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();} });
+        el.addEventListener("change", ()=>{
+          if(id==="buyDex"||id==="sellDex"||id==="tokenAddress"||id==="token"){ maybeFetchPrice(); twoLegQuote(); }
+          if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();}
+        });
+      });
+      const netSel = $("network");
+      if(netSel){
+        netSel.addEventListener('change', ()=>{ refreshForNetwork(); twoLegQuote(); });
+      }
+      const sim = $("simulateBtn"); if(sim){ sim.addEventListener('click', ()=>{ if(validate()) { simulate(); twoLegQuote(); } }); }
+      const copyB = $("copyJsonBtn"); if(copyB){ copyB.addEventListener('click', copyJSON); }
+      const dlB = $("downloadJsonBtn"); if(dlB){ dlB.addEventListener('click', downloadJSON); }
+      const form = document.getElementById("testbedForm");
+      if(form){
+        form.addEventListener("submit", function(e){
+          e.preventDefault();
+          if(!validate()){ return; }
+          const data = collectData();
+          const subject = encodeURIComponent(`CK TestBed | NET: ${data.network} | TOKEN: ${data.token}`);
+          const body = encodeURIComponent($("preview").textContent + "\n\nSent from Crypto Kings TestBed");
+          if(data.submitMode === 'mailto'){
+            const href = `mailto:${data.email}?subject=${subject}&body=${body}`;
+            window.location.href = href;
+          } else { downloadJSON(); }
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      try{
+        bindEvents();
+        refreshForNetwork();
+        calcGas();
+        formatPreview();
+      } catch(err){ console.error('Init error:', err); }
+    });
   </script>
 </body>
 </html>
-

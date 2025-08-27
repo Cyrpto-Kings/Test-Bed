@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crypto Kings TestBed</title>
+  <meta name="description" content="TestBed form to simulate flash-loan arbitrage routing." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0b0d12; --panel:#121623; --ink:#e8eef9; --muted:#98a2b3; --brand:#7c5cff; --accent:#1d9bf0; --ok:#22c55e; --warn:#f59e0b; --danger:#ef4444; --ring:rgba(124,92,255,.35);}    
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:radial-gradient(1200px 600px at 100% -10%, rgba(124,92,255,.08), transparent),
+    radial-gradient(900px 500px at -10% 110%, rgba(29,155,240,.08), transparent), var(--bg); color:var(--ink)}
+    .wrap{max-width:980px; margin:0 auto; padding:32px 20px 80px}
+    header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{width:42px;height:42px; border-radius:12px; background:linear-gradient(135deg, var(--brand), var(--accent)); display:grid; place-items:center; box-shadow:0 10px 30px rgba(124,92,255,.35)}
+    .logo span{font-weight:800; font-size:18px}
+    h1{margin:0; font-size:clamp(20px, 2.6vw, 32px)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .grid{display:grid; grid-template-columns:1fr; gap:16px}
+    @media (min-width:760px){ .grid{grid-template-columns:repeat(2, 1fr)} }
+    label{display:block; font-size:13px; color:var(--muted); margin-bottom:8px}
+    select, input[type="text"], input[type="email"], input[type="number"]{width:100%; padding:12px 14px; border:1px solid rgba(255,255,255,.15); background:#0f1320; color:var(--ink); border-radius:12px; outline:none; transition:border .2s, box-shadow .2s}
+    select:focus, input:focus{border-color:var(--brand); box-shadow:0 0 0 4px var(--ring)}
+    .row{display:grid; grid-template-columns:1fr; gap:16px}
+    @media (min-width:760px){ .row-3{grid-template-columns:repeat(3, 1fr)} .row-2{grid-template-columns:repeat(2, 1fr)} }
+    .help{font-size:12px; color:var(--muted); margin-top:6px}
+    .cta{display:flex; gap:12px; align-items:center; margin-top:18px}
+    button{appearance:none; border:none; background:linear-gradient(135deg, var(--brand), var(--accent)); color:#fff; padding:14px 18px; border-radius:14px; font-weight:700; cursor:pointer; box-shadow:0 10px 24px rgba(124,92,255,.35); transition:transform .08s ease}
+    button:active{transform:translateY(1px)}
+    .ghost{background:transparent; border:1px solid rgba(255,255,255,.18); color:var(--ink); box-shadow:none}
+    footer{margin-top:30px; color:var(--muted); font-size:12px}
+    .pill{display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(124,92,255,.15); color:#cfd7ff; font-size:12px; font-weight:600}
+    .inline{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .out{white-space:pre-wrap; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0e1220; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.08)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"><span>CK</span></div>
+        <div>
+          <h1>Crypto Kings TestBed</h1>
+          <div class="inline">
+            <span class="pill">Flash‑Loan Arbitrage Simulator</span>
+            <small class="help">UI only. No on‑chain execution.</small>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <form id="testbedForm" class="card" autocomplete="on">
+      <div class="row">
+        <div>
+          <label for="loanAmount">Field 0 — Loan Amount</label>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="number" id="loanAmount" name="loanAmount" min="0" step="any" placeholder="e.g., 1000" required />
+            <span id="loanTokenSymbol" style="font-size:14px; color:var(--muted)"></span>
+          </div>
+          <div class="help">Amount to borrow in the flash loan (denominated in selected token).</div>
+        </div>
+      </div>
+
+      <div class="row row-2">
+        <div>
+          <label for="platform">Field 1 — Flash Loan Platform</label>
+          <select id="platform" name="platform" required>
+            <option value="" disabled selected>Select a platform</option>
+            <option>Aave v3 (Ethereum)</option>
+            <option>Aave v3 (Polygon)</option>
+            <option>Balancer (Ethereum)</option>
+            <option>Uniswap V3 (Uni Flash)</option>
+            <option>DyDx (Perp Flash)</option>
+            <option>Radiant (Arbitrum)</option>
+            <option>Solend (Solana)</option>
+            <option>MarginFi (Solana)</option>
+            <option>Other / Custom</option>
+          </select>
+          <div class="help">Choose where the flash loan originates.</div>
+        </div>
+        <div>
+          <label for="token">Field 2 — Desired Token</label>
+          <select id="token" name="token" required>
+            <option value="" disabled selected>Select a token</option>
+            <option>WETH</option>
+            <option>WBTC</option>
+            <option>USDC</option>
+            <option>USDT</option>
+            <option>DAI</option>
+            <option>SOL</option>
+            <option>WBNB</option>
+            <option>MATIC</option>
+            <option>ARB</option>
+            <option>OP</option>
+            <option>Other / Custom</option>
+          </select>
+          <div class="help">Asset you will borrow/swap in the route.</div>
+        </div>
+      </div>
+
+      <div class="row row-2">
+        <div>
+          <label for="buyDex">Field 3 — Purchase From DEX</label>
+          <select id="buyDex" name="buyDex" required>
+            <option value="" disabled selected>Select a DEX</option>
+            <option>Uniswap V3</option>
+            <option>SushiSwap</option>
+            <option>Curve</option>
+            <option>Balancer</option>
+            <option>1inch Aggregator</option>
+            <option>Jupiter (Solana)</option>
+            <option>Raydium (Solana)</option>
+            <option>Orca (Solana)</option>
+            <option>PancakeSwap (BSC)</option>
+            <option>Trader Joe (Avalanche)</option>
+            <option>Other / Custom</option>
+          </select>
+        </div>
+        <div>
+          <label for="sellDex">Field 4 — Sell To DEX</label>
+          <select id="sellDex" name="sellDex" required>
+            <option value="" disabled selected>Select a DEX</option>
+            <option>Uniswap V3</option>
+            <option>SushiSwap</option>
+            <option>Curve</option>
+            <option>Balancer</option>
+            <option>1inch Aggregator</option>
+            <option>Jupiter (Solana)</option>
+            <option>Raydium (Solana)</option>
+            <option>Orca (Solana)</option>
+            <option>PancakeSwap (BSC)</option>
+            <option>Trader Joe (Avalanche)</option>
+            <option>Other / Custom</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row row-2">
+        <div>
+          <label for="rewardWallet">Field 5 — Wallet Address for Reward</label>
+          <input type="text" id="rewardWallet" name="rewardWallet" placeholder="0x… or Solana address" required/>
+          <div class="help">Where any positive PnL should be paid.</div>
+        </div>
+        <div>
+          <label for="feeWallet">Field 6 — Wallet Address for Fees</label>
+          <input type="text" id="feeWallet" name="feeWallet" placeholder="0x… or Solana address" required/>
+          <div class="help">Wallet to deduct protocol or service fees.</div>
+        </div>
+      </div>
+
+      <div class="row row-3">
+        <div>
+          <label for="gasPrice">Field 7 — Gas Price (Gwei)</label>
+          <input type="number" id="gasPrice" name="gasPrice" min="0" step="0.1" placeholder="e.g., 20" required>
+        </div>
+        <div>
+          <label for="gasLimit">Gas Limit (units)</label>
+          <input type="number" id="gasLimit" name="gasLimit" min="0" step="1000" placeholder="e.g., 300000" required>
+        </div>
+        <div>
+          <label for="gasFeeEth">Estimated Gas Fee (ETH)</label>
+          <input type="text" id="gasFeeEth" name="gasFeeEth" placeholder="Auto‑calculated" readonly>
+          <div class="help">Calculated as (gasPrice × gasLimit) ÷ 1e9.</div>
+        </div>
+      </div>
+
+      <div class="row row-2">
+        <div>
+          <label for="email">Notification Email</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" required>
+          <div class="help">Form will open your email client with a pre‑filled message.</div>
+        </div>
+        <div>
+          <label for="notes">Route Notes (optional)</label>
+          <input type="text" id="notes" name="notes" placeholder="Any custom parameters or remarks"/>
+        </div>
+      </div>
+
+      <div class="cta">
+        <button id="processBtn" type="submit">Process Trade</button>
+        <button class="ghost" type="reset">Reset</button>
+      </div>
+
+      <div id="validation" class="help" style="margin-top:10px"></div>
+    </form>
+
+    <footer>
+      <p><strong>Disclaimer:</strong> This TestBed is a front‑end demonstration that collects parameters only and composes an email via <code>mailto:</code>. It does not execute trades or interact with blockchains or smart contracts.</p>
+      <p class="help">Tip: Replace the mailto flow with a backend endpoint (e.g., /api/submit) or a service like EmailJS when you are ready.</p>
+    </footer>
+
+    <div class="card" style="margin-top:16px">
+      <div class="inline" style="margin-bottom:8px"><span class="pill">Preview Payload</span><small class="help">Updates as you type</small></div>
+      <div id="preview" class="out">—</div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function formatPreview(){
+      const data = {
+        loanAmount: $("loanAmount").value || "",
+        token: $("token").value || "",
+        platform: $("platform").value || "",
+        buyDex: $("buyDex").value || "",
+        sellDex: $("sellDex").value || "",
+        rewardWallet: $("rewardWallet").value || "",
+        feeWallet: $("feeWallet").value || "",
+        gasPrice: $("gasPrice").value || "",
+        gasLimit: $("gasLimit").value || "",
+        gasFeeEth: $("gasFeeEth").value || "",
+        notes: $("notes").value || ""
+      };
+      const symbol = data.token ? data.token : "Token";
+      if($("loanTokenSymbol")) $("loanTokenSymbol").textContent = symbol;
+      const lines = [
+        `Loan Amount: ${data.loanAmount} ${symbol}`,
+        `Platform: ${data.platform}`,
+        `Token: ${data.token}`,
+        `Buy On: ${data.buyDex}`,
+        `Sell To: ${data.sellDex}`,
+        `Reward Wallet: ${data.rewardWallet}`,
+        `Fee Wallet: ${data.feeWallet}`,
+        `Gas Price (Gwei): ${data.gasPrice}`,
+        `Gas Limit: ${data.gasLimit}`,
+        `Est. Gas Fee (ETH): ${data.gasFeeEth}`,
+        `Notes: ${data.notes}`
+      ];
+      $("preview").textContent = lines.join("\n");
+    }
+
+    // Gas fee calculator: (gwei * units) / 1e9 = ETH
+    function calcGas(){
+      const gp = parseFloat($("gasPrice").value);
+      const gl = parseFloat($("gasLimit").value);
+      if (!isNaN(gp) && !isNaN(gl)) {
+        const eth = (gp * gl) / 1e9; // ETH
+        $("gasFeeEth").value = eth.toFixed(6);
+      } else {
+        $("gasFeeEth").value = "";
+      }
+      formatPreview();
+    }
+
+    ["loanAmount","platform","token","buyDex","sellDex","rewardWallet","feeWallet","gasPrice","gasLimit","notes"].forEach(id=>{
+      $(id).addEventListener("input", ()=>{ if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();}});
+      $(id).addEventListener("change", ()=>{ if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();}});
+    });
+
+    // simple address validators (loose)
+    function looksLikeEVM(addr){ return /^0x[a-fA-F0-9]{40}$/.test(addr.trim()); }
+    function looksLikeSol(addr){ return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr.trim()); }
+
+    function validate(){
+      const rw = $("rewardWallet").value.trim();
+      const fw = $("feeWallet").value.trim();
+      let msg = "";
+      if (rw && !(looksLikeEVM(rw) || looksLikeSol(rw))) msg += "• Reward wallet doesn’t look like a valid EVM or Solana address.\n";
+      if (fw && !(looksLikeEVM(fw) || looksLikeSol(fw))) msg += "• Fee wallet doesn’t look like a valid EVM or Solana address.\n";
+      $("validation").textContent = msg;
+      return

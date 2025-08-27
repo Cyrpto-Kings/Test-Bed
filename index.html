@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed V6.1.2</title>
+<title>Crypto Kings Test Bed v6.1.3</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .wrap{max-width:880px;margin:0 auto;padding:28px 16px 60px}
+  .wrap{max-width:920px;margin:0 auto;padding:28px 16px 60px}
   h1{margin:0 0 14px;font-size:22px}
   .card{background:#111422;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -20,14 +20,16 @@
   button{appearance:none;border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,#7c5cff,#1d9bf0)}
   .ghost{background:transparent;border:1px solid rgba(255,255,255,.18)}
   .ok{color:#34d399}
+  .warn{color:#f59e0b}
   .hidden{display:none}
+  .price-pill{font-size:12px;border:1px solid rgba(255,255,255,.14);padding:6px 10px;border-radius:999px;display:inline-flex;gap:8px;align-items:center}
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Crypto Kings TestBed v6.1.2</h1>
+    <h1>Crypto Kings Test Bed v6.1.3</h1>
 
-    <form id="form" class="card">
+    <form id="form" class="card" novalidate>
       <!-- Loan amount -->
       <div class="row">
         <div>
@@ -40,7 +42,7 @@
       <div class="row row-3" style="margin-top:10px">
         <div>
           <label for="network">Network</label>
-          <select id="network" required onchange="window.__ck_refresh && window.__ck_refresh()">
+          <select id="network" required>
             <option value="" disabled selected>Select a network</option>
             <option value="ethereum">Ethereum</option>
             <option value="arbitrum">Arbitrum</option>
@@ -59,6 +61,7 @@
             <option>ARB</option><option>MATIC</option><option>WBNB</option>
             <option>Other / Custom</option>
           </select>
+          <div id="tokenPrice" class="help" style="margin-top:6px"></div>
         </div>
         <div>
           <label for="platform">Flash Loan Platform</label>
@@ -101,17 +104,17 @@
       <!-- Gas -->
       <div class="row row-4" style="margin-top:10px">
         <div id="gasPriceWrap">
-          <label for="gasPrice">Gas Price (Gwei)</label>
-          <input id="gasPrice" type="number" min="0" step="0.1" placeholder="e.g., 20" />
+          <label for="gasPrice">Gas Price (Gwei) <span id="gasAutoNote" class="help"></span></label>
+          <input id="gasPrice" type="number" min="0" step="0.1" placeholder="Auto" readonly />
         </div>
         <div id="gasLimitWrap">
           <label for="gasLimit">Gas Limit (units)</label>
           <input id="gasLimit" type="number" min="0" step="1000" placeholder="e.g., 300000" />
         </div>
         <div id="gasFeeWrap">
-          <label for="gasFeeEth">Estimated Gas Fee (ETH)</label>
+          <label for="gasFeeEth">Estimated Gas Fee</label>
           <input id="gasFeeEth" type="text" placeholder="Auto-calculated" readonly />
-          <div class="help">(gasPrice × gasLimit) ÷ 1e9</div>
+          <div id="gasExplain" class="help" style="margin-top:6px"></div>
         </div>
         <div>
           <label for="maxGasEth">Max Gas Spend (ETH)</label>
@@ -123,14 +126,14 @@
       <div class="row" style="margin-top:10px">
         <div>
           <label><input id="agree" type="checkbox" /> I accept the Terms & Disclaimer</label>
-          <div class="help">This product is a Beta version and is under development</div>
+          <div class="help">This is a Beta Version in Development Mode.</div>
         </div>
       </div>
 
       <!-- Actions -->
       <div class="cta">
-        <button id="processBtn" type="submit">Process Trade</button>
-        <button class="ghost" type="reset">Reset</button>
+        <button id="processBtn" type="submit">Proceed</button>
+        <button id="resetBtn" class="ghost" type="reset">Reset</button>
       </div>
 
       <div id="validation" class="help" style="margin-top:10px"></div>
@@ -141,6 +144,7 @@
 (function(){
   const $ = id => document.getElementById(id);
 
+  /** ------- DATA ------- **/
   const PLATFORMS = {
     ethereum:["Aave v3","Balancer","Uniswap V3 (Uni Flash)","Other / Custom"],
     arbitrum:["Aave v3","Radiant","Balancer","Other / Custom"],
@@ -159,15 +163,215 @@
   };
   const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
 
+  // Public RPCs (CORS on some networks may block; we fallback to manual if so)
+  const RPC = {
+    ethereum: "https://cloudflare-eth.com",
+    polygon: "https://polygon-rpc.com",
+    bsc: "https://bsc-dataseed.binance.org",
+    avalanche: "https://api.avax.network/ext/bc/C/rpc",
+    arbitrum: "https://arb1.arbitrum.io/rpc"
+  };
+
+  // Token -> CoinGecko id map for live USD pricing
+  const CG_IDS = {
+    "WETH":"ethereum", "WBTC":"wrapped-bitcoin",
+    "ETH":"ethereum", "BTC":"bitcoin",
+    "USDC":"usd-coin", "USDT":"tether", "DAI":"dai",
+    "SOL":"solana", "ARB":"arbitrum", "MATIC":"matic-network",
+    "WBNB":"binancecoin"
+  };
+
+  /** ------- HELPERS ------- **/
   function setOptions(select, list){
     if(!select) return;
-    select.innerHTML = '<option value="" disabled selected>Select…</option>' +
-      (list||[]).map(v=>`<option>${v}</option>`).join('');
+    const opts = (list || ["Other / Custom"])
+      .map(v=>`<option>${v}</option>`).join('');
+    select.innerHTML = `<option value="" disabled selected>Select…</option>${opts}`;
   }
+
+  function refresh(){
+    const net = $("network").value;
+    setOptions($("platform"), PLATFORMS[net]);
+    const dex = DEXES[net];
+    setOptions($("buyDex"), dex);
+    setOptions($("sellDex"), dex);
+
+    // Show/hide EVM gas inputs
+    ["gasPriceWrap","gasLimitWrap","gasFeeWrap"].forEach(id=>{
+      const el=$(id); if(!el) return; el.classList.toggle("hidden", !EVM.has(net));
+    });
+
+    // Start/stop auto gas fetch
+    setupAutoGas();
+    calcGas();
+  }
+
+  async function fetchTokenPriceUSD(symbol){
+    const id = CG_IDS[symbol] || null;
+    if(!id) return null;
+    try{
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=usd`;
+      const r = await fetch(url, {cache:"no-store"});
+      if(!r.ok) return null;
+      const j = await r.json();
+      const price = j?.[id]?.usd;
+      return (typeof price === "number") ? price : null;
+    } catch(_e){ return null; }
+  }
+
+  function fmtUSD(v){
+    return isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "";
+  }
+
   function calcGas(){
     const gp=parseFloat($("gasPrice").value), gl=parseFloat($("gasLimit").value);
-    $("gasFeeEth").value = (!isNaN(gp)&&!isNaN(gl)) ? ((gp*gl)/1e9).toFixed(6) : "";
+    const isValid = !isNaN(gp) && !isNaN(gl) && gl>0;
+    const eth = isValid ? (gp * gl) / 1e9 : NaN; // Gwei * units / 1e9 => ETH
+    $("gasFeeEth").value = isValid ? eth.toFixed(6) + " ETH" : "";
+
+    const explain = $("gasExplain");
+    if(isValid){
+      const line1 = `Gas fee = (gasPrice × gasLimit) ÷ 1e9`;
+      const line2 = `= (${gp} Gwei × ${gl.toLocaleString()}) ÷ 1,000,000,000 = ${eth.toFixed(6)} ETH`;
+      explain.textContent = line1 + " → " + line2;
+
+      const ethUSD = window.__ck_prices?.ETH_USD;
+      if(typeof ethUSD === "number"){
+        const usd = eth * ethUSD;
+        explain.textContent += ` (~${fmtUSD(usd)})`;
+      }
+    } else {
+      explain.textContent = "Enter a gas limit to see the ETH cost. Gas price is auto-fetched per network.";
+    }
   }
+
+  async function updateTokenPriceBanner(){
+    const sym = $("token").value || "";
+    const el = $("tokenPrice");
+    if(!sym || sym === "Other / Custom"){ el.textContent = ""; return; }
+    el.textContent = "Fetching live price…";
+    const p = await fetchTokenPriceUSD(sym);
+    if(p == null){
+      el.innerHTML = `<span class="warn">Live price unavailable for ${sym}.</span>`;
+      return;
+    }
+    el.innerHTML = `<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
+  }
+
+  async function warmEthPrice(){
+    const p = await fetchTokenPriceUSD("WETH");
+    if(typeof p === "number"){
+      window.__ck_prices = Object.assign({}, window.__ck_prices, { ETH_USD: p });
+      calcGas();
+    }
+  }
+
+  /** ------- AUTO GAS PRICE ------- **/
+  let gasTimer = null;
+
+  async function fetchGasPriceGweiFor(network){
+    const endpoint = RPC[network];
+    if(!endpoint) throw new Error("No RPC for " + network);
+    // eth_gasPrice returns wei as hex
+    const payload = { jsonrpc:"2.0", id:1, method:"eth_gasPrice", params:[] };
+    const res = await fetch(endpoint, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error("RPC HTTP " + res.status);
+    const j = await res.json();
+    const hexWei = j?.result;
+    if(!hexWei) throw new Error("No gasPrice in response");
+    const wei = parseInt(hexWei, 16);
+    return wei / 1e9; // Gwei
+  }
+
+  async function updateGasOnce(){
+    const net = $("network").value;
+    const note = $("gasAutoNote");
+    const gasInput = $("gasPrice");
+
+    if(!EVM.has(net)){
+      gasInput.value = "";
+      gasInput.readOnly = true;
+      note.textContent = "";
+      return;
+    }
+
+    note.textContent = "auto";
+    try{
+      const gwei = await fetchGasPriceGweiFor(net);
+      gasInput.readOnly = true;
+      gasInput.value = Number(gwei).toFixed(1);
+      const ts = new Date();
+      note.textContent = `auto • ${ts.toLocaleTimeString()}`;
+      calcGas();
+    } catch(err){
+      // Fallback: allow manual entry if RPC blocks CORS
+      gasInput.readOnly = false;
+      note.textContent = "auto failed (RPC CORS). You can enter manually.";
+    }
+  }
+
+  function setupAutoGas(){
+    if(gasTimer) { clearInterval(gasTimer); gasTimer = null; }
+    updateGasOnce();
+    // refresh every ~20s
+    gasTimer = setInterval(updateGasOnce, 20000);
+  }
+
+  /** ------- WIRING ------- **/
+  const form = $("form");
+  const processBtn = $("processBtn");
+  const resetBtn = $("resetBtn");
+  const validation = $("validation");
+  const OWNER_EMAIL = "owner@example.com"; // <-- REPLACE WITH YOUR ADDRESS
+
+  $("network").addEventListener("change", refresh);
+  $("token").addEventListener("change", updateTokenPriceBanner);
+  ["gasLimit"].forEach(id => {
+    const el=$(id); if(el) el.addEventListener("input", calcGas);
+  });
+
+  form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    calcGas();
+    if(!validate()) return;
+    processBtn.disabled = true;
+
+    const payload = {
+      network:$("network").value, platform:$("platform").value, token:$("token").value,
+      loanAmount:$("loanAmount").value, buyDex:$("buyDex").value, sellDex:$("sellDex").value,
+      rewardWallet:$("rewardWallet").value, feeWallet:$("feeWallet").value,
+      gasPrice:$("gasPrice").value, gasLimit:$("gasLimit").value,
+      gasFeeEth:($("gasFeeEth").value||"").replace(" ETH",""), maxGasEth:$("maxGasEth").value,
+    };
+    const subject = encodeURIComponent(`CK TestBed | ${payload.network} | ${payload.token}`);
+    const body = encodeURIComponent(
+      `Loan Amount (USDC): ${payload.loanAmount}\n`+
+      `Network: ${payload.network}\nPlatform: ${payload.platform}\nToken: ${payload.token}\n`+
+      `Buy on: ${payload.buyDex}\nSell to: ${payload.sellDex}\n`+
+      `Reward Wallet: ${payload.rewardWallet}\nFee Wallet: ${payload.feeWallet}\n`+
+      `Gas Price (Gwei): ${payload.gasPrice}\nGas Limit: ${payload.gasLimit}\n`+
+      `Est. Gas Fee (ETH): ${payload.gasFeeEth}\nMax Gas Spend (ETH): ${payload.maxGasEth}\n\n`+
+      `Sent from Crypto Kings TestBed`
+    );
+
+    window.location.href = `mailto:${OWNER_EMAIL}?subject=${subject}&body=${body}`;
+
+    validation.classList.remove("warn");
+    validation.classList.add("ok");
+    validation.textContent = "Success! Details prepared and handed to your email client.";
+  });
+
+  resetBtn.addEventListener("click", ()=>{
+    validation.classList.remove("ok","warn");
+    validation.textContent = "";
+    processBtn.disabled = false;
+    setTimeout(()=>{ try { refresh(); updateTokenPriceBanner(); warmEthPrice(); } catch(e){} }, 0);
+  });
+
   function validate(){
     let m="";
     if(!$("network").value) m+="• Select a network.\n";
@@ -180,56 +384,17 @@
     if($("feeWallet").value !== $("feeWalletConfirm").value) m+="• Fee wallet confirmation doesn’t match.\n";
     if(!$("agree").checked) m+="• You must accept the Terms & Disclaimer.\n";
     $("validation").textContent = m;
+    if(m){ $("validation").classList.add("warn"); } else { $("validation").classList.remove("warn"); }
     return m==="";
   }
 
-  function refresh(){
-    const net = $("network").value;
-    setOptions($("platform"), PLATFORMS[net] || ["Other / Custom"]);
-    const dex = DEXES[net] || ["Other / Custom"];
-    setOptions($("buyDex"), dex);
-    setOptions($("sellDex"), dex);
-    ["gasPriceWrap","gasLimitWrap","gasFeeWrap"].forEach(id=>{
-      const el=$(id); if(!el) return; el.classList.toggle("hidden", !EVM.has(net));
-    });
-  }
-  window.__ck_refresh = () => { try{ refresh(); }catch(e){} };
-
-  // Email on submit + success message
-  const OWNER_EMAIL = "honkulon@gmail.com"; // <-- REPLACE WITH YOUR ADDRESS
-  document.getElementById("form").addEventListener("submit", (e)=>{
-    e.preventDefault();
-    calcGas();
-    if(!validate()) return;
-
-    const payload = {
-      network:$("network").value, platform:$("platform").value, token:$("token").value,
-      loanAmount:$("loanAmount").value, buyDex:$("buyDex").value, sellDex:$("sellDex").value,
-      rewardWallet:$("rewardWallet").value, feeWallet:$("feeWallet").value,
-      gasPrice:$("gasPrice").value, gasLimit:$("gasLimit").value,
-      gasFeeEth:$("gasFeeEth").value, maxGasEth:$("maxGasEth").value,
-    };
-    const subject = encodeURIComponent(`CK TestBed | ${payload.network} | ${payload.token}`);
-    const body = encodeURIComponent(
-      `Loan Amount (USDC): ${payload.loanAmount}\n`+
-      `Network: ${payload.network}\nPlatform: ${payload.platform}\nToken: ${payload.token}\n`+
-      `Buy on: ${payload.buyDex}\nSell to: ${payload.sellDex}\n`+
-      `Reward Wallet: ${payload.rewardWallet}\nFee Wallet: ${payload.feeWallet}\n`+
-      `Gas Price (Gwei): ${payload.gasPrice}\nGas Limit: ${payload.gasLimit}\n`+
-      `Est. Gas Fee (ETH): ${payload.gasFeeEth}\nMax Gas Spend (ETH): ${payload.maxGasEth}\n\n`+
-      `Sent from Crypto Kings TestBed`
-    );
-    window.location.href = `mailto:${honkulon@gmail.com}?subject=${SUCCESS}&body=${body}`;
-    const v = $("validation"); v.classList.add("ok");
-    v.textContent = "Success! Details have been prepared in your email client.";
-  });
-
-  ["gasPrice","gasLimit"].forEach(id => {
-    const el=$(id); if(el) el.addEventListener("input", calcGas);
-  });
-
-  document.addEventListener("DOMContentLoaded", ()=>{
-    try { refresh(); calcGas(); } catch(e){}
+  // Init
+  document.addEventListener("DOMContentLoaded", async ()=>{
+    try {
+      refresh();
+      updateTokenPriceBanner();
+      warmEthPrice();
+    } catch(e){}
   });
 })();
 </script>

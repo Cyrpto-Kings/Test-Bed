@@ -14,29 +14,36 @@
     html,body{height:100%}
     body{margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:radial-gradient(1200px 600px at 100% -10%, rgba(124,92,255,.08), transparent),
     radial-gradient(900px 500px at -10% 110%, rgba(29,155,240,.08), transparent), var(--bg); color:var(--ink)}
-    .wrap{max-width:980px; margin:0 auto; padding:32px 20px 80px}
+    .wrap{max-width:1100px; margin:0 auto; padding:32px 20px 80px}
     header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px}
     .brand{display:flex; align-items:center; gap:12px}
     .logo{width:42px;height:42px; border-radius:12px; background:linear-gradient(135deg, var(--brand), var(--accent)); display:grid; place-items:center; box-shadow:0 10px 30px rgba(124,92,255,.35)}
     .logo span{font-weight:800; font-size:18px}
     h1{margin:0; font-size:clamp(20px, 2.6vw, 32px)}
     .card{background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,.35)}
-    .grid{display:grid; grid-template-columns:1fr; gap:16px}
-    @media (min-width:760px){ .grid{grid-template-columns:repeat(2, 1fr)} }
     label{display:block; font-size:13px; color:var(--muted); margin-bottom:8px}
     select, input[type="text"], input[type="email"], input[type="number"]{width:100%; padding:12px 14px; border:1px solid rgba(255,255,255,.15); background:#0f1320; color:var(--ink); border-radius:12px; outline:none; transition:border .2s, box-shadow .2s}
     select:focus, input:focus{border-color:var(--brand); box-shadow:0 0 0 4px var(--ring)}
     .row{display:grid; grid-template-columns:1fr; gap:16px}
-    @media (min-width:760px){ .row-3{grid-template-columns:repeat(3, 1fr)} .row-2{grid-template-columns:repeat(2, 1fr)} }
+    @media (min-width:760px){ .row-3{grid-template-columns:repeat(3, 1fr)} .row-2{grid-template-columns:repeat(2, 1fr)} .row-4{grid-template-columns:repeat(4, 1fr)} }
     .help{font-size:12px; color:var(--muted); margin-top:6px}
-    .cta{display:flex; gap:12px; align-items:center; margin-top:18px}
+    .cta{display:flex; gap:12px; align-items:center; margin-top:18px; flex-wrap:wrap}
     button{appearance:none; border:none; background:linear-gradient(135deg, var(--brand), var(--accent)); color:#fff; padding:14px 18px; border-radius:14px; font-weight:700; cursor:pointer; box-shadow:0 10px 24px rgba(124,92,255,.35); transition:transform .08s ease}
     button:active{transform:translateY(1px)}
     .ghost{background:transparent; border:1px solid rgba(255,255,255,.18); color:var(--ink); box-shadow:none}
+    .danger{background:linear-gradient(135deg, var(--danger), #b91c1c)}
     footer{margin-top:30px; color:var(--muted); font-size:12px}
     .pill{display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(124,92,255,.15); color:#cfd7ff; font-size:12px; font-weight:600}
     .inline{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    .out{white-space:pre-wrap; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0e1220; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.08)}
+    .out{white-space:pre-wrap; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; background:#0e1220; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.08)}
+    .hidden{display:none !important}
+    .rs{display:flex; align-items:center; gap:8px}
+    .switch{display:flex; align-items:center; gap:8px}
+    .bar{height:10px; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden}
+    .bar > span{display:block; height:100%}
+    .good{background:linear-gradient(90deg, var(--ok), #16a34a)}
+    .bad{background:linear-gradient(90deg, var(--danger), #ef4444)}
+    .tooltip{border-bottom:1px dotted rgba(255,255,255,.4); cursor:help}
   </style>
 </head>
 <body>
@@ -55,33 +62,20 @@
     </header>
 
     <form id="testbedForm" class="card" autocomplete="on">
-      <div class="row">
+      <!-- Global controls -->
+      <div class="row row-3">
         <div>
-          <label for="loanAmount">Field 0 — Loan Amount</label>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <input type="number" id="loanAmount" name="loanAmount" min="0" step="any" placeholder="e.g., 1000" required />
-            <span id="loanTokenSymbol" style="font-size:14px; color:var(--muted)"></span>
-          </div>
-          <div class="help">Amount to borrow in the flash loan (denominated in selected token).</div>
-        </div>
-      </div>
-
-      <div class="row row-2">
-        <div>
-          <label for="platform">Field 1 — Flash Loan Platform</label>
-          <select id="platform" name="platform" required>
-            <option value="" disabled selected>Select a platform</option>
-            <option>Aave v3 (Ethereum)</option>
-            <option>Aave v3 (Polygon)</option>
-            <option>Balancer (Ethereum)</option>
-            <option>Uniswap V3 (Uni Flash)</option>
-            <option>DyDx (Perp Flash)</option>
-            <option>Radiant (Arbitrum)</option>
-            <option>Solend (Solana)</option>
-            <option>MarginFi (Solana)</option>
-            <option>Other / Custom</option>
+          <label for="network">Network</label>
+          <select id="network" name="network" required>
+            <option value="" disabled selected>Select a network</option>
+            <option value="ethereum">Ethereum</option>
+            <option value="arbitrum">Arbitrum</option>
+            <option value="polygon">Polygon</option>
+            <option value="bsc">BSC</option>
+            <option value="avalanche">Avalanche</option>
+            <option value="solana">Solana</option>
           </select>
-          <div class="help">Choose where the flash loan originates.</div>
+          <div class="help">Determines available platforms, DEXes and gas model.</div>
         </div>
         <div>
           <label for="token">Field 2 — Desired Token</label>
@@ -99,82 +93,107 @@
             <option>OP</option>
             <option>Other / Custom</option>
           </select>
-          <div class="help">Asset you will borrow/swap in the route.</div>
+        </div>
+        <div>
+          <label for="loanAmount">Field 0 — Loan Amount</label>
+          <div class="rs">
+            <input type="number" id="loanAmount" name="loanAmount" min="0" step="any" placeholder="e.g., 1000" required />
+            <span id="loanTokenSymbol" class="help"></span>
+          </div>
+          <div class="help">Amount to borrow (denominated in selected token).</div>
         </div>
       </div>
 
-      <div class="row row-2">
+      <!-- Platform / DEX routing -->
+      <div class="row row-3">
+        <div>
+          <label for="platform">Field 1 — Flash Loan Platform</label>
+          <select id="platform" name="platform" required>
+            <option value="" disabled selected>Select a platform</option>
+          </select>
+        </div>
         <div>
           <label for="buyDex">Field 3 — Purchase From DEX</label>
-          <select id="buyDex" name="buyDex" required>
-            <option value="" disabled selected>Select a DEX</option>
-            <option>Uniswap V3</option>
-            <option>SushiSwap</option>
-            <option>Curve</option>
-            <option>Balancer</option>
-            <option>1inch Aggregator</option>
-            <option>Jupiter (Solana)</option>
-            <option>Raydium (Solana)</option>
-            <option>Orca (Solana)</option>
-            <option>PancakeSwap (BSC)</option>
-            <option>Trader Joe (Avalanche)</option>
-            <option>Other / Custom</option>
-          </select>
+          <select id="buyDex" name="buyDex" required></select>
         </div>
         <div>
           <label for="sellDex">Field 4 — Sell To DEX</label>
-          <select id="sellDex" name="sellDex" required>
-            <option value="" disabled selected>Select a DEX</option>
-            <option>Uniswap V3</option>
-            <option>SushiSwap</option>
-            <option>Curve</option>
-            <option>Balancer</option>
-            <option>1inch Aggregator</option>
-            <option>Jupiter (Solana)</option>
-            <option>Raydium (Solana)</option>
-            <option>Orca (Solana)</option>
-            <option>PancakeSwap (BSC)</option>
-            <option>Trader Joe (Avalanche)</option>
-            <option>Other / Custom</option>
-          </select>
+          <select id="sellDex" name="sellDex" required></select>
         </div>
       </div>
 
+      <!-- Wallets & confirmations -->
       <div class="row row-2">
         <div>
           <label for="rewardWallet">Field 5 — Wallet Address for Reward</label>
           <input type="text" id="rewardWallet" name="rewardWallet" placeholder="0x… or Solana address" required/>
+          <input type="text" id="rewardWalletConfirm" placeholder="Confirm reward wallet" />
           <div class="help">Where any positive PnL should be paid.</div>
         </div>
         <div>
           <label for="feeWallet">Field 6 — Wallet Address for Fees</label>
           <input type="text" id="feeWallet" name="feeWallet" placeholder="0x… or Solana address" required/>
+          <input type="text" id="feeWalletConfirm" placeholder="Confirm fee wallet" />
           <div class="help">Wallet to deduct protocol or service fees.</div>
+        </div>
+      </div>
+
+      <!-- Gas / Slippage / Limits (EVM only shows gas) -->
+      <div class="row row-4">
+        <div id="gasPriceWrap">
+          <label for="gasPrice">Field 7 — Gas Price (Gwei)</label>
+          <input type="number" id="gasPrice" name="gasPrice" min="0" step="0.1" placeholder="e.g., 20">
+        </div>
+        <div id="gasLimitWrap">
+          <label for="gasLimit">Gas Limit (units)</label>
+          <input type="number" id="gasLimit" name="gasLimit" min="0" step="1000" placeholder="e.g., 300000">
+        </div>
+        <div id="gasFeeWrap">
+          <label for="gasFeeEth">Estimated Gas Fee (ETH)</label>
+          <input type="text" id="gasFeeEth" name="gasFeeEth" placeholder="Auto‑calculated" readonly>
+          <div class="help">(gasPrice × gasLimit) ÷ 1e9</div>
+        </div>
+        <div>
+          <label for="maxGasEth">Max Gas Spend (ETH)</label>
+          <input type="number" id="maxGasEth" name="maxGasEth" min="0" step="any" placeholder="e.g., 0.02">
         </div>
       </div>
 
       <div class="row row-3">
         <div>
-          <label for="gasPrice">Field 7 — Gas Price (Gwei)</label>
-          <input type="number" id="gasPrice" name="gasPrice" min="0" step="0.1" placeholder="e.g., 20" required>
+          <label for="slippage">Slippage Tolerance (%)</label>
+          <input type="number" id="slippage" name="slippage" min="0" step="0.1" placeholder="e.g., 0.5">
         </div>
         <div>
-          <label for="gasLimit">Gas Limit (units)</label>
-          <input type="number" id="gasLimit" name="gasLimit" min="0" step="1000" placeholder="e.g., 300000" required>
+          <label for="minProfitToken">Min Profit Threshold (Token)</label>
+          <input type="number" id="minProfitToken" name="minProfitToken" min="0" step="any" placeholder="e.g., 5">
         </div>
         <div>
-          <label for="gasFeeEth">Estimated Gas Fee (ETH)</label>
-          <input type="text" id="gasFeeEth" name="gasFeeEth" placeholder="Auto‑calculated" readonly>
-          <div class="help">Calculated as (gasPrice × gasLimit) ÷ 1e9.</div>
+          <label for="minProfitGBP">Min Profit Threshold (£)</label>
+          <input type="number" id="minProfitGBP" name="minProfitGBP" min="0" step="any" placeholder="e.g., 25">
         </div>
       </div>
 
-      <div class="row row-2">
+      <!-- Email + submission mode -->
+      <div class="row row-3">
         <div>
           <label for="email">Notification Email</label>
           <input type="email" id="email" name="email" placeholder="you@example.com" required>
-          <div class="help">Form will open your email client with a pre‑filled message.</div>
         </div>
+        <div>
+          <label for="submitMode">Submission Mode</label>
+          <select id="submitMode">
+            <option value="mailto" selected>Email (mailto)</option>
+            <option value="json">Download JSON only</option>
+          </select>
+        </div>
+        <div class="switch">
+          <label for="agree">Terms & Disclaimer</label>
+          <input type="checkbox" id="agree"> <span class="help">I understand this is a UI demo; no on‑chain execution.</span>
+        </div>
+      </div>
+
+      <div class="row">
         <div>
           <label for="notes">Route Notes (optional)</label>
           <input type="text" id="notes" name="notes" placeholder="Any custom parameters or remarks"/>
@@ -182,8 +201,11 @@
       </div>
 
       <div class="cta">
+        <button id="simulateBtn" type="button">Simulate</button>
         <button id="processBtn" type="submit">Process Trade</button>
-        <button class="ghost" type="reset">Reset</button>
+        <button id="copyJsonBtn" class="ghost" type="button">Copy JSON</button>
+        <button id="downloadJsonBtn" class="ghost" type="button">Download JSON</button>
+        <button class="ghost danger" type="reset">Reset</button>
       </div>
 
       <div id="validation" class="help" style="margin-top:10px"></div>
@@ -191,48 +213,100 @@
 
     <footer>
       <p><strong>Disclaimer:</strong> This TestBed is a front‑end demonstration that collects parameters only and composes an email via <code>mailto:</code>. It does not execute trades or interact with blockchains or smart contracts.</p>
-      <p class="help">Tip: Replace the mailto flow with a backend endpoint (e.g., /api/submit) or a service like EmailJS when you are ready.</p>
+      <p class="help">Tip: Replace the mailto flow with a backend endpoint (e.g., /api/submit) when you’re ready.</p>
     </footer>
 
     <div class="card" style="margin-top:16px">
       <div class="inline" style="margin-bottom:8px"><span class="pill">Preview Payload</span><small class="help">Updates as you type</small></div>
       <div id="preview" class="out">—</div>
+      <div class="inline" style="margin-top:10px">
+        <span class="help">Profit Gate:</span>
+        <div class="bar" style="width:260px"><span id="profitBar" style="width:0%" class="bad"></span></div>
+        <span id="profitLabel" class="help">No simulation yet</span>
+      </div>
     </div>
   </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
 
+    // --- Mappings ---
+    const PLATFORMS = {
+      ethereum: ["Aave v3", "Balancer", "Uniswap V3 (Uni Flash)", "DyDx (Perp Flash)", "Other / Custom"],
+      arbitrum: ["Aave v3", "Radiant", "Balancer", "Other / Custom"],
+      polygon: ["Aave v3", "Balancer", "Other / Custom"],
+      bsc: ["PancakeSwap (flash via router)", "Other / Custom"],
+      avalanche: ["Trader Joe (flash via router)", "Other / Custom"],
+      solana: ["Solend", "MarginFi", "Other / Custom"],
+    };
+
+    const DEXES = {
+      ethereum: ["Uniswap V3", "SushiSwap", "Curve", "Balancer", "1inch Aggregator", "Other / Custom"],
+      arbitrum: ["Uniswap V3", "SushiSwap", "Camelot", "Balancer", "1inch Aggregator", "Other / Custom"],
+      polygon: ["Uniswap V3", "SushiSwap", "Balancer", "1inch Aggregator", "QuickSwap", "Other / Custom"],
+      bsc: ["PancakeSwap", "ApeSwap", "Other / Custom"],
+      avalanche: ["Trader Joe", "Pangolin", "Other / Custom"],
+      solana: ["Jupiter", "Raydium", "Orca", "Other / Custom"],
+    };
+
+    const EVM_NETWORKS = new Set(["ethereum", "arbitrum", "polygon", "bsc", "avalanche"]);
+
+    // --- Helpers ---
+    function setOptions(select, items){
+      select.innerHTML = '<option value="" disabled selected>Select…</option>' + items.map(x=>`<option>${x}</option>`).join("");
+    }
+
     function formatPreview(){
-      const data = {
-        loanAmount: $("loanAmount").value || "",
-        token: $("token").value || "",
-        platform: $("platform").value || "",
-        buyDex: $("buyDex").value || "",
-        sellDex: $("sellDex").value || "",
-        rewardWallet: $("rewardWallet").value || "",
-        feeWallet: $("feeWallet").value || "",
-        gasPrice: $("gasPrice").value || "",
-        gasLimit: $("gasLimit").value || "",
-        gasFeeEth: $("gasFeeEth").value || "",
-        notes: $("notes").value || ""
-      };
-      const symbol = data.token ? data.token : "Token";
+      const data = collectData();
+      const symbol = data.token || "Token";
       if($("loanTokenSymbol")) $("loanTokenSymbol").textContent = symbol;
       const lines = [
-        `Loan Amount: ${data.loanAmount} ${symbol}`,
+        `Network: ${data.network}`,
         `Platform: ${data.platform}`,
         `Token: ${data.token}`,
+        `Loan Amount: ${data.loanAmount} ${symbol}`,
         `Buy On: ${data.buyDex}`,
         `Sell To: ${data.sellDex}`,
         `Reward Wallet: ${data.rewardWallet}`,
         `Fee Wallet: ${data.feeWallet}`,
-        `Gas Price (Gwei): ${data.gasPrice}`,
-        `Gas Limit: ${data.gasLimit}`,
-        `Est. Gas Fee (ETH): ${data.gasFeeEth}`,
+        EVM_NETWORKS.has(data.network) ? `Gas Price (Gwei): ${data.gasPrice}` : `Gas Price: N/A (non‑EVM)`,
+        EVM_NETWORKS.has(data.network) ? `Gas Limit: ${data.gasLimit}` : `Gas Limit: N/A (non‑EVM)`,
+        EVM_NETWORKS.has(data.network) ? `Est. Gas Fee (ETH): ${data.gasFeeEth}` : `Est. Network Fee: —`,
+        `Max Gas Spend (ETH): ${data.maxGasEth}`,
+        `Slippage (%): ${data.slippage}`,
+        `Min Profit (Token): ${data.minProfitToken}`,
+        `Min Profit (£): ${data.minProfitGBP}`,
+        `Email: ${data.email}`,
         `Notes: ${data.notes}`
       ];
       $("preview").textContent = lines.join("\n");
+      try { localStorage.setItem('ck-testbed-cache', JSON.stringify(data)); } catch(e){}
+    }
+
+    function collectData(){
+      return {
+        network: $("network").value || "",
+        token: $("token").value || "",
+        platform: $("platform").value || "",
+        loanAmount: $("loanAmount").value || "",
+        buyDex: $("buyDex").value || "",
+        sellDex: $("sellDex").value || "",
+        rewardWallet: $("rewardWallet").value || "",
+        rewardWalletConfirm: $("rewardWalletConfirm").value || "",
+        feeWallet: $("feeWallet").value || "",
+        feeWalletConfirm: $("feeWalletConfirm").value || "",
+        gasPrice: $("gasPrice").value || "",
+        gasLimit: $("gasLimit").value || "",
+        gasFeeEth: $("gasFeeEth").value || "",
+        maxGasEth: $("maxGasEth").value || "",
+        slippage: $("slippage").value || "",
+        minProfitToken: $("minProfitToken").value || "",
+        minProfitGBP: $("minProfitGBP").value || "",
+        email: $("email").value || "",
+        submitMode: $("submitMode").value || "mailto",
+        agree: $("agree").checked,
+        notes: $("notes").value || "",
+      };
     }
 
     // Gas fee calculator: (gwei * units) / 1e9 = ETH
@@ -248,20 +322,139 @@
       formatPreview();
     }
 
-    ["loanAmount","platform","token","buyDex","sellDex","rewardWallet","feeWallet","gasPrice","gasLimit","notes"].forEach(id=>{
-      $(id).addEventListener("input", ()=>{ if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();}});
-      $(id).addEventListener("change", ()=>{ if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();}});
-    });
+    function eip55LooksValid(addr){
+      // Quick heuristic: if mixed-case and 0x-prefixed with 40 hex chars, accept as likely checksumed
+      if(!/^0x[0-9a-fA-F]{40}$/.test(addr)) return false;
+      const hasLower = /[a-f]/.test(addr.slice(2));
+      const hasUpper = /[A-F]/.test(addr.slice(2));
+      return hasLower && hasUpper; // heuristic only
+    }
 
-    // simple address validators (loose)
     function looksLikeEVM(addr){ return /^0x[a-fA-F0-9]{40}$/.test(addr.trim()); }
     function looksLikeSol(addr){ return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr.trim()); }
 
     function validate(){
-      const rw = $("rewardWallet").value.trim();
-      const fw = $("feeWallet").value.trim();
+      const d = collectData();
       let msg = "";
-      if (rw && !(looksLikeEVM(rw) || looksLikeSol(rw))) msg += "• Reward wallet doesn’t look like a valid EVM or Solana address.\n";
-      if (fw && !(looksLikeEVM(fw) || looksLikeSol(fw))) msg += "• Fee wallet doesn’t look like a valid EVM or Solana address.\n";
+      if(!d.network) msg += "• Select a network.\n";
+      if(!d.platform) msg += "• Select a flash loan platform.\n";
+      if(!d.token) msg += "• Select a token.\n";
+      if(!d.loanAmount || Number(d.loanAmount)<=0) msg += "• Enter a valid loan amount.\n";
+      if(!d.buyDex) msg += "• Select a buy DEX.\n";
+      if(!d.sellDex) msg += "• Select a sell DEX.\n";
+      if(d.rewardWallet !== d.rewardWalletConfirm) msg += "• Reward wallet confirmation doesn’t match.\n";
+      if(d.feeWallet !== d.feeWalletConfirm) msg += "• Fee wallet confirmation doesn’t match.\n";
+      if(d.rewardWallet && !(looksLikeEVM(d.rewardWallet) || looksLikeSol(d.rewardWallet))) msg += "• Reward wallet doesn’t look like a valid EVM or Solana address.\n";
+      if(d.feeWallet && !(looksLikeEVM(d.feeWallet) || looksLikeSol(d.feeWallet))) msg += "• Fee wallet doesn’t look like a valid EVM or Solana address.\n";
+      if(EVM_NETWORKS.has(d.network)){
+        if(!d.gasPrice || !d.gasLimit) msg += "• Provide gas price and gas limit for EVM networks.\n";
+        if(d.maxGasEth && d.gasFeeEth && Number(d.gasFeeEth) > Number(d.maxGasEth)) msg += "• Estimated gas exceeds your max gas spend.\n";
+      }
+      if(d.minProfitToken && Number(d.minProfitToken)<0) msg += "• Min profit (token) must be ≥ 0.\n";
+      if(d.minProfitGBP && Number(d.minProfitGBP)<0) msg += "• Min profit (£) must be ≥ 0.\n";
+      if(!d.email) msg += "• Provide a notification email.\n";
+      if(!d.agree) msg += "• You must accept the Terms & Disclaimer.\n";
       $("validation").textContent = msg;
-      return
+      return msg === "";
+    }
+
+    function refreshForNetwork(){
+      const net = $("network").value;
+      if(!net){ return; }
+      setOptions($("platform"), PLATFORMS[net] || ["Other / Custom"]);
+      const dexes = DEXES[net] || ["Other / Custom"];
+      setOptions($("buyDex"), dexes);
+      setOptions($("sellDex"), dexes);
+
+      // Toggle gas fields for EVM vs Solana
+      const showGas = EVM_NETWORKS.has(net);
+      ["gasPriceWrap","gasLimitWrap","gasFeeWrap"].forEach(id=>{
+        $(id).classList.toggle('hidden', !showGas);
+      });
+
+      formatPreview();
+    }
+
+    function simulate(){
+      // Very simple gate: we just compare estimated gas vs maxGas; and whether thresholds set
+      const d = collectData();
+      let score = 0; // 0..100
+      if(d.minProfitToken || d.minProfitGBP) score += 30; else score += 10;
+      if(d.slippage && Number(d.slippage) <= 1) score += 30; else if(d.slippage) score += 15;
+      if(EVM_NETWORKS.has(d.network)){
+        if(d.maxGasEth && d.gasFeeEth && Number(d.maxGasEth) >= Number(d.gasFeeEth)) score += 30;
+      } else { score += 30; }
+      if(d.buyDex && d.sellDex && d.buyDex !== d.sellDex) score += 10;
+      const pct = Math.max(5, Math.min(100, score));
+      const bar = $("profitBar");
+      bar.style.width = pct + "%";
+      bar.className = pct >= 60 ? "good" : "bad";
+      $("profitLabel").textContent = pct >= 60 ? "Pass (est.)" : "Fail (est.)";
+    }
+
+    function toJSONPayload(){
+      const d = collectData();
+      const subject = `CK TestBed | NET: ${d.network || 'N/A'} | TOKEN: ${d.token || 'N/A'}`;
+      return { subject, timestamp: new Date().toISOString(), ...d };
+    }
+
+    function copyJSON(){
+      const payload = JSON.stringify(toJSONPayload(), null, 2);
+      navigator.clipboard.writeText(payload).then(()=>{
+        $("validation").textContent = "JSON copied to clipboard.";
+      }).catch(()=>{
+        $("validation").textContent = "Couldn’t copy JSON (clipboard blocked).";
+      })
+    }
+
+    function downloadJSON(){
+      const payload = JSON.stringify(toJSONPayload(), null, 2);
+      const blob = new Blob([payload], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'ck-testbed-request.json'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Event wiring
+    ["loanAmount","platform","token","buyDex","sellDex","rewardWallet","rewardWalletConfirm","feeWallet","feeWalletConfirm","gasPrice","gasLimit","maxGasEth","slippage","minProfitToken","minProfitGBP","email","notes","submitMode"].forEach(id=>{
+      $(id).addEventListener("input", ()=>{ if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();}});
+      $(id).addEventListener("change", ()=>{ if(id==="gasPrice"||id==="gasLimit"){calcGas();} else {formatPreview();}});
+    });
+    $("network").addEventListener('change', refreshForNetwork);
+
+    $("simulateBtn").addEventListener('click', ()=>{ if(validate()) simulate(); });
+    $("copyJsonBtn").addEventListener('click', copyJSON);
+    $("downloadJsonBtn").addEventListener('click', downloadJSON);
+
+    document.getElementById("testbedForm").addEventListener("submit", function(e){
+      e.preventDefault();
+      if(!validate()){ return; }
+      const data = collectData();
+      const subject = encodeURIComponent(`CK TestBed | NET: ${data.network} | TOKEN: ${data.token}`);
+      const body = encodeURIComponent($("preview").textContent + "\n\nSent from Crypto Kings TestBed");
+
+      if(data.submitMode === 'mailto'){
+        const href = `mailto:${data.email}?subject=${subject}&body=${body}`;
+        window.location.href = href;
+      } else {
+        downloadJSON();
+      }
+    });
+
+    // initial render + restore cache if any
+    try{
+      const cached = localStorage.getItem('ck-testbed-cache');
+      if(cached){
+        const d = JSON.parse(cached);
+        ["network","token","platform","loanAmount","buyDex","sellDex","rewardWallet","rewardWalletConfirm","feeWallet","feeWalletConfirm","gasPrice","gasLimit","gasFeeEth","maxGasEth","slippage","minProfitToken","minProfitGBP","email","notes","submitMode"].forEach(id=>{ if(d[id]!==undefined && $(id)) $(id).value = d[id]; });
+        refreshForNetwork();
+        calcGas();
+      } else {
+        refreshForNetwork();
+        formatPreview();
+      }
+    } catch(e){ formatPreview(); }
+  </script>
+</body>
+</html>

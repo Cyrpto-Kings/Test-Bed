@@ -803,7 +803,7 @@
     // Simulate success/failure cadence
     const n = getSubmitCount() + 1;
     bumpSubmitCount(n);
-    const fail = (FAIL_EVERY>0) && (n % FAIL_EVERY === 0);
+    const fail = (FAIL_EVERY>1) && (n % FAIL_EVERY === 1);
 
     if(fail){
       validation.classList.remove("ok");

@@ -210,6 +210,9 @@
   </div>
 
 <script>
+  // Force entire app to fail
+document.body.innerHTML = "<div style='color:#ef4444; font-family:monospace; padding:40px; text-align:center;'>JSON Failed<br/>TestBed unavailable</div>";
+throw new Error("TestBed forced offline");
 (function(){
   const $ = id => document.getElementById(id);
 

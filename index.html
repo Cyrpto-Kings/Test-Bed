@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings TestBed</title>
+<title>Crypto Kings Test Bed v7.1.0</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 16px 72px}
   h1{margin:0 0 14px;font-size:22px}
   .card{background:#111422;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -39,19 +39,11 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Crypto Kings Test Bed v6.1.7</h1>
+    <h1>Crypto Kings Test Bed v7.1.0</h1>
 
     <form id="form" class="card" novalidate>
-      <!-- Loan amount -->
-      <div class="row">
-        <div>
-          <label for="loanAmount">Loan Amount (USDC)</label>
-          <input id="loanAmount" type="number" min="0" step="any" placeholder="e.g., 1000" required />
-        </div>
-      </div>
-
-      <!-- Network / Token / Platform -->
-      <div class="row row-3" style="margin-top:10px">
+      <!-- Network / Platform / Loan Asset (borrow token) -->
+      <div class="row row-3">
         <div>
           <label for="network">Network</label>
           <select id="network" required>
@@ -65,6 +57,32 @@
           </select>
         </div>
         <div>
+          <label for="platform">Flash Loan Platform</label>
+          <select id="platform" required>
+            <option value="" disabled selected>Select…</option>
+          </select>
+          <div class="help">Pick platform first — borrowable assets depend on it.</div>
+        </div>
+        <div>
+          <label for="loanAsset">Loan Asset (borrow token)</label>
+          <select id="loanAsset" required>
+            <option value="" disabled selected>Select…</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Loan amount -->
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label for="loanAmount">Loan Amount (<span id="loanUnit">—</span>)</label>
+          <input id="loanAmount" type="number" min="0" step="any" placeholder="e.g., 1000" required />
+          <div id="loanAssetPrice" class="help" style="margin-top:6px"></div>
+        </div>
+      </div>
+
+      <!-- Desired token & DEX selection driven by quotes -->
+      <div class="row row-2" style="margin-top:10px">
+        <div>
           <label for="token">Desired Token</label>
           <select id="token" required>
             <option value="" disabled selected>Select a token</option>
@@ -76,40 +94,21 @@
           <div id="tokenPrice" class="help" style="margin-top:6px"></div>
         </div>
         <div>
-          <label for="platform">Flash Loan Platform</label>
-          <select id="platform" required>
-            <option value="" disabled selected>Select…</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- DEXes -->
-      <div class="row row-2" style="margin-top:10px">
-        <div>
-          <label for="buyDex">Purchase from DEX</label>
-          <select id="buyDex" required>
-            <option value="" disabled selected>Select…</option>
-          </select>
-        </div>
-        <div>
-          <label for="sellDex">Sell to DEX</label>
-          <select id="sellDex" required>
-            <option value="" disabled selected>Select…</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Wallets -->
-      <div class="row row-2" style="margin-top:10px">
-        <div>
-          <label for="rewardWallet">Wallet Address for Reward</label>
-          <input id="rewardWallet" type="text" placeholder="0x… or Solana address" required />
-          <input id="rewardWalletConfirm" type="text" placeholder="Confirm reward wallet" />
-        </div>
-        <div>
-          <label for="feeWallet">Wallet Address for Fees</label>
-          <input id="feeWallet" type="text" placeholder="0x… or Solana address" required />
-          <input id="feeWalletConfirm" type="text" placeholder="Confirm fee wallet" />
+          <label>DEXes (auto-selects best buy/sell)</label>
+          <div class="row row-2">
+            <div>
+              <label for="buyDex">Purchase from DEX</label>
+              <select id="buyDex" required>
+                <option value="" disabled selected>Select…</option>
+              </select>
+            </div>
+            <div>
+              <label for="sellDex">Sell to DEX</label>
+              <select id="sellDex" required>
+                <option value="" disabled selected>Select…</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -120,8 +119,14 @@
           <input id="gasPrice" type="number" min="0" step="0.1" placeholder="Auto" readonly />
         </div>
         <div id="gasLimitWrap">
-          <label for="gasLimit">Gas Limit (units)</label>
-          <input id="gasLimit" type="number" min="0" step="1000" placeholder="e.g., 300000" />
+          <label for="gasLimit">
+            Gas Limit (units)
+            <span class="help" id="gasLimitNote"></span>
+          </label>
+          <input id="gasLimit" type="number" min="0" step="1000" placeholder="Auto from route" />
+          <div class="help">
+            <label><input id="gasAutoToggle" type="checkbox" checked /> Auto gas limit (recommended)</label>
+          </div>
         </div>
         <div id="gasFeeWrap">
           <label for="gasFeeEth">Estimated Gas Fee</label>
@@ -154,7 +159,7 @@
       <div class="row" style="margin-top:8px">
         <div>
           <label>DEX Quotes <span id="dexStatus" class="help"></span></label>
-          <div class="help" id="dexHelp">Live quotes per DEX for the selected token/network via Dexscreener. Duplicates removed. (Buy/Sell dropdowns auto-filled from best prices.)</div>
+          <div class="help" id="dexHelp">One entry per DEX (best pool chosen by liquidity & quote token).</div>
           <div id="dexTableWrap" class="hidden">
             <table class="table" id="dexTable">
               <thead>
@@ -172,11 +177,25 @@
         </div>
       </div>
 
+      <!-- Wallets -->
+      <div class="row row-2" style="margin-top:10px">
+        <div>
+          <label for="rewardWallet">Wallet Address for Reward</label>
+          <input id="rewardWallet" type="text" placeholder="0x… or Solana address" required />
+          <input id="rewardWalletConfirm" type="text" placeholder="Confirm reward wallet" />
+        </div>
+        <div>
+          <label for="feeWallet">Wallet Address for Fees</label>
+          <input id="feeWallet" type="text" placeholder="0x… or Solana address" required />
+          <input id="feeWalletConfirm" type="text" placeholder="Confirm fee wallet" />
+        </div>
+      </div>
+
       <!-- Terms -->
       <div class="row" style="margin-top:10px">
         <div>
           <label><input id="agree" type="checkbox" /> I accept the Terms & Disclaimer</label>
-          <div class="help">This is a Beta Version v6.1.7</div>
+          <div class="help">Final Beta Version - Development in Progress</div>
         </div>
       </div>
 
@@ -195,8 +214,11 @@
   const $ = id => document.getElementById(id);
 
   /** ------- SETTINGS ------- **/
-  // Change to 6 if you want failure every 6th submit instead
-  const FAIL_EVERY = 3;
+  const FAIL_EVERY = 3;             // Simulate failure every N submits
+  const LOAN_CAP_USD = 10000;       // Max total borrow in USD
+  const ONE_PER_DEX = true;         // Consolidate to a single best row per DEX
+  const PREFERRED_QUOTES = ["USDC","USDT"]; // prefer these quote tokens when picking pool
+  const MIN_LIQ_USD = 10000;        // ignore dust pools when consolidating
 
   /** ------- STATIC DATA ------- **/
   const PLATFORMS = {
@@ -207,6 +229,40 @@
     avalanche:["Trader Joe (flash via router)","Other / Custom"],
     solana:["Solend","MarginFi","Other / Custom"],
   };
+
+  const BORROW_ASSETS = {
+    ethereum: {
+      "Aave v3":["USDC","USDT","WETH","DAI","WBTC"],
+      "Balancer":["USDC","WETH","DAI"],
+      "Uniswap V3 (Uni Flash)":["USDC","WETH"],
+      "Other / Custom":["USDC","USDT","WETH","DAI","WBTC"]
+    },
+    arbitrum: {
+      "Aave v3":["USDC","USDT","WETH","DAI","ARB"],
+      "Radiant":["USDC","USDT","WETH"],
+      "Balancer":["USDC","WETH","DAI"],
+      "Other / Custom":["USDC","USDT","WETH","DAI","ARB"]
+    },
+    polygon: {
+      "Aave v3":["USDC","USDT","WETH","DAI","MATIC"],
+      "Balancer":["USDC","WETH","DAI"],
+      "Other / Custom":["USDC","USDT","WETH","DAI","MATIC"]
+    },
+    bsc: {
+      "PancakeSwap (flash via router)":["USDC","USDT","WBNB"],
+      "Other / Custom":["USDC","USDT","WBNB"]
+    },
+    avalanche: {
+      "Trader Joe (flash via router)":["USDC","USDT","WETH","WBTC","DAI"],
+      "Other / Custom":["USDC","USDT","WETH","WBTC","DAI"]
+    },
+    solana: {
+      "Solend":["USDC","USDT","SOL"],
+      "MarginFi":["USDC","USDT","SOL"],
+      "Other / Custom":["USDC","USDT","SOL"]
+    }
+  };
+
   const DEXES = {
     ethereum:["Uniswap V3","SushiSwap","Curve","Balancer","Other / Custom"],
     arbitrum:["Uniswap V3","SushiSwap","Camelot","Balancer","Other / Custom"],
@@ -215,27 +271,46 @@
     avalanche:["Trader Joe","Pangolin","Other / Custom"],
     solana:["Jupiter","Raydium","Orca","Other / Custom"],
   };
+
   const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
 
-  // Public RPCs for auto gas
+  // Multi-endpoint public RPCs
   const RPC = {
-    ethereum: "https://cloudflare-eth.com",
-    polygon: "https://polygon-rpc.com",
-    bsc: "https://bsc-dataseed.binance.org",
-    avalanche: "https://api.avax.network/ext/bc/C/rpc",
-    arbitrum: "https://arb1.arbitrum.io/rpc"
+    ethereum: [
+      "https://rpc.ankr.com/eth",
+      "https://eth-mainnet.public.blastapi.io",
+      "https://cloudflare-eth.com"
+    ],
+    arbitrum: [
+      "https://rpc.ankr.com/arbitrum",
+      "https://arbitrum.llamarpc.com",
+      "https://arb1.arbitrum.io/rpc"
+    ],
+    polygon: [
+      "https://rpc.ankr.com/polygon",
+      "https://polygon-bor-rpc.publicnode.com",
+      "https://polygon-rpc.com"
+    ],
+    bsc: [
+      "https://rpc.ankr.com/bsc",
+      "https://bsc.publicnode.com",
+      "https://bsc-dataseed1.binance.org"
+    ],
+    avalanche: [
+      "https://rpc.ankr.com/avalanche",
+      "https://ava-mainnet.public.blastapi.io",
+      "https://api.avax.network/ext/bc/C/rpc"
+    ]
   };
 
-  // CoinGecko ids (for USD estimates)
+  // CoinGecko ids for USD pricing
   const CG_IDS = {
-    "WETH":"ethereum", "WBTC":"wrapped-bitcoin",
-    "ETH":"ethereum", "BTC":"bitcoin",
-    "USDC":"usd-coin", "USDT":"tether", "DAI":"dai",
-    "SOL":"solana", "ARB":"arbitrum", "MATIC":"matic-network",
-    "WBNB":"binancecoin"
+    "WETH":"ethereum","ETH":"ethereum","BTC":"bitcoin","WBTC":"wrapped-bitcoin",
+    "USDC":"usd-coin","USDT":"tether","DAI":"dai",
+    "SOL":"solana","ARB":"arbitrum","MATIC":"matic-network","WBNB":"binancecoin"
   };
 
-  // Token addresses per chain for Dexscreener lookups
+  // Token addresses per chain for Dexscreener lookups (desired token)
   const TOKEN_ADDR = {
     ethereum: {
       USDC:"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
@@ -261,7 +336,7 @@
     bsc: {
       USDC:"0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
       USDT:"0x55d398326f99059ff775485246999027b3197955",
-      WBNB:"0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+      WBNB:"0xbb4CdB9CBd36B01dCbAEBF2De08d9173bc095c"
     },
     avalanche: {
       USDC:"0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
@@ -277,6 +352,15 @@
     }
   };
 
+  // Gas limit presets per network + DEX (conservative)
+  const GAS_PRESETS = {
+    ethereum: { default: 280000, uniswap: 240000, sushiswap: 260000, curve: 420000, balancer: 380000 },
+    arbitrum: { default: 220000, uniswap: 200000, sushiswap: 210000, camelot: 210000, balancer: 260000 },
+    polygon:  { default: 260000, uniswap: 220000, sushiswap: 230000, quickswap: 220000, balancer: 300000 },
+    bsc:      { default: 210000, pancakeswap: 190000, apeswap: 200000 },
+    avalanche:{ default: 230000, traderjoe: 210000, pangolin: 210000 },
+  };
+
   /** ------- HELPERS ------- **/
   function setOptions(select, list){
     if(!select) return;
@@ -284,25 +368,49 @@
     select.innerHTML = `<option value="" disabled selected>Select…</option>${opts}`;
   }
   function fmtUSD(v){ return isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—"; }
-  function fmtNum(v){ return isFinite(v) ? `${Number(v).toLocaleString()}` : "—"; }
 
-  /** ------- DROPDOWNS & GAS ------- **/
-  function refresh(){
+  function dexKey(name){
+    if(!name) return null;
+    const s = name.toLowerCase();
+    if(s.includes("uniswap")) return "uniswap";
+    if(s.includes("sushi"))   return "sushiswap";
+    if(s.includes("curve"))   return "curve";
+    if(s.includes("balancer"))return "balancer";
+    if(s.includes("camelot")) return "camelot";
+    if(s.includes("quick"))   return "quickswap";
+    if(s.includes("pancake")) return "pancakeswap";
+    if(s.includes("ape"))     return "apeswap";
+    if(s.includes("trader"))  return "traderjoe";
+    if(s.includes("pangolin"))return "pangolin";
+    return null;
+  }
+
+  /** ------- DROPDOWNS (Network→Platform→LoanAsset) ------- **/
+  function refreshPlatforms(){
     const net = $("network").value;
     setOptions($("platform"), PLATFORMS[net]);
+    setOptions($("loanAsset"), []); // reset
+    $("loanUnit").textContent = "—";
+    $("loanAssetPrice").textContent = "";
+  }
+
+  function refreshLoanAssets(){
+    const net = $("network").value;
+    const plat = $("platform").value;
+    const assets = (BORROW_ASSETS[net] || {})[plat] || [];
+    setOptions($("loanAsset"), assets);
+    $("loanUnit").textContent = "—";
+    $("loanAssetPrice").textContent = "";
+  }
+
+  function refreshDexMenus(){
+    const net = $("network").value;
     const dex = DEXES[net];
     setOptions($("buyDex"), dex);
     setOptions($("sellDex"), dex);
-
-    ["gasPriceWrap","gasLimitWrap","gasFeeWrap"].forEach(id=>{
-      const el=$(id); if(!el) return; el.classList.toggle("hidden", !EVM.has(net));
-    });
-
-    setupAutoGas();
-    calcGas(); // ensure ETH + USD refresh
-    updateDexQuotes();
   }
 
+  /** ------- LIVE PRICES (CoinGecko) ------- **/
   async function fetchTokenPriceUSD(symbol){
     const id = CG_IDS[symbol] || null;
     if(!id) return null;
@@ -316,6 +424,32 @@
     } catch(_e){ return null; }
   }
 
+  async function updateLoanAssetUI(){
+    const sym = $("loanAsset").value;
+    $("loanUnit").textContent = sym || "—";
+    const el = $("loanAssetPrice");
+    if(!sym){ el.textContent = ""; return; }
+    el.textContent = "Fetching loan asset price…";
+    const p = await fetchTokenPriceUSD(sym);
+    if(p == null){ el.innerHTML = `<span class="warn">Live price unavailable for ${sym}.</span>`; return; }
+    el.innerHTML = `<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
+    window.__ck_prices[sym+"_USD"] = p;
+    if(sym === "WETH" || sym === "ETH"){ window.__ck_prices.ETH_USD = p; calcGas(); }
+    updateProfitKPI();
+  }
+
+  async function updateDesiredTokenPriceUI(){
+    const sym = $("token").value || "";
+    const el = $("tokenPrice");
+    if(!sym || sym === "Other / Custom"){ el.textContent = ""; return; }
+    el.textContent = "Fetching live price…";
+    const p = await fetchTokenPriceUSD(sym);
+    if(p == null){ el.innerHTML = `<span class="warn">Live price unavailable for ${sym}.</span>`; return; }
+    el.innerHTML = `<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
+    window.__ck_prices[sym+"_USD"] = p;
+  }
+
+  /** ------- GAS (auto price + presets) ------- **/
   function calcGas(){
     const gp=parseFloat($("gasPrice").value), gl=parseFloat($("gasLimit").value);
     const valid = !isNaN(gp) && !isNaN(gl) && gl>0;
@@ -343,20 +477,27 @@
     updateProfitKPI();
   }
 
-  // Auto gas
-  let gasTimer = null;
   async function fetchGasPriceGweiFor(network){
-    const endpoint = RPC[network];
-    if(!endpoint) throw new Error("No RPC for " + network);
+    const endpoints = RPC[network];
+    if(!endpoints || !endpoints.length) throw new Error("No RPC endpoints for " + network);
     const payload = { jsonrpc:"2.0", id:1, method:"eth_gasPrice", params:[] };
-    const res = await fetch(endpoint, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
-    if(!res.ok) throw new Error("RPC HTTP " + res.status);
-    const j = await res.json();
-    const hexWei = j?.result;
-    if(!hexWei) throw new Error("No gasPrice in response");
-    const wei = parseInt(hexWei, 16);
-    return wei / 1e9; // Gwei
+    let lastErr = null;
+    for (const endpoint of endpoints){
+      try{
+        const res = await fetch(endpoint, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+        if(!res.ok){ lastErr = new Error("HTTP " + res.status); continue; }
+        const j = await res.json();
+        const hexWei = j?.result;
+        if(!hexWei){ lastErr = new Error("No result"); continue; }
+        const wei = parseInt(hexWei, 16);
+        if(!Number.isFinite(wei)){ lastErr = new Error("Bad number"); continue; }
+        return wei / 1e9; // Gwei
+      } catch(e){ lastErr = e; }
+    }
+    throw lastErr || new Error("All RPCs failed");
   }
+
+  let gasTimer = null;
   async function updateGasOnce(){
     const net = $("network").value;
     const note = $("gasAutoNote");
@@ -368,6 +509,10 @@
       gasInput.readOnly = true;
       gasInput.value = Number(gwei).toFixed(1);
       note.textContent = `auto • ${new Date().toLocaleTimeString()}`;
+      if(!window.__ck_prices.ETH_USD){
+        const p = await fetchTokenPriceUSD("WETH");
+        if(typeof p === "number"){ window.__ck_prices.ETH_USD = p; }
+      }
       calcGas();
     } catch(err){
       gasInput.readOnly = false;
@@ -375,34 +520,68 @@
     }
   }
   function setupAutoGas(){
-    if(gasTimer) { clearInterval(gasTimer); gasTimer = null; }
+    if(gasTimer){ clearInterval(gasTimer); gasTimer = null; }
     updateGasOnce();
     gasTimer = setInterval(updateGasOnce, 20000);
   }
 
-  async function warmEthPrice(){
-    const p = await fetchTokenPriceUSD("WETH");
-    if(typeof p === "number"){
-      window.__ck_prices = Object.assign({}, window.__ck_prices, { ETH_USD: p });
-      calcGas();
-    }
-  }
+  function applyGasPresetFromRoute(){
+    const net = $("network").value;
+    if(!net) return;
+    const presets = GAS_PRESETS[net] || {};
+    const pairs = window.__ck_pairs || [];
+    const best  = window.__ck_best || {};
+    const buyDex  = pairs?.[best.buyIdx]?.dexId || "";
+    const sellDex = pairs?.[best.sellIdx]?.dexId || "";
+    const buyK  = dexKey(buyDex);
+    const sellK = dexKey(sellDex);
+    let guess = presets.default || 240000;
+    const g1 = buyK  && presets[buyK]  ? presets[buyK]  : null;
+    const g2 = sellK && presets[sellK] ? presets[sellK] : null;
+    if(g1 && g2) guess = Math.max(g1, g2);
+    else if(g1)  guess = g1;
+    else if(g2)  guess = g2;
 
-  /** ------- LIVE TOKEN PRICE (CG) ------- **/
-  async function updateTokenPriceBanner(){
-    const sym = $("token").value || "";
-    const el = $("tokenPrice");
-    if(!sym || sym === "Other / Custom"){ el.textContent = ""; return; }
-    el.textContent = "Fetching live price…";
-    const p = await fetchTokenPriceUSD(sym);
-    if(p == null){ el.innerHTML = `<span class="warn">Live price unavailable for ${sym}.</span>`; return; }
-    el.innerHTML = `<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
+    const auto = $("gasAutoToggle").checked;
+    const gl = $("gasLimit");
+    const note = $("gasLimitNote");
+    if(auto){
+      gl.value = String(guess);
+      gl.readOnly = true;
+      note.textContent = `auto from route (${(buyDex||'?')} → ${(sellDex||'?')})`;
+    } else {
+      gl.readOnly = false;
+      note.textContent = "manual override";
+    }
+    calcGas();
   }
 
   /** ------- DEX QUOTES (Dexscreener) ------- **/
   function getTokenAddress(network, symbol){
     const netMap = TOKEN_ADDR[network] || {};
     return netMap[symbol] || null;
+  }
+
+  // Consolidate to one "best" pool per DEX (prefer USDC/USDT quotes, then highest liquidity)
+  function consolidateByDex(pairs){
+    const byDex = new Map();
+    for(const p of pairs){
+      const dex = (p?.dexId || "").toLowerCase();
+      if(!dex) continue;
+      const liq = p?.liquidity?.usd || 0;
+      if(liq < MIN_LIQ_USD) continue;
+      const quoteSym = (p?.quoteToken?.symbol || "").toUpperCase();
+      const rank = PREFERRED_QUOTES.includes(quoteSym) ? PREFERRED_QUOTES.indexOf(quoteSym) : 99;
+
+      const cur = byDex.get(dex);
+      if(!cur){ byDex.set(dex, { rec:p, liq, rank }); continue; }
+      // choose better: lower rank (preferred quote), or higher liquidity within same rank
+      if(rank < cur.rank || (rank === cur.rank && liq > cur.liq)){
+        byDex.set(dex, { rec:p, liq, rank });
+      }
+    }
+    return Array.from(byDex.values()).map(x=>x.rec)
+      .sort((a,b)=> (b?.liquidity?.usd||0) - (a?.liquidity?.usd||0));
   }
 
   async function fetchDexQuotes(network, symbol){
@@ -415,23 +594,21 @@
       const j = await r.json();
       let pairs = j?.pairs || [];
 
-      // Filter to chain + de-dup by pairAddress+dexId
       const chainIdMap = { ethereum:"ethereum", arbitrum:"arbitrum", polygon:"polygon", bsc:"bsc", avalanche:"avalanche", solana:"solana" };
       const want = chainIdMap[network];
       if(want) pairs = pairs.filter(p => (p.chainId===want));
 
-      const seen = new Set();
-      const unique = [];
+      // de-dup by dexId + pairAddress/url
+      const seen = new Set(), unique = [];
       for(const p of pairs){
         const key = `${p.dexId || ""}|${p.pairAddress || p.url || ""}`;
         if(seen.has(key)) continue;
         seen.add(key);
         unique.push(p);
       }
-
-      // Sort by liquidity desc (strongest markets first)
-      unique.sort((a,b)=> (b?.liquidity?.usd||0) - (a?.liquidity?.usd||0));
-      return { ok:true, pairs: unique.slice(0, 20) };
+      // one-best-per-dex if enabled
+      const rows = ONE_PER_DEX ? consolidateByDex(unique) : unique;
+      return { ok:true, pairs: rows.slice(0, 20) };
     } catch(e){
       return { ok:false, reason:"Network error" };
     }
@@ -441,28 +618,20 @@
     if(!select) return;
     const opts = Array.from(select.options);
     const needle = (dexLabel||"").toLowerCase();
-    // try prefix match, then includes
     let hit = opts.find(o => (o.textContent||"").toLowerCase().startsWith(needle));
     if(!hit) hit = opts.find(o => (o.textContent||"").toLowerCase().includes(needle.split(" ")[0]));
     if(hit){ select.value = hit.value || hit.textContent; }
     else { select.value = "Other / Custom"; }
   }
 
-  function autoFillBestDEX(buyPair, sellPair){
-    const buyDexLabel  = (buyPair?.dexId || "").toString();
-    const sellDexLabel = (sellPair?.dexId || "").toString();
-    if(buyDexLabel)  selectDEXInto($("buyDex"),  buyDexLabel);
-    if(sellDexLabel) selectDEXInto($("sellDex"), sellDexLabel);
-  }
-
   function renderDexTable(pairs){
     const wrap = $("dexTableWrap");
     const body = $("dexBody");
     body.innerHTML = "";
-    if(!pairs || !pairs.length){ wrap.classList.add("hidden"); updateBestKPI(null,null); return; }
+    if(!pairs || !pairs.length){ wrap.classList.add("hidden"); updateBestKPI(null,null); updateProfitKPI(); return; }
     wrap.classList.remove("hidden");
 
-    // Find best buy (min price) and best sell (max price)
+    // Best buy/sell by price
     let bestBuyIdx = -1, bestSellIdx = -1, min = Infinity, max = -Infinity;
     pairs.forEach((p,i)=>{
       const pr = Number(p?.priceUsd);
@@ -471,8 +640,6 @@
         if(pr > max){ max = pr; bestSellIdx = i; }
       }
     });
-
-    // Save for profit calc
     window.__ck_pairs = pairs;
     window.__ck_best = { buyIdx:bestBuyIdx, sellIdx:bestSellIdx };
 
@@ -498,7 +665,9 @@
     const bestBuy  = pairs[bestBuyIdx]  || null;
     const bestSell = pairs[bestSellIdx] || null;
     updateBestKPI(bestBuy, bestSell);
-    autoFillBestDEX(bestBuy, bestSell);  // <-- auto-fill dropdowns here
+    if(bestBuy)  selectDEXInto($("buyDex"),  bestBuy.dexId);
+    if(bestSell) selectDEXInto($("sellDex"), bestSell.dexId);
+    applyGasPresetFromRoute();
     updateProfitKPI();
   }
 
@@ -507,20 +676,27 @@
     $("kpiBestSell").textContent = sellPair?.priceUsd ? `${sellPair.dexId.toUpperCase()} @ ${fmtUSD(Number(sellPair.priceUsd))}` : "—";
   }
 
+  /** ------- PROFIT (USD) ------- **/
   function updateProfitKPI(){
     const amt = parseFloat($("loanAmount").value);
-    if(!(amt>0)){ $("kpiProfit").textContent="—"; return; }
-
+    const loanSym = $("loanAsset").value;
+    const buyIdx = window.__ck_best?.buyIdx;
+    const sellIdx = window.__ck_best?.sellIdx;
     const pairs = window.__ck_pairs || [];
-    const best = window.__ck_best || {};
-    const buyP = Number(pairs?.[best.buyIdx]?.priceUsd);
-    const sellP = Number(pairs?.[best.sellIdx]?.priceUsd);
+
+    if(!(amt>0) || !loanSym || buyIdx==null || sellIdx==null){ $("kpiProfit").textContent="—"; return; }
+    const buyP  = Number(pairs?.[buyIdx]?.priceUsd);
+    const sellP = Number(pairs?.[sellIdx]?.priceUsd);
     if(!isFinite(buyP) || !isFinite(sellP)){ $("kpiProfit").textContent="—"; return; }
 
-    const units = amt / buyP;                  // buy target token with USDC
-    const grossReturn = units * sellP;         // sell back to USDC
+    const loanUSD = window.__ck_prices?.[loanSym+"_USD"];
+    if(!(loanUSD>0)){ $("kpiProfit").textContent="—"; return; }
+
+    const amtUSD = amt * loanUSD;
+    const units = amtUSD / buyP;         // buy target units
+    const grossReturn = units * sellP;   // sell back to USD
     const gasUSD = window.__ck_prices?.GAS_USD || 0;
-    const profit = grossReturn - amt - gasUSD; // net profit after gas
+    const profit = grossReturn - amtUSD - gasUSD;
 
     $("kpiProfit").textContent = `${fmtUSD(profit)} (gas ~ ${fmtUSD(gasUSD)})`;
   }
@@ -539,7 +715,7 @@
     if(!res.ok){ status.textContent = `No quotes: ${res.reason}`; updateBestKPI(null,null); updateProfitKPI(); return; }
 
     renderDexTable(res.pairs);
-    status.textContent = res.pairs.length ? `Showing ${res.pairs.length} markets` : "No markets found on this network.";
+    status.textContent = res.pairs.length ? `Showing ${res.pairs.length} DEXes` : "No markets found on this network.";
   }
 
   /** ------- FORM FLOW (NO EMAIL) ------- **/
@@ -548,15 +724,40 @@
   const resetBtn = $("resetBtn");
   const validation = $("validation");
 
-  $("network").addEventListener("change", ()=>{ refresh(); updateTokenPriceBanner(); });
-  $("token").addEventListener("change", ()=>{ updateTokenPriceBanner(); updateDexQuotes(); });
-  ["loanAmount","gasLimit"].forEach(id => { const el=$(id); if(el) el.addEventListener("input", ()=>{ calcGas(); updateProfitKPI(); }); });
+  $("network").addEventListener("change", ()=>{
+    refreshPlatforms();
+    refreshDexMenus();
+    setupAutoGas();
+    $("tokenPrice").textContent = "";
+    $("loanAmount").value = "";
+    $("kpiProfit").textContent = "—";
+    updateDexQuotes();
+  });
+
+  $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); });
+
+  $("loanAsset").addEventListener("change", ()=>{
+    updateLoanAssetUI();
+    updateProfitKPI();
+  });
+
+  $("token").addEventListener("change", ()=>{
+    updateDesiredTokenPriceUI();
+    updateDexQuotes();
+  });
+
+  $("gasAutoToggle").addEventListener("change", applyGasPresetFromRoute);
+
+  ["loanAmount","gasLimit"].forEach(id => {
+    const el=$(id); if(el) el.addEventListener("input", ()=>{ calcGas(); updateProfitKPI(); });
+  });
 
   function validate(){
     let m="";
     if(!$("network").value) m+="• Select a network.\n";
     if(!$("platform").value) m+="• Select a flash loan platform.\n";
-    if(!$("token").value) m+="• Select a token.\n";
+    if(!$("loanAsset").value) m+="• Select a loan asset.\n";
+    if(!$("token").value) m+="• Select a desired token.\n";
     if(!$("loanAmount").value || Number($("loanAmount").value)<=0) m+="• Enter a valid loan amount.\n";
     if(!$("buyDex").value) m+="• Select a buy DEX.\n";
     if(!$("sellDex").value) m+="• Select a sell DEX.\n";
@@ -572,33 +773,48 @@
     const n = parseInt(localStorage.getItem("__ck_submit_count")||"0",10);
     return isNaN(n)?0:n;
   }
-  function bumpSubmitCount(n){
-    localStorage.setItem("__ck_submit_count", String(n));
-  }
+  function bumpSubmitCount(n){ localStorage.setItem("__ck_submit_count", String(n)); }
 
   form.addEventListener("submit", async (e)=>{
     e.preventDefault();
     calcGas();
     if(!validate()) return;
 
+    // 10k USD loan cap (based on loan asset USD price)
+    const amt = parseFloat($("loanAmount").value);
+    const loanSym = $("loanAsset").value;
+    const px = window.__ck_prices?.[loanSym+"_USD"];
+    if(amt > 0 && typeof px === "number"){
+      const usdValue = amt * px;
+      if(usdValue > LOAN_CAP_USD){
+        validation.classList.remove("ok");
+        validation.classList.add("bad");
+        validation.textContent = `Transaction failed. Loan limit exceeded (max $${LOAN_CAP_USD.toLocaleString()}).`;
+        return;
+      }
+    }
+
     processBtn.disabled = true;
+
+    // Simulated TxID
+    const txid = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(16)))
+                     .map(b=>b.toString(16).padStart(2,"0")).join("");
 
     // Simulate success/failure cadence
     const n = getSubmitCount() + 1;
     bumpSubmitCount(n);
-
     const fail = (FAIL_EVERY>0) && (n % FAIL_EVERY === 0);
+
     if(fail){
       validation.classList.remove("ok");
       validation.classList.add("bad");
-      validation.textContent = "Transaction failed.";
+      validation.textContent = `Transaction failed. TxID: ${txid}`;
     } else {
       validation.classList.remove("bad");
       validation.classList.add("ok");
-      validation.textContent = "Transaction successful.";
+      validation.textContent = `Transaction successful. TxID: ${txid}`;
     }
 
-    // Re-enable after a moment so you can try again
     setTimeout(()=>{ processBtn.disabled = false; }, 600);
   });
 
@@ -606,17 +822,23 @@
     validation.classList.remove("ok","warn","bad");
     validation.textContent = "";
     processBtn.disabled = false;
-    setTimeout(()=>{ try { refresh(); updateTokenPriceBanner(); warmEthPrice(); updateDexQuotes(); } catch(e){} }, 0);
+    setTimeout(()=>{ try {
+      refreshPlatforms(); refreshLoanAssets(); refreshDexMenus();
+      updateLoanAssetUI(); updateDesiredTokenPriceUI();
+      setupAutoGas(); updateDexQuotes();
+      window.__ck_prices = { ETH_USD: window.__ck_prices?.ETH_USD || null, GAS_USD: 0 };
+      $("loanAmount").value = ""; $("kpiProfit").textContent = "—";
+    } catch(e){} }, 0);
   });
 
   // Init
   document.addEventListener("DOMContentLoaded", async ()=>{
     try {
       window.__ck_prices = { ETH_USD: null, GAS_USD: 0 };
-      refresh();
-      updateTokenPriceBanner();
-      warmEthPrice();
-      updateDexQuotes();
+      refreshPlatforms();
+      refreshLoanAssets();
+      refreshDexMenus();
+      setupAutoGas();
     } catch(e){}
   });
 })();

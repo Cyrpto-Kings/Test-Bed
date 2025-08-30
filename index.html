@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v7.2.0</title>
+<title>Crypto Kings Test Bed v7.7.2</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,Segoe UI,Roboto,Arial,sans-serif}
@@ -20,15 +20,12 @@
   .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
   button{appearance:none;border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,#7c5cff,#1d9bf0)}
   .ghost{background:transparent;border:1px solid rgba(255,255,255,.18)}
-  .ok{color:var(--ok)}
-  .warn{color:var(--warn)}
-  .bad{color:var(--bad)}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
   .hidden{display:none}
   .price-pill{font-size:12px;border:1px solid rgba(255,255,255,.14);padding:6px 10px;border-radius:999px;display:inline-flex;gap:8px;align-items:center}
   .kpi{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
   .kpi .box{border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px}
-  .kpi .label{font-size:11px;color:var(--muted)}
-  .kpi .value{font-weight:700}
+  .kpi .label{font-size:11px;color:var(--muted)} .kpi .value{font-weight:700}
   .table{width:100%;border-collapse:collapse;margin-top:10px}
   .table th,.table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px;text-align:left}
   .table th{color:#b8c0cc;font-weight:600}
@@ -40,204 +37,239 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Crypto Kings v7.5.4</h1>
+    <h1>Crypto Kings v7.7.2</h1>
 
-    <form id="form" class="card" novalidate>
-      <!-- Network / Platform / Loan Asset (borrow token) -->
-      <div class="row row-3">
-        <div>
-          <label for="network">Network</label>
-          <select id="network" required>
-            <option value="" disabled selected>Select a network</option>
-            <option value="ethereum">Ethereum</option>
-            <option value="arbitrum">Arbitrum</option>
-            <option value="polygon">Polygon</option>
-            <option value="bsc">BSC</option>
-            <option value="avalanche">Avalanche</option>
-            <option value="solana">Solana</option>
-          </select>
-        </div>
-        <div>
-          <label for="platform">Flash Loan Platform</label>
-          <select id="platform" required>
-            <option value="" disabled selected>Select…</option>
-          </select>
-          <div class="help">Pick platform first — borrowable assets depend on it.</div>
-        </div>
-        <div>
-          <label for="loanAsset">Loan Asset (borrow token)</label>
-          <select id="loanAsset" required>
-            <option value="" disabled selected>Select…</option>
-          </select>
-        </div>
+    <!-- Boot loader spinner (shows for ~5s on first load) -->
+    <div id="bootWrap" style="text-align:center;padding:24px 0;">
+      <div style="border:4px solid rgba(255,255,255,.2);
+                  border-top:4px solid #7c5cff;
+                  border-radius:50%;
+                  width:48px;height:48px;
+                  animation:spin 1s linear infinite;
+                  margin:0 auto;">
       </div>
+      <div class="help" style="margin-top:8px">Loading TestBed…</div>
+    </div>
 
-      <!-- Loan amount -->
-      <div class="row" style="margin-top:10px">
-        <div>
-          <label for="loanAmount">Loan Amount (<span id="loanUnit">—</span>)</label>
-          <input id="loanAmount" type="number" min="0" step="any" placeholder="e.g., 1000" required />
-          <div id="loanAssetPrice" class="help" style="margin-top:6px"></div>
+    <!-- The entire form is hidden until boot completes -->
+    <div id="formWrap" class="hidden">
+      <form id="form" class="card" novalidate>
+        <!-- Network / Platform / Loan Asset (borrow token) -->
+        <div class="row row-3">
+          <div>
+            <label for="network">Network</label>
+            <select id="network" required>
+              <option value="" disabled selected>Select a network</option>
+              <option value="ethereum">Ethereum</option>
+              <option value="arbitrum">Arbitrum</option>
+              <option value="polygon">Polygon</option>
+              <option value="bsc">BSC</option>
+              <option value="avalanche">Avalanche</option>
+              <option value="solana">Solana</option>
+            </select>
+          </div>
+          <div>
+            <label for="platform">Flash Loan Platform</label>
+            <select id="platform" required>
+              <option value="" disabled selected>Select…</option>
+            </select>
+            <div class="help">Pick platform first — borrowable assets depend on it.</div>
+          </div>
+          <div>
+            <label for="loanAsset">Loan Asset (borrow token)</label>
+            <select id="loanAsset" required>
+              <option value="" disabled selected>Select…</option>
+            </select>
+          </div>
         </div>
-      </div>
 
-      <!-- Desired token & DEX selection (labels include live price) -->
-      <div class="row row-2" style="margin-top:10px">
-        <div>
-          <label for="token">Desired Token</label>
-          <select id="token" required>
-            <option value="" disabled selected>Select a token</option>
-            <option>USDC</option><option>USDT</option><option>WETH</option>
-            <option>WBTC</option><option>DAI</option><option>SOL</option>
-            <option>ARB</option><option>MATIC</option><option>WBNB</option>
-            <option>Other / Custom</option>
-          </select>
-          <div id="tokenPrice" class="help" style="margin-top:6px"></div>
+        <!-- Loan amount -->
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label for="loanAmount">Loan Amount (<span id="loanUnit">—</span>)</label>
+            <input id="loanAmount" type="number" min="0" step="any" placeholder="e.g., 1000" required />
+            <div id="loanAssetPrice" class="help" style="margin-top:6px"></div>
+          </div>
         </div>
-        <div>
-          <label>DEXes (auto-selects best buy/sell)</label>
-          <div class="row row-2">
+
+        <!-- Desired token & DEX selection -->
+        <div class="row row-2" style="margin-top:10px">
+          <div>
+            <label for="token">Desired Token</label>
+            <select id="token" required>
+              <option value="" disabled selected>Select a token</option>
+              <option>USDC</option><option>USDT</option><option>WETH</option>
+              <option>WBTC</option><option>DAI</option><option>SOL</option>
+              <option>ARB</option><option>MATIC</option><option>WBNB</option>
+              <option>Other / Custom</option>
+            </select>
+            <div id="tokenPrice" class="help" style="margin-top:6px"></div>
+          </div>
+          <div>
+            <label>DEXes (auto-selects best buy/sell)</label>
+            <div class="row row-2">
+              <div>
+                <label for="buyDex">Purchase from DEX</label>
+                <select id="buyDex" required>
+                  <option value="" disabled selected>Select…</option>
+                </select>
+              </div>
+              <div>
+                <label for="sellDex">Sell to DEX</label>
+                <select id="sellDex" required>
+                  <option value="" disabled selected>Select…</option>
+                </select>
+              </div>
+            </div>
+            <div class="help" id="dexDropdownHint">Prices reflect best pool per DEX.</div>
+          </div>
+        </div>
+
+        <!-- Gas (auto EIP-1559) -->
+        <div class="row row-4" style="margin-top:10px">
+          <div id="gasPriceWrap">
+            <label for="gasPrice">Gas Price (Gwei) <span id="gasAutoNote" class="help"></span></label>
+            <input id="gasPrice" type="number" min="0" step="0.1" placeholder="Auto" readonly />
+          </div>
+          <div id="gasLimitWrap">
+            <label for="gasLimit">
+              Gas Limit (units)
+              <span class="help" id="gasLimitNote"></span>
+            </label>
+            <input id="gasLimit" type="number" min="0" step="1000" placeholder="Auto from route" />
+            <div class="help">
+              <label><input id="gasAutoToggle" type="checkbox" checked /> Auto gas limit (recommended)</label>
+            </div>
+          </div>
+          <div id="gasFeeWrap">
+            <label for="gasFeeEth">Estimated Gas Fee</label>
+            <input id="gasFeeEth" type="text" placeholder="Auto-calculated" readonly />
+            <div id="gasExplain" class="help" style="margin-top:6px"></div>
+          </div>
+          <div>
+            <label for="maxGasEth">Max Gas Spend (ETH)</label>
+            <input id="maxGasEth" type="number" min="0" step="any" placeholder="e.g., 0.02" />
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi">
+          <div class="box"><div class="label">Best Buy</div><div class="value" id="kpiBestBuy">—</div></div>
+          <div class="box"><div class="label">Best Sell</div><div class="value" id="kpiBestSell">—</div></div>
+          <div class="box"><div class="label">Profit (excl. gas, incl. fee)</div><div class="value" id="kpiProfitNoGas">—</div></div>
+          <div class="box"><div class="label">Profit (incl. gas)</div><div class="value" id="kpiProfit">—</div></div>
+        </div>
+
+        <!-- DEX Quotes -->
+        <div class="row" style="margin-top:8px">
+          <div>
+            <label>DEX Quotes <span id="dexStatus" class="help"></span></label>
+            <div class="help" id="dexHelp">One entry per DEX (best pool chosen by liquidity & quote token).</div>
+            <div id="dexTableWrap" class="hidden">
+              <table class="table" id="dexTable">
+                <thead>
+                  <tr>
+                    <th>DEX</th>
+                    <th>Pair</th>
+                    <th class="right">Price (USD)</th>
+                    <th class="right">Liquidity</th>
+                    <th class="right">Vol 24h</th>
+                  </tr>
+                </thead>
+                <tbody id="dexBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profitability Calculator -->
+        <div class="card" style="margin-top:14px">
+          <h3 style="margin:0 0 8px;font-size:16px">Profitability Calculator</h3>
+          <div class="row row-4">
             <div>
-              <label for="buyDex">Purchase from DEX</label>
-              <select id="buyDex" required>
-                <option value="" disabled selected>Select…</option>
-              </select>
+              <label for="edgePct">Edge (%) <span class="help" id="edgeAutoNote"></span></label>
+              <input id="edgePct" type="number" step="0.01" placeholder="e.g., 1.25" />
+              <div class="help"><label><input id="useComputedEdge" type="checkbox" checked /> Use computed edge from best buy/sell</label></div>
             </div>
             <div>
-              <label for="sellDex">Sell to DEX</label>
-              <select id="sellDex" required>
-                <option value="" disabled selected>Select…</option>
-              </select>
+              <label for="feePct">Flash-Loan Fee (%)</label>
+              <input id="feePct" type="number" step="0.01" value="0.9" />
+            </div>
+            <div>
+              <label for="slipPct">Slippage/MEV Buffer (%)</label>
+              <input id="slipPct" type="number" step="0.01" value="0.10" />
+            </div>
+            <div>
+              <label for="gasUsd">Gas ($) <span class="help" id="gasUsdAutoNote"></span></label>
+              <input id="gasUsd" type="number" step="0.01" placeholder="Auto from gas calc" />
             </div>
           </div>
-          <div class="help" id="dexDropdownHint">Prices reflect best pool per DEX.</div>
-        </div>
-      </div>
-
-      <!-- Gas (auto EIP-1559) -->
-      <div class="row row-4" style="margin-top:10px">
-        <div id="gasPriceWrap">
-          <label for="gasPrice">Gas Price (Gwei) <span id="gasAutoNote" class="help"></span></label>
-          <input id="gasPrice" type="number" min="0" step="0.1" placeholder="Auto" readonly />
-        </div>
-        <div id="gasLimitWrap">
-          <label for="gasLimit">
-            Gas Limit (units)
-            <span class="help" id="gasLimitNote"></span>
-          </label>
-          <input id="gasLimit" type="number" min="0" step="1000" placeholder="Auto from route" />
-          <div class="help">
-            <label><input id="gasAutoToggle" type="checkbox" checked /> Auto gas limit (recommended)</label>
+          <div class="kpi">
+            <div class="box"><div class="label">Break-even Edge</div><div class="value" id="kpiBreakeven">—</div></div>
+            <div class="box"><div class="label">Net P/L per Trade</div><div class="value" id="kpiNetPL">—</div></div>
+          </div>
+          <div class="cta">
+            <button id="btnDownloadCsv" type="button" class="ghost">Download CSV Report</button>
+            <span id="reportStatus" class="help"></span>
           </div>
         </div>
-        <div id="gasFeeWrap">
-          <label for="gasFeeEth">Estimated Gas Fee</label>
-          <input id="gasFeeEth" type="text" placeholder="Auto-calculated" readonly />
-          <div id="gasExplain" class="help" style="margin-top:6px"></div>
-        </div>
-        <div>
-          <label for="maxGasEth">Max Gas Spend (ETH)</label>
-          <input id="maxGasEth" type="number" min="0" step="any" placeholder="e.g., 0.02" />
-        </div>
-      </div>
 
-      <!-- KPIs -->
-      <div class="kpi">
-        <div class="box">
-          <div class="label">Best Buy</div>
-          <div class="value" id="kpiBestBuy">—</div>
-        </div>
-        <div class="box">
-          <div class="label">Best Sell</div>
-          <div class="value" id="kpiBestSell">—</div>
-        </div>
-        <div class="box">
-          <div class="label">Profit (excl. gas, incl. fee)</div>
-          <div class="value" id="kpiProfitNoGas">—</div>
-        </div>
-        <div class="box">
-          <div class="label">Profit (incl. gas)</div>
-          <div class="value" id="kpiProfit">—</div>
-        </div>
-      </div>
-
-      <!-- DEX Quotes (one row per DEX) -->
-      <div class="row" style="margin-top:8px">
-        <div>
-          <label>DEX Quotes <span id="dexStatus" class="help"></span></label>
-          <div class="help" id="dexHelp">One entry per DEX (best pool chosen by liquidity & quote token).</div>
-          <div id="dexTableWrap" class="hidden">
-            <table class="table" id="dexTable">
-              <thead>
-                <tr>
-                  <th>DEX</th>
-                  <th>Pair</th>
-                  <th class="right">Price (USD)</th>
-                  <th class="right">Liquidity</th>
-                  <th class="right">Vol 24h</th>
-                </tr>
-              </thead>
-              <tbody id="dexBody"></tbody>
-            </table>
+        <!-- Wallets -->
+        <div class="row row-2" style="margin-top:10px">
+          <div>
+            <label for="rewardWallet">Wallet Address for Reward</label>
+            <input id="rewardWallet" type="text" placeholder="0x… or Solana address" required />
+            <input id="rewardWalletConfirm" type="text" placeholder="Confirm reward wallet" />
+          </div>
+          <div>
+            <label for="feeWallet">Wallet Address for Fees</label>
+            <input id="feeWallet" type="text" placeholder="0x… or Solana address" required />
+            <input id="feeWalletConfirm" type="text" placeholder="Confirm fee wallet" />
           </div>
         </div>
-      </div>
 
-      <!-- Wallets -->
-      <div class="row row-2" style="margin-top:10px">
-        <div>
-          <label for="rewardWallet">Wallet Address for Reward</label>
-          <input id="rewardWallet" type="text" placeholder="0x… or Solana address" required />
-          <input id="rewardWalletConfirm" type="text" placeholder="Confirm reward wallet" />
+        <!-- Terms -->
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label><input id="agree" type="checkbox" /> I accept the Terms & Disclaimer</label>
+            <div class="help">Beta Version v7.7.2</div>
+          </div>
         </div>
-        <div>
-          <label for="feeWallet">Wallet Address for Fees</label>
-          <input id="feeWallet" type="text" placeholder="0x… or Solana address" required />
-          <input id="feeWalletConfirm" type="text" placeholder="Confirm fee wallet" />
+
+        <!-- Actions -->
+        <div class="cta">
+          <button id="processBtn" type="submit">Proceed</button>
+          <button id="resetBtn" class="ghost" type="reset">Reset</button>
         </div>
-      </div>
 
-      <!-- Terms -->
-      <div class="row" style="margin-top:10px">
-        <div>
-          <label><input id="agree" type="checkbox" /> I accept the Terms & Disclaimer</label>
-          <div class="help">Beta Version v7.5.4</div>
+        <!-- Spinner during proceed -->
+        <div id="loadingSpinner" class="hidden" style="margin-top:10px;text-align:center;">
+          <div style="border:4px solid rgba(255,255,255,.2);
+                      border-top:4px solid #7c5cff;
+                      border-radius:50%;
+                      width:36px;height:36px;
+                      animation:spin 1s linear infinite;
+                      margin:0 auto;">
+          </div>
+          <div class="help">Processing transaction…</div>
         </div>
-      </div>
 
-      <!-- Actions -->
-      <div class="cta">
-        <button id="processBtn" type="submit">Proceed</button>
-        <button id="resetBtn" class="ghost" type="reset">Reset</button>
-      </div>
-
-      <!-- Spinner -->
-      <div id="loadingSpinner" class="hidden" style="margin-top:10px;text-align:center;">
-        <div style="border:4px solid rgba(255,255,255,.2);
-                    border-top:4px solid #7c5cff;
-                    border-radius:50%;
-                    width:36px;height:36px;
-                    animation:spin 1s linear infinite;
-                    margin:0 auto;">
-        </div>
-        <div class="help">Processing transaction…</div>
-      </div>
-
-      <div id="validation" class="help" style="margin-top:10px"></div>
-    </form>
+        <div id="validation" class="help" style="margin-top:10px"></div>
+      </form>
+    </div>
   </div>
 
 <script>
 (function(){
-  const $ = id => document.getElementById(id); // keep ONE definition only
+  const $ = id => document.getElementById(id);
 
   /** ------- SIMPLE SWITCH ------- **/
   const ALWAYS_FAIL = false;       // set true to force every submit to fail
   const FAIL_RATIO  = 0.75;        // 0.75 = 75% fail, 25% success
 
   /** ------- SETTINGS ------- **/
-  const LOAN_CAP_USD = 10000;      // Max total borrow in USD
-  const LOAN_FEE_RATE = 0.009;     // 0.9% flash-loan fee in USD terms
+  const LOAN_CAP_USD = 10000;
+  const LOAN_FEE_RATE = 0.009;     // 0.9% default for KPIs (can override in calculator)
   const ONE_PER_DEX = true;
   const PREFERRED_QUOTES = ["USDC","USDT"];
   const MIN_LIQ_USD = 10000;
@@ -361,6 +393,16 @@
   };
 
   /** ------- HELPERS ------- **/
+  const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
+  function norm(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+  const DEX_ALIAS = new Map([
+    ["uniswap","uniswap v3"],["uniswapv3","uniswap v3"],
+    ["sushiswap","sushiswap"],["curve","curve"],["balancer","balancer"],
+    ["camelot","camelot"],["quickswap","quickswap"],
+    ["pancakeswap","pancakeswap"],["pancakeswapv3","pancakeswap"],
+    ["traderjoe","trader joe"],["pangolin","pangolin"],["apeswap","apeswap"]
+  ]);
+
   function setOptions(select, list){
     if(!select) return;
     const opts = (list || ["Other / Custom"]).map(v=>`<option>${v}</option>`).join('');
@@ -369,14 +411,13 @@
   function setOptionsWithPrices(select, list, priceMap){
     if(!select) return;
     const opts = (list || ["Other / Custom"]).map(v=>{
-      const key = (v||"").toLowerCase();
+      const key = norm(v);
       const price = priceMap?.get(key);
       const label = price ? `${v} — $${Number(price).toLocaleString(undefined,{maximumFractionDigits:6})}` : `${v} — —`;
       return `<option value="${v}">${label}</option>`;
     }).join('');
     select.innerHTML = `<option value="" disabled selected>Select…</option>${opts}`;
   }
-  function fmtUSD(v){ return isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—"; }
   function dexKey(name){
     if(!name) return null;
     const s = name.toLowerCase();
@@ -397,7 +438,7 @@
   function refreshPlatforms(){
     const net = $("network").value;
     setOptions($("platform"), PLATFORMS[net]);
-    setOptions($("loanAsset"), []); // reset
+    setOptions($("loanAsset"), []);
     $("loanUnit").textContent = "—";
     $("loanAssetPrice").textContent = "";
   }
@@ -440,7 +481,7 @@
     el.innerHTML = `<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
     window.__ck_prices[sym+"_USD"] = p;
     if(sym === "WETH" || sym === "ETH"){ window.__ck_prices.ETH_USD = p; calcGas(); }
-    updateProfitKPIs();
+    updateProfitKPIs(); updateProfitCalc();
   }
   async function updateDesiredTokenPriceUI(){
     const sym = $("token").value || "";
@@ -470,8 +511,11 @@
         const usd = eth * ethUSD;
         window.__ck_prices.GAS_USD = usd;
         out += ` (~${fmtUSD(usd)})`;
+        $("gasUsd").value = usd.toFixed(2);
+        $("gasUsdAutoNote").textContent = "auto";
       } else {
         window.__ck_prices.GAS_USD = 0;
+        $("gasUsdAutoNote").textContent = "";
       }
 
       const loanSym = $("loanAsset").value;
@@ -480,16 +524,15 @@
       if(amt>0 && loanUSD>0){
         const amtUSD = amt * loanUSD;
         const pct = (window.__ck_prices.GAS_USD || 0) / amtUSD;
-        if(pct > 0.005){
-          out += ` • Heads up: gas is ~${(pct*100).toFixed(2)}% of loan. Consider Arbitrum/Polygon or reduce gas limit.`;
-        }
+        if(pct > 0.005){ out += ` • Heads up: gas is ~${(pct*100).toFixed(2)}% of loan.`; }
       }
       explain.textContent = out;
     } else {
       window.__ck_prices.GAS_USD = 0;
       explain.textContent = "Enter a gas limit to see ETH and USD cost. Gas price is auto-fetched.";
+      $("gasUsdAutoNote").textContent = "";
     }
-    updateProfitKPIs();
+    updateProfitKPIs(); updateProfitCalc();
   }
   async function fetchGasPriceGweiFor(network){
     const endpoints = RPC[network];
@@ -632,28 +675,30 @@
       return { ok:false, reason:"Network error" };
     }
   }
-  function selectDEXInto(select, dexLabel){
-    if(!select) return;
-    const opts = Array.from(select.options);
-    const needle = (dexLabel||"").toLowerCase();
-    let hit = opts.find(o => (o.textContent||"").toLowerCase().startsWith(needle));
-    if(!hit) hit = opts.find(o => (o.textContent||"").toLowerCase().includes(needle.split(" ")[0]));
-    if(hit){ select.value = hit.value || hit.textContent; } else { select.value = "Other / Custom"; }
-  }
   function buildDexPriceMap(pairs){
     const m = new Map();
     for(const p of (pairs||[])){
-      const k = (p?.dexId || "").toLowerCase();
+      const raw = (p?.dexId || "");
+      const alias = DEX_ALIAS.get(norm(raw)) || raw;
+      const k = norm(alias);
       const price = Number(p?.priceUsd);
       if(k && isFinite(price)) m.set(k, price);
     }
     return m;
   }
+  function selectDEXInto(select, dexLabel){
+    if(!select) return;
+    const wanted = norm( DEX_ALIAS.get(norm(dexLabel)) || dexLabel );
+    const opts = Array.from(select.options).filter(o=>o.value);
+    let hit = opts.find(o => norm(o.textContent).startsWith(wanted));
+    if(!hit){ hit = opts.find(o => norm(o.textContent).includes(wanted)); }
+    if(hit){ select.value = hit.value; } else { select.value = "Other / Custom"; }
+  }
   function renderDexTable(pairs){
     const wrap = $("dexTableWrap");
     const body = $("dexBody");
     body.innerHTML = "";
-    if(!pairs || !pairs.length){ wrap.classList.add("hidden"); updateBestKPI(null,null); updateProfitKPIs(); return; }
+    if(!pairs || !pairs.length){ wrap.classList.add("hidden"); updateBestKPI(null,null); updateProfitKPIs(); updateProfitCalc(); return; }
     wrap.classList.remove("hidden");
     let bestBuyIdx = -1, bestSellIdx = -1, min = Infinity, max = -Infinity;
     pairs.forEach((p,i)=>{
@@ -682,19 +727,33 @@
     const bestBuy  = pairs[bestBuyIdx]  || null;
     const bestSell = pairs[bestSellIdx] || null;
     updateBestKPI(bestBuy, bestSell);
+
     const priceMap = buildDexPriceMap(pairs);
     refreshDexMenus(priceMap);
     if(bestBuy)  selectDEXInto($("buyDex"),  bestBuy.dexId);
     if(bestSell) selectDEXInto($("sellDex"), bestSell.dexId);
     applyGasPresetFromRoute();
-    updateProfitKPIs();
+
+    let edge = NaN;
+    if(bestBuy?.priceUsd && bestSell?.priceUsd){
+      const buyP = Number(bestBuy.priceUsd), sellP = Number(bestSell.priceUsd);
+      if(isFinite(buyP) && isFinite(sellP) && buyP>0){ edge = (sellP - buyP)/buyP * 100; }
+    }
+    if(!isNaN(edge)){
+      $("edgeAutoNote").textContent = `computed: ${edge.toFixed(3)}%`;
+      if($("useComputedEdge").checked){ $("edgePct").value = edge.toFixed(3); }
+    } else {
+      $("edgeAutoNote").textContent = "";
+    }
+
+    updateProfitKPIs(); updateProfitCalc();
   }
   function updateBestKPI(buyPair, sellPair){
     $("kpiBestBuy").textContent  = buyPair?.priceUsd ? `${buyPair.dexId.toUpperCase()} @ ${fmtUSD(Number(buyPair.priceUsd))}` : "—";
     $("kpiBestSell").textContent = sellPair?.priceUsd ? `${sellPair.dexId.toUpperCase()} @ ${fmtUSD(Number(sellPair.priceUsd))}` : "—";
   }
 
-  /** ------- PROFIT (USD) ------- **/
+  /** ------- PROFIT (USD) (existing KPIs) ------- **/
   function computeProfits(){
     const amt = parseFloat($("loanAmount").value);
     const loanSym = $("loanAsset").value;
@@ -724,18 +783,105 @@
     $("kpiProfit").textContent = `${fmtUSD(r.withGasProfitUSD)} (gas ~ ${fmtUSD(r.gasUSD)})`;
   }
 
-  async function updateDexQuotes(){
-    const net = $("network").value;
-    const sym = $("token").value;
-    const status = $("dexStatus");
-    const wrap = $("dexTableWrap");
-    wrap.classList.add("hidden");
-    if(!net || !sym || sym==="Other / Custom"){ status.textContent=""; updateBestKPI(null,null); updateProfitKPIs(); refreshDexMenus(null); return; }
-    status.textContent = "Fetching quotes…";
-    const res = await fetchDexQuotes(net, sym);
-    if(!res.ok){ status.textContent = `No quotes: ${res.reason}`; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); return; }
-    renderDexTable(res.pairs);
-    status.textContent = res.pairs.length ? `Showing ${res.pairs.length} DEXes` : "No markets found on this network.";
+  /** ------- PROFITABILITY CALCULATOR ------- **/
+  function calcPrincipalUSD(){
+    const amt = parseFloat($("loanAmount").value);
+    const sym = $("loanAsset").value;
+    const px  = window.__ck_prices?.[sym+"_USD"];
+    if(!(amt>0) || !(px>0)) return NaN;
+    return amt * px;
+  }
+  function updateProfitCalc(){
+    const principal = calcPrincipalUSD();
+    const gasUsdInput = parseFloat($("gasUsd").value);
+    const gasUSD = isFinite(gasUsdInput) ? gasUsdInput : (window.__ck_prices?.GAS_USD || 0);
+    const feePct = parseFloat($("feePct").value) || (LOAN_FEE_RATE*100);
+    const slipPct = parseFloat($("slipPct").value) || 0;
+
+    if($("useComputedEdge").checked){
+      const best = window.__ck_best || {};
+      const pairs = window.__ck_pairs || {};
+      const buyP  = Number((pairs[best.buyIdx]||{}).priceUsd);
+      const sellP = Number((pairs[best.sellIdx]||{}).priceUsd);
+      if(isFinite(buyP) && isFinite(sellP) && buyP>0){
+        const edge = (sellP - buyP)/buyP*100;
+        $("edgePct").value = edge.toFixed(3);
+        $("edgeAutoNote").textContent = `computed: ${edge.toFixed(3)}%`;
+      }
+    }
+
+    const edgePct = parseFloat($("edgePct").value);
+    if(!(principal>0) || !isFinite(edgePct)){
+      $("kpiBreakeven").textContent = "—";
+      $("kpiNetPL").textContent = "—";
+      return;
+    }
+
+    const feeUSD = principal * (feePct/100);
+    const slipUSD = principal * (slipPct/100);
+    const gross = principal * (edgePct/100);
+    const net = gross - feeUSD - gasUSD - slipUSD;
+
+    const breakeven = principal>0 ? ((feeUSD + gasUSD + slipUSD)/principal)*100 : NaN;
+
+    $("kpiBreakeven").textContent = isFinite(breakeven) ? `${breakeven.toFixed(3)}%` : "—";
+    $("kpiNetPL").textContent = `${fmtUSD(net)}`;
+  }
+
+  // Build a data object for CSV
+  function buildReport(){
+    const net = $("network").value, plat=$("platform").value, loanAsset=$("loanAsset").value, token=$("token").value;
+    const amt = parseFloat($("loanAmount").value)||0;
+    const prices = window.__ck_prices||{};
+    const pairs = window.__ck_pairs||[];
+    const best = window.__ck_best||{};
+    const buy = pairs[best.buyIdx]||null, sell=pairs[best.sellIdx]||null;
+    const buyP = buy?.priceUsd?Number(buy.priceUsd):NaN, sellP=sell?.priceUsd?Number(sell.priceUsd):NaN;
+    const edgePct = parseFloat($("edgePct").value)||NaN;
+    const feePct = parseFloat($("feePct").value)||0.9;
+    const slipPct = parseFloat($("slipPct").value)||0.1;
+    const gasUSD = parseFloat($("gasUsd").value);
+    const principalUSD = calcPrincipalUSD();
+    const feeUSD = principalUSD*(feePct/100);
+    const slipUSD = principalUSD*(slipPct/100);
+    const gross = principalUSD*(edgePct/100);
+    const net = gross - feeUSD - (isFinite(gasUSD)?gasUSD:(prices.GAS_USD||0)) - slipUSD;
+    const breakeven = principalUSD>0 ? ((feeUSD + (isFinite(gasUSD)?gasUSD:(prices.GAS_USD||0)) + slipUSD)/principalUSD)*100 : NaN;
+    return {
+      timestamp: new Date().toISOString(),
+      network: net, platform: plat, loanAsset, desiredToken: token,
+      loanAmount: amt, loanAssetUSD: prices[loanAsset+"_USD"]||null, principalUSD: principalUSD||null,
+      bestBuyDex: buy?.dexId||null, bestBuyPriceUSD: buyP||null,
+      bestSellDex: sell?.dexId||null, bestSellPriceUSD: sellP||null,
+      computedEdgePct: (isFinite(buyP)&&isFinite(sellP)&&buyP>0)?((sellP-buyP)/buyP*100):null,
+      edgePctUsed: edgePct, feePctUsed: feePct, slipPctUsed: slipPct,
+      gasUSDUsed: isFinite(gasUSD)?gasUSD:(prices.GAS_USD||0),
+      breakevenPct: isFinite(breakeven)?breakeven:null,
+      netPL: net
+    };
+  }
+
+  function toCSV(obj){
+    const headers = Object.keys(obj);
+    const values = headers.map(k=>{
+      const v = obj[k];
+      if(v==null) return "";
+      if(typeof v === "number") return String(v);
+      return `"${String(v).replace(/"/g,'""')}"`;
+    });
+    return headers.join(",") + "\n" + values.join(",") + "\n";
+  }
+
+  function downloadCSV(){
+    const data = buildReport();
+    const csv = toCSV(data);
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `ck-report-${Date.now()}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    $("reportStatus").textContent = "CSV downloaded.";
   }
 
   /** ------- FORM FLOW ------- **/
@@ -745,22 +891,32 @@
   const validation = $("validation");
 
   $("network").addEventListener("change", ()=>{
-    refreshPlatforms();
-    refreshDexMenus(null);
-    setupAutoGas();
-    $("tokenPrice").textContent = "";
-    $("loanAmount").value = "";
-    $("kpiProfit").textContent = "—";
-    $("kpiProfitNoGas").textContent = "—";
-    updateDexQuotes();
+    refreshPlatforms(); refreshDexMenus(null); setupAutoGas();
+    $("tokenPrice").textContent = ""; $("loanAmount").value = "";
+    $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
+    updateDexQuotes(); updateProfitCalc();
   });
-  $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); });
-  $("loanAsset").addEventListener("change", ()=>{ updateLoanAssetUI(); updateProfitKPIs(); });
+  $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); updateProfitCalc(); });
+  $("loanAsset").addEventListener("change", ()=>{ updateLoanAssetUI(); updateProfitKPIs(); updateProfitCalc(); });
   $("token").addEventListener("change", ()=>{ updateDesiredTokenPriceUI(); updateDexQuotes(); });
   $("gasAutoToggle").addEventListener("change", applyGasPresetFromRoute);
   ["loanAmount","gasLimit"].forEach(id => {
-    const el=$(id); if(el) el.addEventListener("input", ()=>{ calcGas(); updateProfitKPIs(); });
+    const el=$(id); if(el) el.addEventListener("input", ()=>{ calcGas(); updateProfitKPIs(); updateProfitCalc(); });
   });
+
+  // Calculator listeners
+  ["edgePct","feePct","slipPct","gasUsd"].forEach(id=>{
+    const el=$(id); if(el) el.addEventListener("input", updateProfitCalc);
+  });
+  $("useComputedEdge").addEventListener("change", ()=>{
+    if($("useComputedEdge").checked){
+      const best = window.__ck_best||{}, pairs=window.__ck_pairs||[];
+      const buy=Number(pairs?.[best.buyIdx]?.priceUsd), sell=Number(pairs?.[best.sellIdx]?.priceUsd);
+      if(isFinite(buy) && isFinite(sell) && buy>0){ $("edgePct").value = ((sell-buy)/buy*100).toFixed(3); }
+    }
+    updateProfitCalc();
+  });
+  $("btnDownloadCsv").addEventListener("click", downloadCSV);
 
   function validate(){
     let m="";
@@ -841,18 +997,30 @@
       setupAutoGas(); updateDexQuotes();
       window.__ck_prices = { ETH_USD: window.__ck_prices?.ETH_USD || null, GAS_USD: 0 };
       $("loanAmount").value = ""; $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
+      $("edgePct").value=""; $("gasUsd").value=""; $("edgeAutoNote").textContent=""; $("gasUsdAutoNote").textContent="";
+      updateProfitCalc();
     } catch(e){} }, 0);
   });
 
-  // Init
+  // Boot loader: show spinner for 5s, then reveal form
   document.addEventListener("DOMContentLoaded", async ()=>{
     try {
+      // Init data even while boot screen is visible
       window.__ck_prices = { ETH_USD: null, GAS_USD: 0 };
       refreshPlatforms();
       refreshLoanAssets();
       refreshDexMenus(null);
       setupAutoGas();
+      updateProfitCalc();
     } catch(e){}
+
+    // Reveal the form after 5 seconds
+    setTimeout(()=>{
+      const boot = $("bootWrap");
+      const fw = $("formWrap");
+      if(boot) boot.classList.add("hidden");
+      if(fw) fw.classList.remove("hidden");
+    }, 5000);
   });
 })();
 </script>

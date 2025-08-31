@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v7.7.2</title>
+<title>Crypto Kings Test Bed v7.8.0</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,Segoe UI,Roboto,Arial,sans-serif}
@@ -37,9 +37,9 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Crypto Kings v7.7.2</h1>
+    <h1>Crypto Kings v7.8.0</h1>
 
-    <!-- Boot loader spinner (shows for ~5s on first load) -->
+    <!-- Boot loader spinner (shows on initial page load) -->
     <div id="bootWrap" style="text-align:center;padding:24px 0;">
       <div style="border:4px solid rgba(255,255,255,.2);
                   border-top:4px solid #7c5cff;
@@ -54,7 +54,7 @@
     <!-- The entire form is hidden until boot completes -->
     <div id="formWrap" class="hidden">
       <form id="form" class="card" novalidate>
-        <!-- Network / Platform / Loan Asset (borrow token) -->
+        <!-- Network / Platform / Loan Asset -->
         <div class="row row-3">
           <div>
             <label for="network">Network</label>
@@ -73,7 +73,6 @@
             <select id="platform" required>
               <option value="" disabled selected>Select…</option>
             </select>
-            <div class="help">Pick platform first — borrowable assets depend on it.</div>
           </div>
           <div>
             <label for="loanAsset">Loan Asset (borrow token)</label>
@@ -83,8 +82,18 @@
           </div>
         </div>
 
+        <!-- Wallet Connect -->
+        <div class="card" style="margin:14px 0;">
+          <h3 style="margin:0 0 8px;font-size:16px">Wallet</h3>
+          <div class="cta">
+            <button id="btnConnectEVM" type="button">Connect MetaMask</button>
+            <button id="btnConnectPhantom" type="button" class="ghost">Connect Phantom</button>
+          </div>
+          <div id="walletStatus" class="help" style="margin-top:6px">Not connected.</div>
+        </div>
+
         <!-- Loan amount -->
-        <div class="row" style="margin-top:10px">
+        <div class="row">
           <div>
             <label for="loanAmount">Loan Amount (<span id="loanUnit">—</span>)</label>
             <input id="loanAmount" type="number" min="0" step="any" placeholder="e.g., 1000" required />
@@ -92,7 +101,7 @@
           </div>
         </div>
 
-        <!-- Desired token & DEX selection -->
+        <!-- Desired token & DEX -->
         <div class="row row-2" style="margin-top:10px">
           <div>
             <label for="token">Desired Token</label>
@@ -125,17 +134,14 @@
           </div>
         </div>
 
-        <!-- Gas (auto EIP-1559) -->
+        <!-- Gas -->
         <div class="row row-4" style="margin-top:10px">
           <div id="gasPriceWrap">
             <label for="gasPrice">Gas Price (Gwei) <span id="gasAutoNote" class="help"></span></label>
             <input id="gasPrice" type="number" min="0" step="0.1" placeholder="Auto" readonly />
           </div>
           <div id="gasLimitWrap">
-            <label for="gasLimit">
-              Gas Limit (units)
-              <span class="help" id="gasLimitNote"></span>
-            </label>
+            <label for="gasLimit">Gas Limit (units) <span class="help" id="gasLimitNote"></span></label>
             <input id="gasLimit" type="number" min="0" step="1000" placeholder="Auto from route" />
             <div class="help">
               <label><input id="gasAutoToggle" type="checkbox" checked /> Auto gas limit (recommended)</label>
@@ -143,7 +149,7 @@
           </div>
           <div id="gasFeeWrap">
             <label for="gasFeeEth">Estimated Gas Fee</label>
-            <input id="gasFeeEth" type="text" placeholder="Auto-calculated" readonly />
+            <input id="gasFeeEth" type="text" placeholder="Auto" readonly />
             <div id="gasExplain" class="help" style="margin-top:6px"></div>
           </div>
           <div>
@@ -164,13 +170,12 @@
         <div class="row" style="margin-top:8px">
           <div>
             <label>DEX Quotes <span id="dexStatus" class="help"></span></label>
-            <div class="help" id="dexHelp">One entry per DEX (best pool chosen by liquidity & quote token).</div>
+            <div class="help" id="dexHelp">One entry per DEX (best pool chosen by liquidity & preferred quote token).</div>
             <div id="dexTableWrap" class="hidden">
               <table class="table" id="dexTable">
                 <thead>
                   <tr>
-                    <th>DEX</th>
-                    <th>Pair</th>
+                    <th>DEX</th><th>Pair</th>
                     <th class="right">Price (USD)</th>
                     <th class="right">Liquidity</th>
                     <th class="right">Vol 24h</th>
@@ -182,57 +187,15 @@
           </div>
         </div>
 
-        <!-- Profitability Calculator -->
-        <div class="card" style="margin-top:14px">
-          <h3 style="margin:0 0 8px;font-size:16px">Profitability Calculator</h3>
-          <div class="row row-4">
-            <div>
-              <label for="edgePct">Edge (%) <span class="help" id="edgeAutoNote"></span></label>
-              <input id="edgePct" type="number" step="0.01" placeholder="e.g., 1.25" />
-              <div class="help"><label><input id="useComputedEdge" type="checkbox" checked /> Use computed edge from best buy/sell</label></div>
-            </div>
-            <div>
-              <label for="feePct">Flash-Loan Fee (%)</label>
-              <input id="feePct" type="number" step="0.01" value="0.9" />
-            </div>
-            <div>
-              <label for="slipPct">Slippage/MEV Buffer (%)</label>
-              <input id="slipPct" type="number" step="0.01" value="0.10" />
-            </div>
-            <div>
-              <label for="gasUsd">Gas ($) <span class="help" id="gasUsdAutoNote"></span></label>
-              <input id="gasUsd" type="number" step="0.01" placeholder="Auto from gas calc" />
-            </div>
-          </div>
-          <div class="kpi">
-            <div class="box"><div class="label">Break-even Edge</div><div class="value" id="kpiBreakeven">—</div></div>
-            <div class="box"><div class="label">Net P/L per Trade</div><div class="value" id="kpiNetPL">—</div></div>
-          </div>
-          <div class="cta">
-            <button id="btnDownloadCsv" type="button" class="ghost">Download CSV Report</button>
-            <span id="reportStatus" class="help"></span>
-          </div>
-        </div>
-
         <!-- Wallets -->
         <div class="row row-2" style="margin-top:10px">
           <div>
             <label for="rewardWallet">Wallet Address for Reward</label>
-            <input id="rewardWallet" type="text" placeholder="0x… or Solana address" required />
-            <input id="rewardWalletConfirm" type="text" placeholder="Confirm reward wallet" />
+            <input id="rewardWallet" type="text" placeholder="0x… or Solana address" />
           </div>
           <div>
             <label for="feeWallet">Wallet Address for Fees</label>
-            <input id="feeWallet" type="text" placeholder="0x… or Solana address" required />
-            <input id="feeWalletConfirm" type="text" placeholder="Confirm fee wallet" />
-          </div>
-        </div>
-
-        <!-- Terms -->
-        <div class="row" style="margin-top:10px">
-          <div>
-            <label><input id="agree" type="checkbox" /> I accept the Terms & Disclaimer</label>
-            <div class="help">Beta Version v7.7.2</div>
+            <input id="feeWallet" type="text" placeholder="0x… or Solana address" />
           </div>
         </div>
 
@@ -262,6 +225,9 @@
 <script>
 (function(){
   const $ = id => document.getElementById(id);
+  const short = a => a ? (a.slice(0,6) + "…" + a.slice(-4)) : "";
+  const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
+  function norm(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
 
   /** ------- SIMPLE SWITCH ------- **/
   const ALWAYS_FAIL = false;       // set true to force every submit to fail
@@ -269,7 +235,7 @@
 
   /** ------- SETTINGS ------- **/
   const LOAN_CAP_USD = 10000;
-  const LOAN_FEE_RATE = 0.009;     // 0.9% default for KPIs (can override in calculator)
+  const LOAN_FEE_RATE = 0.009;     // 0.9% flash-loan fee in USD terms
   const ONE_PER_DEX = true;
   const PREFERRED_QUOTES = ["USDC","USDT"];
   const MIN_LIQ_USD = 10000;
@@ -283,7 +249,6 @@
     avalanche:["Trader Joe (flash via router)","Other / Custom"],
     solana:["Solend","MarginFi","Other / Custom"],
   };
-
   const BORROW_ASSETS = {
     ethereum: {
       "Aave v3":["USDC","USDT","WETH","DAI","WBTC"],
@@ -316,7 +281,6 @@
       "Other / Custom":["USDC","USDT","SOL"]
     }
   };
-
   const DEXES = {
     ethereum:["Uniswap V3","SushiSwap","Curve","Balancer","Other / Custom"],
     arbitrum:["Uniswap V3","SushiSwap","Camelot","Balancer","Other / Custom"],
@@ -325,7 +289,6 @@
     avalanche:["Trader Joe","Pangolin","Other / Custom"],
     solana:["Jupiter","Raydium","Orca","Other / Custom"],
   };
-
   const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
 
   // RPCs for auto-gas
@@ -392,9 +355,6 @@
     avalanche:{ default: 185000, traderjoe: 165000, pangolin: 165000 },
   };
 
-  /** ------- HELPERS ------- **/
-  const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
-  function norm(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
   const DEX_ALIAS = new Map([
     ["uniswap","uniswap v3"],["uniswapv3","uniswap v3"],
     ["sushiswap","sushiswap"],["curve","curve"],["balancer","balancer"],
@@ -403,6 +363,7 @@
     ["traderjoe","trader joe"],["pangolin","pangolin"],["apeswap","apeswap"]
   ]);
 
+  /** ------- HELPERS ------- **/
   function setOptions(select, list){
     if(!select) return;
     const opts = (list || ["Other / Custom"]).map(v=>`<option>${v}</option>`).join('');
@@ -481,7 +442,7 @@
     el.innerHTML = `<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
     window.__ck_prices[sym+"_USD"] = p;
     if(sym === "WETH" || sym === "ETH"){ window.__ck_prices.ETH_USD = p; calcGas(); }
-    updateProfitKPIs(); updateProfitCalc();
+    updateProfitKPIs();
   }
   async function updateDesiredTokenPriceUI(){
     const sym = $("token").value || "";
@@ -511,11 +472,8 @@
         const usd = eth * ethUSD;
         window.__ck_prices.GAS_USD = usd;
         out += ` (~${fmtUSD(usd)})`;
-        $("gasUsd").value = usd.toFixed(2);
-        $("gasUsdAutoNote").textContent = "auto";
       } else {
         window.__ck_prices.GAS_USD = 0;
-        $("gasUsdAutoNote").textContent = "";
       }
 
       const loanSym = $("loanAsset").value;
@@ -530,9 +488,8 @@
     } else {
       window.__ck_prices.GAS_USD = 0;
       explain.textContent = "Enter a gas limit to see ETH and USD cost. Gas price is auto-fetched.";
-      $("gasUsdAutoNote").textContent = "";
     }
-    updateProfitKPIs(); updateProfitCalc();
+    updateProfitKPIs();
   }
   async function fetchGasPriceGweiFor(network){
     const endpoints = RPC[network];
@@ -621,7 +578,7 @@
     if(g1 && g2) guess = Math.max(g1, g2);
     else if(g1)  guess = g1; else if(g2) guess = g2;
 
-    const auto = $("gasAutoToggle").checked;
+    const auto = $("gasAutoToggle")?.checked ?? true;
     const gl = $("gasLimit");
     const note = $("gasLimitNote");
     if(auto){ gl.value = String(guess); gl.readOnly = true; note.textContent = `auto from route (${(buyDex||'?')} → ${(sellDex||'?')})`; }
@@ -629,7 +586,7 @@
     calcGas();
   }
 
-  /** ------- DEX QUOTES (Dexscreener) ------- **/
+  /** ------- DEX QUOTES (DexScreener) ------- **/
   function getTokenAddress(network, symbol){
     const netMap = TOKEN_ADDR[network] || {};
     return netMap[symbol] || null;
@@ -698,7 +655,7 @@
     const wrap = $("dexTableWrap");
     const body = $("dexBody");
     body.innerHTML = "";
-    if(!pairs || !pairs.length){ wrap.classList.add("hidden"); updateBestKPI(null,null); updateProfitKPIs(); updateProfitCalc(); return; }
+    if(!pairs || !pairs.length){ wrap.classList.add("hidden"); updateBestKPI(null,null); updateProfitKPIs(); return; }
     wrap.classList.remove("hidden");
     let bestBuyIdx = -1, bestSellIdx = -1, min = Infinity, max = -Infinity;
     pairs.forEach((p,i)=>{
@@ -733,27 +690,14 @@
     if(bestBuy)  selectDEXInto($("buyDex"),  bestBuy.dexId);
     if(bestSell) selectDEXInto($("sellDex"), bestSell.dexId);
     applyGasPresetFromRoute();
-
-    let edge = NaN;
-    if(bestBuy?.priceUsd && bestSell?.priceUsd){
-      const buyP = Number(bestBuy.priceUsd), sellP = Number(bestSell.priceUsd);
-      if(isFinite(buyP) && isFinite(sellP) && buyP>0){ edge = (sellP - buyP)/buyP * 100; }
-    }
-    if(!isNaN(edge)){
-      $("edgeAutoNote").textContent = `computed: ${edge.toFixed(3)}%`;
-      if($("useComputedEdge").checked){ $("edgePct").value = edge.toFixed(3); }
-    } else {
-      $("edgeAutoNote").textContent = "";
-    }
-
-    updateProfitKPIs(); updateProfitCalc();
+    updateProfitKPIs();
   }
   function updateBestKPI(buyPair, sellPair){
     $("kpiBestBuy").textContent  = buyPair?.priceUsd ? `${buyPair.dexId.toUpperCase()} @ ${fmtUSD(Number(buyPair.priceUsd))}` : "—";
     $("kpiBestSell").textContent = sellPair?.priceUsd ? `${sellPair.dexId.toUpperCase()} @ ${fmtUSD(Number(sellPair.priceUsd))}` : "—";
   }
 
-  /** ------- PROFIT (USD) (existing KPIs) ------- **/
+  /** ------- PROFIT (USD) ------- **/
   function computeProfits(){
     const amt = parseFloat($("loanAmount").value);
     const loanSym = $("loanAsset").value;
@@ -783,141 +727,51 @@
     $("kpiProfit").textContent = `${fmtUSD(r.withGasProfitUSD)} (gas ~ ${fmtUSD(r.gasUSD)})`;
   }
 
-  /** ------- PROFITABILITY CALCULATOR ------- **/
-  function calcPrincipalUSD(){
-    const amt = parseFloat($("loanAmount").value);
-    const sym = $("loanAsset").value;
-    const px  = window.__ck_prices?.[sym+"_USD"];
-    if(!(amt>0) || !(px>0)) return NaN;
-    return amt * px;
+  /** ------- WALLET CONNECT ------- **/
+  async function connectEVM(){
+    const el = $("walletStatus"); const eth = window.ethereum;
+    if(!eth){ el.textContent="MetaMask not found. Install the extension and try again."; return; }
+    try{
+      const accounts = await eth.request({ method: "eth_requestAccounts" });
+      const addr = accounts?.[0] || null;
+      const chain = await eth.request({ method:"eth_chainId" }).catch(()=>null);
+      el.textContent = addr ? `EVM connected: ${short(addr)}${chain?` (chain ${parseInt(chain,16)})`:""}` : "EVM connection failed.";
+      if(addr){ if(!$("rewardWallet").value) $("rewardWallet").value = addr; if(!$("feeWallet").value) $("feeWallet").value = addr; }
+      eth.on?.("accountsChanged", (accs)=>{
+        const a = accs?.[0] || null;
+        el.textContent = a ? `EVM connected: ${short(a)}${chain?` (chain ${parseInt(chain,16)})`:""}` : "EVM disconnected.";
+        if(a){ if(!$("rewardWallet").value) $("rewardWallet").value = a; if(!$("feeWallet").value) $("feeWallet").value = a; }
+      });
+      eth.on?.("chainChanged", (cid)=>{
+        const a = (window.ethereum.selectedAddress)||addr;
+        el.textContent = a ? `EVM connected: ${short(a)} (chain ${parseInt(cid,16)})` : "EVM disconnected.";
+      });
+    } catch(e){
+      el.textContent = `EVM connect error: ${e?.message || e}`;
+    }
   }
-  function updateProfitCalc(){
-    const principal = calcPrincipalUSD();
-    const gasUsdInput = parseFloat($("gasUsd").value);
-    const gasUSD = isFinite(gasUsdInput) ? gasUsdInput : (window.__ck_prices?.GAS_USD || 0);
-    const feePct = parseFloat($("feePct").value) || (LOAN_FEE_RATE*100);
-    const slipPct = parseFloat($("slipPct").value) || 0;
-
-    if($("useComputedEdge").checked){
-      const best = window.__ck_best || {};
-      const pairs = window.__ck_pairs || {};
-      const buyP  = Number((pairs[best.buyIdx]||{}).priceUsd);
-      const sellP = Number((pairs[best.sellIdx]||{}).priceUsd);
-      if(isFinite(buyP) && isFinite(sellP) && buyP>0){
-        const edge = (sellP - buyP)/buyP*100;
-        $("edgePct").value = edge.toFixed(3);
-        $("edgeAutoNote").textContent = `computed: ${edge.toFixed(3)}%`;
+  async function connectPhantom(){
+    const el = $("walletStatus"); const sol = window.solana;
+    if(!(sol && sol.isPhantom)){ el.textContent = "Phantom not found. Install the extension and try again."; return; }
+    try{
+      const resp = await sol.connect();
+      const addr = resp?.publicKey?.toString() || null;
+      el.textContent = addr ? `Solana connected: ${short(addr)}` : "Solana connection failed.";
+      if(addr && $("network").value === "solana"){
+        if(!$("rewardWallet").value) $("rewardWallet").value = addr;
+        if(!$("feeWallet").value) $("feeWallet").value = addr;
       }
+      sol.on?.("accountChanged", (pk)=>{
+        const a = pk ? pk.toString() : null;
+        el.textContent = a ? `Solana connected: ${short(a)}` : "Solana disconnected.";
+      });
+      sol.on?.("disconnect", ()=>{ el.textContent = "Solana disconnected."; });
+    } catch(e){
+      el.textContent = `Phantom connect error: ${e?.message || e}`;
     }
-
-    const edgePct = parseFloat($("edgePct").value);
-    if(!(principal>0) || !isFinite(edgePct)){
-      $("kpiBreakeven").textContent = "—";
-      $("kpiNetPL").textContent = "—";
-      return;
-    }
-
-    const feeUSD = principal * (feePct/100);
-    const slipUSD = principal * (slipPct/100);
-    const gross = principal * (edgePct/100);
-    const net = gross - feeUSD - gasUSD - slipUSD;
-
-    const breakeven = principal>0 ? ((feeUSD + gasUSD + slipUSD)/principal)*100 : NaN;
-
-    $("kpiBreakeven").textContent = isFinite(breakeven) ? `${breakeven.toFixed(3)}%` : "—";
-    $("kpiNetPL").textContent = `${fmtUSD(net)}`;
   }
 
-  // Build a data object for CSV
-  function buildReport(){
-    const net = $("network").value, plat=$("platform").value, loanAsset=$("loanAsset").value, token=$("token").value;
-    const amt = parseFloat($("loanAmount").value)||0;
-    const prices = window.__ck_prices||{};
-    const pairs = window.__ck_pairs||[];
-    const best = window.__ck_best||{};
-    const buy = pairs[best.buyIdx]||null, sell=pairs[best.sellIdx]||null;
-    const buyP = buy?.priceUsd?Number(buy.priceUsd):NaN, sellP=sell?.priceUsd?Number(sell.priceUsd):NaN;
-    const edgePct = parseFloat($("edgePct").value)||NaN;
-    const feePct = parseFloat($("feePct").value)||0.9;
-    const slipPct = parseFloat($("slipPct").value)||0.1;
-    const gasUSD = parseFloat($("gasUsd").value);
-    const principalUSD = calcPrincipalUSD();
-    const feeUSD = principalUSD*(feePct/100);
-    const slipUSD = principalUSD*(slipPct/100);
-    const gross = principalUSD*(edgePct/100);
-    const net = gross - feeUSD - (isFinite(gasUSD)?gasUSD:(prices.GAS_USD||0)) - slipUSD;
-    const breakeven = principalUSD>0 ? ((feeUSD + (isFinite(gasUSD)?gasUSD:(prices.GAS_USD||0)) + slipUSD)/principalUSD)*100 : NaN;
-    return {
-      timestamp: new Date().toISOString(),
-      network: net, platform: plat, loanAsset, desiredToken: token,
-      loanAmount: amt, loanAssetUSD: prices[loanAsset+"_USD"]||null, principalUSD: principalUSD||null,
-      bestBuyDex: buy?.dexId||null, bestBuyPriceUSD: buyP||null,
-      bestSellDex: sell?.dexId||null, bestSellPriceUSD: sellP||null,
-      computedEdgePct: (isFinite(buyP)&&isFinite(sellP)&&buyP>0)?((sellP-buyP)/buyP*100):null,
-      edgePctUsed: edgePct, feePctUsed: feePct, slipPctUsed: slipPct,
-      gasUSDUsed: isFinite(gasUSD)?gasUSD:(prices.GAS_USD||0),
-      breakevenPct: isFinite(breakeven)?breakeven:null,
-      netPL: net
-    };
-  }
-
-  function toCSV(obj){
-    const headers = Object.keys(obj);
-    const values = headers.map(k=>{
-      const v = obj[k];
-      if(v==null) return "";
-      if(typeof v === "number") return String(v);
-      return `"${String(v).replace(/"/g,'""')}"`;
-    });
-    return headers.join(",") + "\n" + values.join(",") + "\n";
-  }
-
-  function downloadCSV(){
-    const data = buildReport();
-    const csv = toCSV(data);
-    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `ck-report-${Date.now()}.csv`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url), 1000);
-    $("reportStatus").textContent = "CSV downloaded.";
-  }
-
-  /** ------- FORM FLOW ------- **/
-  const form = $("form");
-  const processBtn = $("processBtn");
-  const resetBtn = $("resetBtn");
-  const validation = $("validation");
-
-  $("network").addEventListener("change", ()=>{
-    refreshPlatforms(); refreshDexMenus(null); setupAutoGas();
-    $("tokenPrice").textContent = ""; $("loanAmount").value = "";
-    $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
-    updateDexQuotes(); updateProfitCalc();
-  });
-  $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); updateProfitCalc(); });
-  $("loanAsset").addEventListener("change", ()=>{ updateLoanAssetUI(); updateProfitKPIs(); updateProfitCalc(); });
-  $("token").addEventListener("change", ()=>{ updateDesiredTokenPriceUI(); updateDexQuotes(); });
-  $("gasAutoToggle").addEventListener("change", applyGasPresetFromRoute);
-  ["loanAmount","gasLimit"].forEach(id => {
-    const el=$(id); if(el) el.addEventListener("input", ()=>{ calcGas(); updateProfitKPIs(); updateProfitCalc(); });
-  });
-
-  // Calculator listeners
-  ["edgePct","feePct","slipPct","gasUsd"].forEach(id=>{
-    const el=$(id); if(el) el.addEventListener("input", updateProfitCalc);
-  });
-  $("useComputedEdge").addEventListener("change", ()=>{
-    if($("useComputedEdge").checked){
-      const best = window.__ck_best||{}, pairs=window.__ck_pairs||[];
-      const buy=Number(pairs?.[best.buyIdx]?.priceUsd), sell=Number(pairs?.[best.sellIdx]?.priceUsd);
-      if(isFinite(buy) && isFinite(sell) && buy>0){ $("edgePct").value = ((sell-buy)/buy*100).toFixed(3); }
-    }
-    updateProfitCalc();
-  });
-  $("btnDownloadCsv").addEventListener("click", downloadCSV);
-
+  /** ------- FORM FLOW & VALIDATION ------- **/
   function validate(){
     let m="";
     if(!$("network").value) m+="• Select a network.\n";
@@ -927,15 +781,36 @@
     if(!$("loanAmount").value || Number($("loanAmount").value)<=0) m+="• Enter a valid loan amount.\n";
     if(!$("buyDex").value) m+="• Select a buy DEX.\n";
     if(!$("sellDex").value) m+="• Select a sell DEX.\n";
-    if($("rewardWallet").value !== $("rewardWalletConfirm").value) m+="• Reward wallet confirmation doesn’t match.\n";
-    if($("feeWallet").value !== $("feeWalletConfirm").value) m+="• Fee wallet confirmation doesn’t match.\n";
-    if(!$("agree").checked) m+="• You must accept the Terms & Disclaimer.\n";
     $("validation").textContent = m;
     if(m){ $("validation").classList.add("warn"); } else { $("validation").classList.remove("warn"); }
     return m==="";
   }
   function getSubmitCount(){ const n = parseInt(localStorage.getItem("__ck_submit_count")||"0",10); return isNaN(n)?0:n; }
   function bumpSubmitCount(n){ localStorage.setItem("__ck_submit_count", String(n)); }
+
+  const form = $("form");
+  const processBtn = $("processBtn");
+  const resetBtn = $("resetBtn");
+  const validation = $("validation");
+
+  // Events
+  document.addEventListener("DOMContentLoaded", ()=>{
+    $("btnConnectEVM")?.addEventListener("click", connectEVM);
+    $("btnConnectPhantom")?.addEventListener("click", connectPhantom);
+  });
+  $("network").addEventListener("change", ()=>{
+    refreshPlatforms(); refreshDexMenus(null); setupAutoGas();
+    $("tokenPrice").textContent = ""; $("loanAmount").value = "";
+    $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
+    updateDexQuotes();
+  });
+  $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); });
+  $("loanAsset").addEventListener("change", ()=>{ updateLoanAssetUI(); updateProfitKPIs(); });
+  $("token").addEventListener("change", ()=>{ updateDesiredTokenPriceUI(); updateDexQuotes(); });
+  $("gasAutoToggle")?.addEventListener("change", applyGasPresetFromRoute);
+  ["loanAmount","gasLimit"].forEach(id => {
+    const el=$(id); if(el) el.addEventListener("input", ()=>{ calcGas(); updateProfitKPIs(); });
+  });
 
   // SUBMIT with spinner + 3:1 fail ratio
   form.addEventListener("submit", async (e)=>{
@@ -969,7 +844,6 @@
       const n = getSubmitCount() + 1;
       bumpSubmitCount(n);
 
-      // 3:1 fail ratio (75% fail), overridden by ALWAYS_FAIL
       const rand = Math.random();
       const fail = ALWAYS_FAIL || (rand < (typeof FAIL_RATIO === "number" ? FAIL_RATIO : 0.75));
 
@@ -997,31 +871,52 @@
       setupAutoGas(); updateDexQuotes();
       window.__ck_prices = { ETH_USD: window.__ck_prices?.ETH_USD || null, GAS_USD: 0 };
       $("loanAmount").value = ""; $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
-      $("edgePct").value=""; $("gasUsd").value=""; $("edgeAutoNote").textContent=""; $("gasUsdAutoNote").textContent="";
-      updateProfitCalc();
     } catch(e){} }, 0);
   });
 
-  // Boot loader: show spinner for 5s, then reveal form
-  document.addEventListener("DOMContentLoaded", async ()=>{
+  /** ------- DEX QUOTES FLOW ------- **/
+  const DEX_STATUS = $("dexStatus");
+  async function updateDexQuotes(){
+    const net = $("network").value;
+    const sym = $("token").value;
+    const wrap = $("dexTableWrap");
+    wrap.classList.add("hidden");
+    if(!net || !sym || sym==="Other / Custom"){ DEX_STATUS.textContent=""; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); return; }
+    DEX_STATUS.textContent = "Fetching quotes…";
+    const res = await fetchDexQuotes(net, sym);
+    if(!res.ok){ DEX_STATUS.textContent = `No quotes: ${res.reason}`; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); return; }
+    renderDexTable(res.pairs);
+    DEX_STATUS.textContent = res.pairs.length ? `Showing ${res.pairs.length} DEXes` : "No markets found on this network.";
+  }
+
+  /** ------- BOOT LOADER ------- **/
+  function showForm(){
+    const boot = $("bootWrap");
+    const fw = $("formWrap");
+    if (boot) boot.classList.add("hidden");
+    if (fw) fw.classList.remove("hidden");
+  }
+  function initApp(){
     try {
-      // Init data even while boot screen is visible
       window.__ck_prices = { ETH_USD: null, GAS_USD: 0 };
       refreshPlatforms();
       refreshLoanAssets();
       refreshDexMenus(null);
       setupAutoGas();
-      updateProfitCalc();
-    } catch(e){}
-
-    // Reveal the form after 5 seconds
-    setTimeout(()=>{
-      const boot = $("bootWrap");
-      const fw = $("formWrap");
-      if(boot) boot.classList.add("hidden");
-      if(fw) fw.classList.remove("hidden");
-    }, 5000);
-  });
+    } catch(e){
+      console.warn("Init error (non-fatal):", e);
+    }
+  }
+  function startBootTimer(){
+    initApp();
+    setTimeout(showForm, 5000);  // normal
+    setTimeout(showForm, 8000);  // hard fallback
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startBootTimer);
+  } else {
+    startBootTimer();
+  }
 })();
 </script>
 </body>

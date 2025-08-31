@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v7.9.0</title>
+<title>Crypto Kings Test Bed v7.9.2</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box}
@@ -12,7 +12,7 @@
 
   /* Top bar */
   .topbar{position:sticky;top:0;z-index:40;background:#0c0f1a;border-bottom:1px solid rgba(255,255,255,.08)}
-  .topbar-inner{max-width:1000px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 16px}
+  .topbar-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 16px}
   .brand{font-weight:800;letter-spacing:.3px}
   .spacer{flex:1}
   .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,#7c5cff,#1d9bf0)}
@@ -29,7 +29,7 @@
   .wallet-sub{font-size:12px;color:var(--muted)}
 
   /* Page layout */
-  .wrap{max-width:1000px;margin:0 auto;padding:24px 16px 96px}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 16px 120px}
   h1{margin:4px 0 14px;font-size:20px}
   .card{background:#111422;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -58,7 +58,6 @@
   .tag{display:inline-block;padding:4px 8px;border:1px solid rgba(255,255,255,.15);border-radius:999px;font-size:12px}
   .best{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.35)}
 
-  /* Spinners */
   @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
 
   /* Sticky Summary Bar */
@@ -70,6 +69,11 @@
   .toast {position:fixed;right:16px;bottom:16px;background:#161a2b;border:1px solid rgba(255,255,255,.12);
     padding:10px 12px;border-radius:10px;opacity:0;transform:translateY(8px);transition:.25s;z-index:30}
   .toast.show{opacity:1;transform:translateY(0)}
+
+  /* Automation */
+  .progress-rail{height:6px;background:#0e1220;border-radius:999px;overflow:hidden}
+  .progress-bar{height:6px;background:linear-gradient(90deg,#7c5cff,#1d9bf0);width:0%}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
 </style>
 </head>
 <body>
@@ -77,7 +81,7 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v7.9.0</span>
+      <span class="chip">v7.9.2</span>
       <div class="spacer"></div>
 
       <div id="connectedChip" class="addr-chip hidden" title="Click to switch wallet">
@@ -86,7 +90,6 @@
       </div>
       <button id="btnOpenWalletMenu" class="btn">Connect Wallet</button>
 
-      <!-- Wallet dropdown (populated by JS) -->
       <div id="walletMenu" class="wallet-menu hidden" role="menu" aria-label="Select a wallet"></div>
     </div>
   </div>
@@ -98,8 +101,7 @@
     <div id="bootWrap" style="text-align:center;padding:24px 0;">
       <div style="border:4px solid rgba(255,255,255,.2);
                   border-top:4px solid #7c5cff;border-radius:50%;
-                  width:48px;height:48px;animation:spin 1s linear infinite;margin:0 auto;">
-      </div>
+                  width:48px;height:48px;animation:spin 1s linear infinite;margin:0 auto;"></div>
       <div class="help" style="margin-top:8px">Loading TestBed…</div>
     </div>
 
@@ -227,7 +229,7 @@
           </div>
         </div>
 
-        <!-- Wallets (auto-filled after connect) -->
+        <!-- Wallets -->
         <div class="row row-2" style="margin-top:10px">
           <div>
             <label for="rewardWallet">Wallet Address for Reward</label>
@@ -241,7 +243,7 @@
 
         <!-- Actions -->
         <div class="cta">
-          <button id="processBtn" type="submit">Simulate & Proceed</button>
+          <button id="processBtn" type="submit">Proceed</button>
           <button id="resetBtn" class="ghost" type="reset">Reset</button>
         </div>
 
@@ -254,6 +256,46 @@
 
         <div id="validation" class="help" style="margin-top:10px" aria-live="assertive"></div>
       </form>
+
+      <!-- =================== AUTOMATION =================== -->
+      <div id="autoCard" class="card" style="margin-top:12px">
+        <div class="row row-4">
+          <div>
+            <label for="autoInterval">Interval (sec)</label>
+            <input id="autoInterval" type="number" min="5" step="1" value="20" />
+          </div>
+          <div>
+            <label for="autoMinProfit">Min Profit (incl gas, USD)</label>
+            <input id="autoMinProfit" type="number" step="1" value="0" />
+          </div>
+          <div>
+            <label for="autoFailRatio">Fail ratio (0–1)</label>
+            <input id="autoFailRatio" type="number" min="0" max="1" step="0.05" value="0.75" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button type="button" id="autoToggle" class="ghost">Start Auto-Run</button>
+          </div>
+        </div>
+        <div id="autoStatus" class="help" style="margin-top:8px">Idle.</div>
+        <div class="progress-rail" style="margin-top:6px"><div id="autoProgress" class="progress-bar"></div></div>
+        <div id="autoDetail" class="help mono" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <label>Trade Log</label>
+        <table class="table" id="logTable">
+          <thead>
+            <tr>
+              <th>Time</th><th>Network</th><th>Token</th><th>Buy → Sell</th>
+              <th class="right">Principal</th><th class="right">P/L excl</th>
+              <th class="right">Gas</th><th class="right">P/L incl</th><th>Status</th><th>TxID</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+      <!-- ================================================ -->
     </div>
   </div>
 
@@ -277,13 +319,17 @@
   const short = a => a ? (a.slice(0,6) + "…" + a.slice(-4)) : "";
   const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
   const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const nowStr = () => new Date().toLocaleTimeString();
   const toast = (msg)=>{ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2200); };
+  const sleep = (ms)=> new Promise(r=>setTimeout(r, ms));
   const debounce = (fn, wait=300)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; };
 
-  /* ========================= BASIC CONFIG ========================= */
-  const ALWAYS_FAIL=false, FAIL_RATIO=0.75;
+  /* ===== Config ===== */
+  const ALWAYS_FAIL=false;
+  let   FAIL_RATIO=0.75; // overridden by Automation input
   const LOAN_CAP_USD=10000, LOAN_FEE_RATE=0.009;
   const ONE_PER_DEX=true, PREFERRED_QUOTES=["USDC","USDT"], MIN_LIQ_USD=10000;
+  const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
 
   const PLATFORMS={
     ethereum:["Aave v3","Balancer","Uniswap V3 (Uni Flash)","Other / Custom"],
@@ -309,9 +355,7 @@
     avalanche:["Trader Joe","Pangolin","Other / Custom"],
     solana:["Jupiter","Raydium","Orca","Other / Custom"],
   };
-  const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
 
-  /* RPCs & Token IDs */
   const RPC={
     ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"],
     arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"],
@@ -321,7 +365,7 @@
   };
   const CG_IDS={"WETH":"ethereum","ETH":"ethereum","BTC":"bitcoin","WBTC":"wrapped-bitcoin","USDC":"usd-coin","USDT":"tether","DAI":"dai","SOL":"solana","ARB":"arbitrum","MATIC":"matic-network","WBNB":"binancecoin"};
 
-  /* FULL token addresses (no ellipses) used for DexScreener queries */
+  /* FULL token addresses (no ellipses) for DexScreener */
   const TOKEN_ADDR = {
     ethereum: {
       USDC:"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
@@ -341,7 +385,6 @@
       USDC:"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
       USDT:"0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
       WETH:"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-      /* Use WMATIC for markets */
       MATIC:"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
       DAI:"0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"
     },
@@ -371,7 +414,6 @@
     bsc:{default:170000,pancakeswap:150000,apeswap:160000},
     avalanche:{default:185000,traderjoe:165000,pangolin:165000}
   };
-
   const DEX_ALIAS=new Map([
     ["uniswap","uniswap v3"],["uniswapv3","uniswap v3"],
     ["sushiswap","sushiswap"],["curve","curve"],["balancer","balancer"],
@@ -380,7 +422,7 @@
     ["traderjoe","trader joe"],["pangolin","pangolin"],["apeswap","apeswap"]
   ]);
 
-  /* ========================= HELPERS ========================= */
+  /* ===== Helpers ===== */
   function setOptions(select, list){
     if(!select) return;
     const opts=(list||["Other / Custom"]).map(v=>`<option>${v}</option>`).join('');
@@ -412,7 +454,7 @@
     return null;
   }
 
-  /* ========================= DROPDOWNS ========================= */
+  /* ===== Dropdowns ===== */
   function refreshPlatforms(){
     const net=$("network").value;
     setOptions($("platform"), PLATFORMS[net]);
@@ -437,7 +479,7 @@
     refreshSummary();
   }
 
-  /* ========================= PRICING ========================= */
+  /* ===== Pricing ===== */
   async function fetchTokenPriceUSD(symbol){
     const id=CG_IDS[symbol]||null;
     if(!id) return null;
@@ -474,7 +516,7 @@
     window.__ck_prices[sym+"_USD"]=p;
   }
 
-  /* ========================= GAS ========================= */
+  /* ===== Gas ===== */
   function calcGas(){
     const gp=parseFloat($("gasPrice").value), gl=parseFloat($("gasLimit").value);
     const valid=!isNaN(gp)&&!isNaN(gl)&&gl>0;
@@ -602,7 +644,7 @@
     calcGas();
   }
 
-  /* ========================= DEX QUOTES ========================= */
+  /* ===== DEX Quotes ===== */
   function getTokenAddress(network, symbol){
     const netMap=TOKEN_ADDR[network]||{};
     return netMap[symbol]||null;
@@ -637,31 +679,17 @@
       if(want) pairs=pairs.filter(p=>p.chainId===want);
       const seen=new Set(), unique=[];
       for(const p of pairs){
-        const key=`${p.dexId||""}|${p.pairAddress||p.url||""}`;
+        const key=`${p.dexId||""}|${p.pairAddress || p.url || ""}`;
         if(seen.has(key)) continue;
         seen.add(key);
         unique.push(p);
       }
       const rows=ONE_PER_DEX ? consolidateByDex(unique) : unique;
-      return { ok:true, pairs: rows.slice(0,20) };
+      return { ok:true, pairs: rows.slice(0, 20) };
     }catch(e){
       return { ok:false, reason:"Network error" };
     }
   }
-  const updateDexQuotes = debounce(async ()=>{
-    const net=$("network").value;
-    const sym=$("token").value;
-    const wrap=$("dexTableWrap");
-    const status=$("dexStatus");
-    wrap.classList.add("hidden");
-    if(!net||!sym||sym==="Other / Custom"){ status.textContent=""; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); refreshSummary(); return; }
-    status.textContent="Fetching quotes…";
-    const res=await fetchDexQuotes(net, sym);
-    if(!res.ok){ status.textContent=`No quotes: ${res.reason}`; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); refreshSummary(); return; }
-    renderDexTable(res.pairs);
-    status.textContent = res.pairs.length ? `Showing ${res.pairs.length} DEXes` : "No markets found on this network.";
-    refreshSummary();
-  }, 300);
   function buildDexPriceMap(pairs){
     const m=new Map();
     for(const p of (pairs||[])){
@@ -726,28 +754,42 @@
     $("kpiBestSell").textContent = sellPair?.priceUsd ? `${sellPair.dexId.toUpperCase()} @ ${fmtUSD(Number(sellPair.priceUsd))}` : "—";
   }
 
-  /* ========================= PROFIT ========================= */
+  /* ===== Profit (uses selected DEX if set) ===== */
+  function findPairByDexLabel(dexLabel){
+    const wanted = norm(dexLabel);
+    const pairs = window.__ck_pairs || [];
+    for(const p of pairs){
+      const alias = (DEX_ALIAS.get(norm(p?.dexId||"")) || p?.dexId || "");
+      if(norm(alias) === wanted) return p;
+    }
+    return null;
+  }
   function computeProfits(){
     const amt=parseFloat($("loanAmount").value);
     const loanSym=$("loanAsset").value;
     const ps=window.__ck_prices||{};
-    const pairs=window.__ck_pairs||[];
-    const best=window.__ck_best||{};
     if(!(amt>0)||!loanSym) return { ok:false };
     const loanUSD=ps[loanSym+"_USD"];
     if(!(loanUSD>0)) return { ok:false };
     const principalUSD=amt*loanUSD;
-    const buyP=Number(pairs?.[best.buyIdx]?.priceUsd);
-    const sellP=Number(pairs?.[best.sellIdx]?.priceUsd);
-    if(!isFinite(buyP)||!isFinite(sellP)) return { ok:false };
-    const units=principalUSD / buyP;
-    const grossReturnUSD=units * sellP;
+
+    let buyPrice=null, sellPrice=null;
+    const buyPick=$("buyDex").value, sellPick=$("sellDex").value;
+    const pairs=window.__ck_pairs||[], best=window.__ck_best||{};
+    if(buyPick){ const bp=findPairByDexLabel(buyPick); if(bp && isFinite(Number(bp.priceUsd))) buyPrice=Number(bp.priceUsd); }
+    if(sellPick){const sp=findPairByDexLabel(sellPick);if(sp && isFinite(Number(sp.priceUsd))) sellPrice=Number(sp.priceUsd); }
+    if(buyPrice==null && isFinite(Number(pairs?.[best.buyIdx]?.priceUsd)))  buyPrice=Number(pairs[best.buyIdx].priceUsd);
+    if(sellPrice==null&& isFinite(Number(pairs?.[best.sellIdx]?.priceUsd))) sellPrice=Number(pairs[best.sellIdx].priceUsd);
+    if(!isFinite(buyPrice)||!isFinite(sellPrice)) return { ok:false };
+
+    const units=principalUSD / buyPrice;
+    const grossReturnUSD=units * sellPrice;
     const grossProfitUSD=grossReturnUSD - principalUSD;
     const flashFeeUSD=principalUSD * LOAN_FEE_RATE;
     const noGasProfitUSD=grossProfitUSD - flashFeeUSD;
     const gasUSD=ps.GAS_USD || 0;
     const withGasProfitUSD=noGasProfitUSD - gasUSD;
-    return { ok:true, principalUSD, buyP, sellP, flashFeeUSD, noGasProfitUSD, gasUSD, withGasProfitUSD };
+    return { ok:true, principalUSD, buyP:buyPrice, sellP:sellPrice, flashFeeUSD, noGasProfitUSD, gasUSD, withGasProfitUSD };
   }
   function updateProfitKPIs(){
     const r=computeProfits();
@@ -757,25 +799,21 @@
     refreshSummary();
   }
 
-  /* ========================= TOPBAR WALLET MENU ========================= */
+  /* ===== Wallet header menu ===== */
   const connectedChip=$("connectedChip"), chipAddr=$("chipAddr"), chipChain=$("chipChain");
   const walletMenu=$("walletMenu"), btnOpenMenu=$("btnOpenWalletMenu");
-
-  // Minimal inline SVG logos
   const svg = {
     metamask:'<svg width="18" height="18" viewBox="0 0 128 128"><path fill="#E2761B" d="M114 15L71 46l8-19z"/><path fill="#E4761B" d="M14 15l33 31-8-19z"/><path fill="#F6851B" d="M99 97L71 82l5 9-5 4z"/></svg>',
     coinbase:'<svg width="18" height="18" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#1652f0"/><path fill="#fff" d="M16 8a8 8 0 100 16 8 8 0 000-16zm-2 5h4v6h-4z"/></svg>',
     walletconnect:'<svg width="18" height="18" viewBox="0 0 400 400"><rect width="400" height="400" rx="80" fill="#3b99fc"/><path fill="#fff" d="M200 160c-28 0-55 11-75 31l-9 9 28 28 9-9c26-26 68-26 94 0l9 9 28-28-9-9c-20-20-47-31-75-31z"/></svg>',
     phantom:'<svg width="18" height="18" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#6c4df4"/><path fill="#fff" d="M22 22h20a10 10 0 110 20H22a10 10 0 110-20z"/></svg>'
   };
-
   const WALLET_ITEMS = [
     { id:"metamask", label:"MetaMask", sub:"EVM", logo:svg.metamask, detect:p=>p?.isMetaMask },
     { id:"coinbase", label:"Coinbase Wallet", sub:"EVM", logo:svg.coinbase, detect:p=>p?.isCoinbaseWallet },
     { id:"walletconnect", label:"WalletConnect", sub:"EVM (QR - SDK req.)", logo:svg.walletconnect, detect:()=>false },
     { id:"phantom", label:"Phantom", sub:"Solana", logo:svg.phantom, detect:()=> (window.solana && window.solana.isPhantom) }
   ];
-
   function renderWalletMenu(){
     walletMenu.innerHTML = WALLET_ITEMS.map(w=>`
       <div class="wallet-item" data-id="${w.id}" role="menuitem" tabindex="0">
@@ -797,7 +835,6 @@
     }
     return predicate(eth) ? eth : null;
   }
-
   async function connectEVMWith(predicate, fallbackName){
     const provider = getEthereumProviderBy(predicate) || window.ethereum;
     if(!provider){ toast(`${fallbackName||"EVM wallet"} not found`); return { ok:false }; }
@@ -843,20 +880,17 @@
       toast("Phantom connect error"); console.warn(e); return { ok:false, error:e };
     }
   }
-
   function toggleWalletMenu(force){
     const show = (typeof force === "boolean") ? force : walletMenu.classList.contains("hidden");
     walletMenu.classList.toggle("hidden", !show);
   }
   $("btnOpenWalletMenu").addEventListener("click", ()=> toggleWalletMenu(true));
-  $("connectedChip").addEventListener("click", ()=> toggleWalletMenu()); // reopen to switch
-
+  $("connectedChip").addEventListener("click", ()=> toggleWalletMenu());
   document.addEventListener("click", (e)=>{
     if (!walletMenu.contains(e.target) && e.target !== $("btnOpenWalletMenu") && e.target !== $("connectedChip")){
       walletMenu.classList.add("hidden");
     }
   });
-
   walletMenu.addEventListener("click", async (e)=>{
     const item = e.target.closest(".wallet-item"); if(!item) return;
     const id = item.getAttribute("data-id");
@@ -866,7 +900,7 @@
     if(id==="phantom") return connectPhantom();
   });
 
-  /* ========================= SUMMARY BAR ========================= */
+  /* ===== Summary Bar ===== */
   function refreshSummary(){
     $("sumNetwork").textContent = $("network").value || "—";
     $("sumLoan").textContent = `Loan: ${$("loanAmount").value||"—"} ${$("loanAsset").value||"—"}`;
@@ -875,7 +909,7 @@
   }
   $("sumProceed").addEventListener("click", ()=> $("processBtn").click());
 
-  /* ========================= VALIDATION & FLOW ========================= */
+  /* ===== Validation & Flow ===== */
   function validate(){
     let m="";
     if(!$("network").value) m+="• Select a network.\n";
@@ -904,34 +938,52 @@
   $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); refreshSummary(); });
   $("loanAsset").addEventListener("change", ()=>{ updateLoanAssetUI(); updateProfitKPIs(); });
   $("token").addEventListener("change", ()=>{ updateDesiredTokenPriceUI(); updateDexQuotes(); });
+  $("buyDex").addEventListener("change", ()=>{ applyGasPresetFromRoute(); updateProfitKPIs(); });
+  $("sellDex").addEventListener("change", ()=>{ applyGasPresetFromRoute(); updateProfitKPIs(); });
   $("gasAutoToggle")?.addEventListener("change", applyGasPresetFromRoute);
-  ["loanAmount","gasLimit"].forEach(id => {
+  ["loanAmount","gasLimit","gasPrice"].forEach(id => {
     const el=$(id); if(el) el.addEventListener("input", ()=>{ calcGas(); updateProfitKPIs(); });
   });
 
-  // SUBMIT with spinner + 3:1 fail ratio
+  /* ===== Manual Proceed (single run) ===== */
   form.addEventListener("submit", async (e)=>{
     e.preventDefault();
+    await simulateOnce();
+  });
+
+  async function simulateOnce(stepHook){
     calcGas();
     if(!validate()) return;
 
-    // $10k loan cap
+    // $10k cap
     const amt=parseFloat($("loanAmount").value);
     const loanSym=$("loanAsset").value;
     const px=window.__ck_prices?.[loanSym+"_USD"];
-    if(amt>0 && typeof px==="number"){
-      const usdValue=amt*px;
-      if(usdValue > LOAN_CAP_USD){
-        validation.classList.remove("ok"); validation.classList.add("bad");
-        validation.textContent = `Transaction failed. Loan limit exceeded (max $${LOAN_CAP_USD.toLocaleString()}).`;
-        toast("Loan cap exceeded");
-        return;
-      }
+    if(amt>0 && typeof px==="number" && amt*px > LOAN_CAP_USD){
+      validation.classList.remove("ok"); validation.classList.add("bad");
+      validation.textContent = `Transaction failed. Loan limit exceeded (max $${LOAN_CAP_USD.toLocaleString()}).`;
+      toast("Loan cap exceeded");
+      return;
     }
 
     processBtn.disabled = true;
     $("loadingSpinner").classList.remove("hidden");
     validation.textContent = "";
+
+    /* step-wise status if hook provided */
+    if(stepHook) await stepHook("Taking loan…", 15);
+
+    await sleep(800);
+    if(stepHook) await stepHook("Making buy on DEX…", 40);
+
+    await sleep(900);
+    if(stepHook) await stepHook("Selling on DEX…", 70);
+
+    await sleep(700);
+    if(stepHook) await stepHook("Repaying loan + 0.9% fee…", 85);
+
+    await sleep(500);
+    if(stepHook) await stepHook("Sending profit…", 95);
 
     setTimeout(() => {
       $("loadingSpinner").classList.add("hidden");
@@ -939,44 +991,150 @@
       const txid = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(16)))
                        .map(b=>b.toString(16).padStart(2,"0")).join("");
 
-      const n = getSubmitCount() + 1;
-      bumpSubmitCount(n);
+      const n = getSubmitCount() + 1; bumpSubmitCount(n);
 
-      const fail = ALWAYS_FAIL || (Math.random() < (typeof FAIL_RATIO === "number" ? FAIL_RATIO : 0.75));
+      const r=computeProfits();
+      const failByRatio = ALWAYS_FAIL || (Math.random() < (typeof FAIL_RATIO === "number" ? FAIL_RATIO : 0.75));
+      const minProfit = Number($("autoMinProfit").value || 0);
+      const failByProfit = r.ok && (r.withGasProfitUSD < minProfit);
+
+      const fail = failByRatio || failByProfit;
 
       if(fail){
         validation.classList.remove("ok");
         validation.classList.add("bad");
-        validation.textContent = `Transaction failed. TxID: ${txid}`;
+        const reason = failByProfit ? ` (below min profit ${fmtUSD(minProfit)})` : "";
+        validation.textContent = `Transaction failed${reason}. TxID: ${txid}`;
         toast("Simulation failed");
+        appendLog("fail", txid, r);
       } else {
         validation.classList.remove("bad");
         validation.classList.add("ok");
         validation.textContent = `Transaction successful. TxID: ${txid}`;
         toast("Simulation successful");
+        appendLog("success", txid, r);
       }
 
       processBtn.disabled = false;
       refreshSummary();
-    }, 5000);
+    }, 500);
+  }
+
+  /* ===== Automation Engine ===== */
+  let autoRunning=false, autoLoopTimer=null, autoInFlight=false;
+  function setAutoProgress(p){ $("autoProgress").style.width = Math.max(0,Math.min(100,p)) + "%"; }
+  function setAutoStatus(text){ $("autoStatus").textContent = text; }
+  function setAutoDetail(text){ $("autoDetail").textContent = text; }
+
+  async function runAutomatedOnce(){
+    if(autoInFlight) return;
+    autoInFlight = true;
+    setAutoProgress(5);
+    setAutoStatus(`[${nowStr()}] Starting cycle`);
+    setAutoDetail("");
+
+    // preconditions & quotes
+    if(!validate()){ setAutoStatus("Waiting for valid inputs…"); autoInFlight=false; return; }
+    if(!window.__ck_pairs || !window.__ck_pairs.length){
+      setAutoStatus("Fetching DEX quotes…");
+      await updateDexQuotes();
+    }
+    applyGasPresetFromRoute();
+    await sleep(100);
+
+    // step hook to reflect in auto panel
+    await simulateOnce(async (msg, pct)=>{
+      setAutoStatus(msg);
+      setAutoDetail(detailLine());
+      setAutoProgress(pct);
+    });
+
+    setAutoProgress(100);
+    setAutoDetail(detailLine());
+    setAutoStatus(`[${nowStr()}] Cycle complete`);
+    await sleep(400);
+    setAutoProgress(0);
+    autoInFlight=false;
+  }
+
+  function detailLine(){
+    const r=computeProfits();
+    if(!r.ok) return "";
+    const buy=$("buyDex").value||"—", sell=$("sellDex").value||"—";
+    return `Buy ${buy} @ ${fmtUSD(r.buyP)} → Sell ${sell} @ ${fmtUSD(r.sellP)} | Principal ${fmtUSD(r.principalUSD)} | P/L ex ${fmtUSD(r.noGasProfitUSD)} | Gas ~ ${fmtUSD(r.gasUSD)} | P/L in ${fmtUSD(r.withGasProfitUSD)}`;
+  }
+
+  function scheduleNext(){
+    if(!autoRunning) return;
+    const secs = Math.max(5, parseInt($("autoInterval").value||"20",10));
+    autoLoopTimer = setTimeout(async ()=>{
+      if(autoRunning) await runAutomatedOnce();
+      scheduleNext();
+    }, secs*1000);
+  }
+
+  $("autoToggle").addEventListener("click", async ()=>{
+    FAIL_RATIO = Number($("autoFailRatio").value || 0.75);
+    if(!autoRunning){
+      autoRunning=true;
+      $("autoToggle").textContent="Stop Auto-Run";
+      setAutoStatus("Auto-Run enabled.");
+      await runAutomatedOnce();
+      scheduleNext();
+    } else {
+      autoRunning=false;
+      $("autoToggle").textContent="Start Auto-Run";
+      setAutoStatus("Stopping…");
+      clearTimeout(autoLoopTimer);
+      setAutoStatus("Idle.");
+      setAutoDetail("");
+      setAutoProgress(0);
+    }
   });
 
-  resetBtn.addEventListener("click", ()=>{
-    validation.classList.remove("ok","warn","bad");
-    validation.textContent = "";
-    processBtn.disabled = false;
-    setTimeout(()=>{ try {
-      refreshPlatforms(); refreshLoanAssets(); refreshDexMenus(null);
-      updateLoanAssetUI(); updateDesiredTokenPriceUI();
-      setupAutoGas(); updateDexQuotes();
-      window.__ck_prices = { ETH_USD: window.__ck_prices?.ETH_USD || null, GAS_USD: 0 };
-      $("loanAmount").value = ""; $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
-      refreshSummary();
-      toast("Form reset");
-    } catch(e){} }, 0);
-  });
+  /* ===== Log ===== */
+  function appendLog(status, txid, r){
+    const b=$("logBody");
+    const tr=document.createElement("tr");
+    const net=$("network").value||"—";
+    const tok=$("token").value||"—";
+    const route=`${$("buyDex").value||"—"} → ${$("sellDex").value||"—"}`;
+    const principal=r?.ok?fmtUSD(r.principalUSD):"—";
+    const pex=r?.ok?fmtUSD(r.noGasProfitUSD):"—";
+    const gas=r?.ok?fmtUSD(r.gasUSD):"—";
+    const pin=r?.ok?fmtUSD(r.withGasProfitUSD):"—";
+    tr.innerHTML=`
+      <td>${nowStr()}</td>
+      <td>${net.toUpperCase()}</td>
+      <td>${tok}</td>
+      <td>${route}</td>
+      <td class="right">${principal}</td>
+      <td class="right">${pex}</td>
+      <td class="right">${gas}</td>
+      <td class="right">${pin}</td>
+      <td>${status}</td>
+      <td class="mono" title="${txid}">${short(txid)}</td>
+    `;
+    b.prepend(tr);
+  }
 
-  /* ========================= BOOT ========================= */
+  /* ===== DEX update (debounced) ===== */
+  const updateDexQuotes = debounce(async ()=>{
+    const net=$("network").value;
+    const sym=$("token").value;
+    const wrap=$("dexTableWrap");
+    const status=$("dexStatus");
+    wrap.classList.add("hidden");
+    if(!net||!sym||sym==="Other / Custom"){ status.textContent=""; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); refreshSummary(); return; }
+    status.textContent="Fetching quotes…";
+    const res=await fetchDexQuotes(net, sym);
+    if(!res.ok){ status.textContent=`No quotes: ${res.reason}`; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); refreshSummary(); return; }
+    renderDexTable(res.pairs);
+    status.textContent = res.pairs.length ? `Showing ${res.pairs.length} DEXes` : "No markets found on this network.";
+    refreshSummary();
+  }, 300);
+
+  /* ===== Boot ===== */
   function showForm(){ $("bootWrap")?.classList.add("hidden"); $("formWrap")?.classList.remove("hidden"); }
   function initApp(){
     try{
@@ -990,8 +1148,8 @@
   }
   function startBootTimer(){
     initApp();
-    setTimeout(showForm, 5000);  // normal
-    setTimeout(showForm, 8000);  // hard fallback
+    setTimeout(showForm, 5000);
+    setTimeout(showForm, 8000);
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", startBootTimer);

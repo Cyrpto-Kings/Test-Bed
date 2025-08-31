@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v7.8.0</title>
+<title>Crypto Kings Test Bed v7.8.1</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .wrap{max-width:1000px;margin:0 auto;padding:28px 16px 72px}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 16px 96px} /* extra bottom for sticky bar */
   h1{margin:0 0 14px;font-size:22px}
   .card{background:#111422;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  input,select,button{font:inherit}
   input,select{width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:#0e1220;color:var(--ink);outline:none}
   input[readonly]{opacity:.85}
   input:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
@@ -33,25 +34,32 @@
   .tag{display:inline-block;padding:4px 8px;border:1px solid rgba(255,255,255,.15);border-radius:999px;font-size:12px}
   .best{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.35)}
   @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+
+  /* Sticky Summary Bar */
+  #summaryBar{position:fixed;left:0;right:0;bottom:12px;display:flex;justify-content:center;z-index:20;pointer-events:none}
+  #summaryInner{pointer-events:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#0f1322;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  #sumProceed{background:linear-gradient(135deg,#34d399,#1d9bf0)}
+
+  /* Toast */
+  .toast {position:fixed;right:16px;bottom:16px;background:#161a2b;border:1px solid rgba(255,255,255,.12);
+    padding:10px 12px;border-radius:10px;opacity:0;transform:translateY(8px);transition:.25s;z-index:30}
+  .toast.show{opacity:1;transform:translateY(0)}
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Crypto Kings v7.8.0</h1>
+    <h1>Crypto Kings v7.8.1</h1>
 
-    <!-- Boot loader spinner (shows on initial page load) -->
+    <!-- Boot loader spinner (initial page load) -->
     <div id="bootWrap" style="text-align:center;padding:24px 0;">
       <div style="border:4px solid rgba(255,255,255,.2);
-                  border-top:4px solid #7c5cff;
-                  border-radius:50%;
-                  width:48px;height:48px;
-                  animation:spin 1s linear infinite;
-                  margin:0 auto;">
+                  border-top:4px solid #7c5cff;border-radius:50%;
+                  width:48px;height:48px;animation:spin 1s linear infinite;margin:0 auto;">
       </div>
       <div class="help" style="margin-top:8px">Loading TestBed…</div>
     </div>
 
-    <!-- The entire form is hidden until boot completes -->
+    <!-- Main form (hidden until boot completes) -->
     <div id="formWrap" class="hidden">
       <form id="form" class="card" novalidate>
         <!-- Network / Platform / Loan Asset -->
@@ -143,9 +151,7 @@
           <div id="gasLimitWrap">
             <label for="gasLimit">Gas Limit (units) <span class="help" id="gasLimitNote"></span></label>
             <input id="gasLimit" type="number" min="0" step="1000" placeholder="Auto from route" />
-            <div class="help">
-              <label><input id="gasAutoToggle" type="checkbox" checked /> Auto gas limit (recommended)</label>
-            </div>
+            <div class="help"><label><input id="gasAutoToggle" type="checkbox" checked /> Auto gas limit (recommended)</label></div>
           </div>
           <div id="gasFeeWrap">
             <label for="gasFeeEth">Estimated Gas Fee</label>
@@ -162,7 +168,7 @@
         <div class="kpi">
           <div class="box"><div class="label">Best Buy</div><div class="value" id="kpiBestBuy">—</div></div>
           <div class="box"><div class="label">Best Sell</div><div class="value" id="kpiBestSell">—</div></div>
-          <div class="box"><div class="label">Profit (excl. gas, incl. fee)</div><div class="value" id="kpiProfitNoGas">—</div></div>
+          <div class="box"><div class="label">Profit (excl. gas, incl. 0.9% fee)</div><div class="value" id="kpiProfitNoGas">—</div></div>
           <div class="box"><div class="label">Profit (incl. gas)</div><div class="value" id="kpiProfit">—</div></div>
         </div>
 
@@ -172,7 +178,7 @@
             <label>DEX Quotes <span id="dexStatus" class="help"></span></label>
             <div class="help" id="dexHelp">One entry per DEX (best pool chosen by liquidity & preferred quote token).</div>
             <div id="dexTableWrap" class="hidden">
-              <table class="table" id="dexTable">
+              <table class="table" id="dexTable" aria-live="polite">
                 <thead>
                   <tr>
                     <th>DEX</th><th>Pair</th>
@@ -201,33 +207,43 @@
 
         <!-- Actions -->
         <div class="cta">
-          <button id="processBtn" type="submit">Proceed</button>
+          <button id="processBtn" type="submit">Simulate & Proceed</button>
           <button id="resetBtn" class="ghost" type="reset">Reset</button>
         </div>
 
         <!-- Spinner during proceed -->
         <div id="loadingSpinner" class="hidden" style="margin-top:10px;text-align:center;">
-          <div style="border:4px solid rgba(255,255,255,.2);
-                      border-top:4px solid #7c5cff;
-                      border-radius:50%;
-                      width:36px;height:36px;
-                      animation:spin 1s linear infinite;
-                      margin:0 auto;">
-          </div>
-          <div class="help">Processing transaction…</div>
+          <div style="border:4px solid rgba(255,255,255,.2);border-top:4px solid #7c5cff;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;margin:0 auto;"></div>
+          <div class="help">Quoting → Building route → Simulating…</div>
         </div>
 
-        <div id="validation" class="help" style="margin-top:10px"></div>
+        <div id="validation" class="help" style="margin-top:10px" aria-live="assertive"></div>
       </form>
     </div>
   </div>
+
+  <!-- Sticky Summary Bar -->
+  <div id="summaryBar">
+    <div id="summaryInner">
+      <span class="tag" id="sumNetwork">—</span>
+      <span class="tag" id="sumLoan">Loan: —</span>
+      <span class="tag" id="sumRoute">Buy: — • Sell: —</span>
+      <span class="tag" id="sumPL">Net P/L: —</span>
+      <button id="sumProceed" type="button">Proceed</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function(){
   const $ = id => document.getElementById(id);
   const short = a => a ? (a.slice(0,6) + "…" + a.slice(-4)) : "";
   const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
-  function norm(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+  const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const toast = (msg)=>{ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2200); };
+  const debounce = (fn, wait=300)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; };
 
   /** ------- SIMPLE SWITCH ------- **/
   const ALWAYS_FAIL = false;       // set true to force every submit to fail
@@ -402,6 +418,7 @@
     setOptions($("loanAsset"), []);
     $("loanUnit").textContent = "—";
     $("loanAssetPrice").textContent = "";
+    refreshSummary();
   }
   function refreshLoanAssets(){
     const net = $("network").value;
@@ -410,12 +427,14 @@
     setOptions($("loanAsset"), assets);
     $("loanUnit").textContent = "—";
     $("loanAssetPrice").textContent = "";
+    refreshSummary();
   }
   function refreshDexMenus(priceMap = null){
     const net = $("network").value;
     const dex = DEXES[net];
     if(priceMap){ setOptionsWithPrices($("buyDex"), dex, priceMap); setOptionsWithPrices($("sellDex"), dex, priceMap); }
     else { setOptions($("buyDex"), dex); setOptions($("sellDex"), dex); }
+    refreshSummary();
   }
 
   /** ------- LIVE PRICES (CoinGecko) ------- **/
@@ -442,7 +461,7 @@
     el.innerHTML = `<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
     window.__ck_prices[sym+"_USD"] = p;
     if(sym === "WETH" || sym === "ETH"){ window.__ck_prices.ETH_USD = p; calcGas(); }
-    updateProfitKPIs();
+    updateProfitKPIs(); refreshSummary();
   }
   async function updateDesiredTokenPriceUI(){
     const sym = $("token").value || "";
@@ -489,7 +508,7 @@
       window.__ck_prices.GAS_USD = 0;
       explain.textContent = "Enter a gas limit to see ETH and USD cost. Gas price is auto-fetched.";
     }
-    updateProfitKPIs();
+    updateProfitKPIs(); refreshSummary();
   }
   async function fetchGasPriceGweiFor(network){
     const endpoints = RPC[network];
@@ -534,7 +553,7 @@
     throw lastErr || new Error("feeHistory failed");
   }
   let gasTimer = null;
-  async function updateGasOnce(){
+  const updateGasOnce = debounce(async ()=>{
     const net = $("network").value;
     const note = $("gasAutoNote");
     const gasInput = $("gasPrice");
@@ -556,7 +575,7 @@
       gasInput.readOnly = false;
       note.textContent = "auto failed (RPC CORS). Enter manually.";
     }
-  }
+  }, 250);
   function setupAutoGas(){
     if(gasTimer){ clearInterval(gasTimer); gasTimer = null; }
     updateGasOnce();
@@ -632,6 +651,20 @@
       return { ok:false, reason:"Network error" };
     }
   }
+  const updateDexQuotes = debounce(async ()=>{
+    const net = $("network").value;
+    const sym = $("token").value;
+    const wrap = $("dexTableWrap");
+    const status = $("dexStatus");
+    wrap.classList.add("hidden");
+    if(!net || !sym || sym==="Other / Custom"){ status.textContent=""; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); refreshSummary(); return; }
+    status.textContent = "Fetching quotes…";
+    const res = await fetchDexQuotes(net, sym);
+    if(!res.ok){ status.textContent = `No quotes: ${res.reason}`; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); refreshSummary(); return; }
+    renderDexTable(res.pairs);
+    status.textContent = res.pairs.length ? `Showing ${res.pairs.length} DEXes` : "No markets found on this network.";
+    refreshSummary();
+  }, 300);
   function buildDexPriceMap(pairs){
     const m = new Map();
     for(const p of (pairs||[])){
@@ -722,37 +755,40 @@
   }
   function updateProfitKPIs(){
     const r = computeProfits();
-    if(!r.ok){ $("kpiProfitNoGas").textContent = "—"; $("kpiProfit").textContent = "—"; return; }
+    if(!r.ok){ $("kpiProfitNoGas").textContent = "—"; $("kpiProfit").textContent = "—"; refreshSummary(); return; }
     $("kpiProfitNoGas").textContent = `${fmtUSD(r.noGasProfitUSD)} (fee ${fmtUSD(r.flashFeeUSD)})`;
     $("kpiProfit").textContent = `${fmtUSD(r.withGasProfitUSD)} (gas ~ ${fmtUSD(r.gasUSD)})`;
+    refreshSummary();
   }
 
   /** ------- WALLET CONNECT ------- **/
   async function connectEVM(){
     const el = $("walletStatus"); const eth = window.ethereum;
-    if(!eth){ el.textContent="MetaMask not found. Install the extension and try again."; return; }
+    if(!eth){ el.textContent="MetaMask not found. Install the extension and try again."; toast("MetaMask not found"); return; }
     try{
       const accounts = await eth.request({ method: "eth_requestAccounts" });
       const addr = accounts?.[0] || null;
       const chain = await eth.request({ method:"eth_chainId" }).catch(()=>null);
       el.textContent = addr ? `EVM connected: ${short(addr)}${chain?` (chain ${parseInt(chain,16)})`:""}` : "EVM connection failed.";
-      if(addr){ if(!$("rewardWallet").value) $("rewardWallet").value = addr; if(!$("feeWallet").value) $("feeWallet").value = addr; }
+      if(addr){ if(!$("rewardWallet").value) $("rewardWallet").value = addr; if(!$("feeWallet").value) $("feeWallet").value = addr; toast("MetaMask connected"); }
       eth.on?.("accountsChanged", (accs)=>{
         const a = accs?.[0] || null;
         el.textContent = a ? `EVM connected: ${short(a)}${chain?` (chain ${parseInt(chain,16)})`:""}` : "EVM disconnected.";
-        if(a){ if(!$("rewardWallet").value) $("rewardWallet").value = a; if(!$("feeWallet").value) $("feeWallet").value = a; }
+        if(a){ if(!$("rewardWallet").value) $("rewardWallet").value = a; if(!$("feeWallet").value) $("feeWallet").value = a; toast("Account changed"); }
       });
       eth.on?.("chainChanged", (cid)=>{
         const a = (window.ethereum.selectedAddress)||addr;
         el.textContent = a ? `EVM connected: ${short(a)} (chain ${parseInt(cid,16)})` : "EVM disconnected.";
+        toast("Chain changed");
       });
     } catch(e){
       el.textContent = `EVM connect error: ${e?.message || e}`;
+      toast("MetaMask connect error");
     }
   }
   async function connectPhantom(){
     const el = $("walletStatus"); const sol = window.solana;
-    if(!(sol && sol.isPhantom)){ el.textContent = "Phantom not found. Install the extension and try again."; return; }
+    if(!(sol && sol.isPhantom)){ el.textContent = "Phantom not found. Install the extension and try again."; toast("Phantom not found"); return; }
     try{
       const resp = await sol.connect();
       const addr = resp?.publicKey?.toString() || null;
@@ -761,15 +797,29 @@
         if(!$("rewardWallet").value) $("rewardWallet").value = addr;
         if(!$("feeWallet").value) $("feeWallet").value = addr;
       }
+      toast("Phantom connected");
       sol.on?.("accountChanged", (pk)=>{
         const a = pk ? pk.toString() : null;
         el.textContent = a ? `Solana connected: ${short(a)}` : "Solana disconnected.";
+        if(a){ toast("Solana account changed"); }
       });
-      sol.on?.("disconnect", ()=>{ el.textContent = "Solana disconnected."; });
+      sol.on?.("disconnect", ()=>{ el.textContent = "Solana disconnected."; toast("Phantom disconnected"); });
     } catch(e){
       el.textContent = `Phantom connect error: ${e?.message || e}`;
+      toast("Phantom connect error");
     }
   }
+
+  /** ------- SUMMARY BAR ------- **/
+  function refreshSummary(){
+    $("sumNetwork").textContent = $("network").value || "—";
+    const amt = $("loanAmount").value || "—";
+    const unit = $("loanAsset").value || "—";
+    $("sumLoan").textContent = `Loan: ${amt} ${unit}`;
+    $("sumRoute").textContent = `Buy: ${$("buyDex").value||"—"} • Sell: ${$("sellDex").value||"—"}`;
+    $("sumPL").textContent = `Net P/L: ${$("kpiProfit").textContent || "—"}`;
+  }
+  $("sumProceed").addEventListener("click", ()=> $("processBtn").click());
 
   /** ------- FORM FLOW & VALIDATION ------- **/
   function validate(){
@@ -802,9 +852,9 @@
     refreshPlatforms(); refreshDexMenus(null); setupAutoGas();
     $("tokenPrice").textContent = ""; $("loanAmount").value = "";
     $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
-    updateDexQuotes();
+    updateDexQuotes(); refreshSummary();
   });
-  $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); });
+  $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); refreshSummary(); });
   $("loanAsset").addEventListener("change", ()=>{ updateLoanAssetUI(); updateProfitKPIs(); });
   $("token").addEventListener("change", ()=>{ updateDesiredTokenPriceUI(); updateDexQuotes(); });
   $("gasAutoToggle")?.addEventListener("change", applyGasPresetFromRoute);
@@ -827,6 +877,7 @@
       if(usdValue > LOAN_CAP_USD){
         validation.classList.remove("ok"); validation.classList.add("bad");
         validation.textContent = `Transaction failed. Loan limit exceeded (max $${LOAN_CAP_USD.toLocaleString()}).`;
+        toast("Loan cap exceeded");
         return;
       }
     }
@@ -851,13 +902,16 @@
         validation.classList.remove("ok");
         validation.classList.add("bad");
         validation.textContent = `Transaction failed. TxID: ${txid}`;
+        toast("Simulation failed");
       } else {
         validation.classList.remove("bad");
         validation.classList.add("ok");
         validation.textContent = `Transaction successful. TxID: ${txid}`;
+        toast("Simulation successful");
       }
 
       processBtn.disabled = false;
+      refreshSummary();
     }, 5000);
   });
 
@@ -871,23 +925,10 @@
       setupAutoGas(); updateDexQuotes();
       window.__ck_prices = { ETH_USD: window.__ck_prices?.ETH_USD || null, GAS_USD: 0 };
       $("loanAmount").value = ""; $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
+      refreshSummary();
+      toast("Form reset");
     } catch(e){} }, 0);
   });
-
-  /** ------- DEX QUOTES FLOW ------- **/
-  const DEX_STATUS = $("dexStatus");
-  async function updateDexQuotes(){
-    const net = $("network").value;
-    const sym = $("token").value;
-    const wrap = $("dexTableWrap");
-    wrap.classList.add("hidden");
-    if(!net || !sym || sym==="Other / Custom"){ DEX_STATUS.textContent=""; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); return; }
-    DEX_STATUS.textContent = "Fetching quotes…";
-    const res = await fetchDexQuotes(net, sym);
-    if(!res.ok){ DEX_STATUS.textContent = `No quotes: ${res.reason}`; updateBestKPI(null,null); refreshDexMenus(null); updateProfitKPIs(); return; }
-    renderDexTable(res.pairs);
-    DEX_STATUS.textContent = res.pairs.length ? `Showing ${res.pairs.length} DEXes` : "No markets found on this network.";
-  }
 
   /** ------- BOOT LOADER ------- **/
   function showForm(){
@@ -903,6 +944,7 @@
       refreshLoanAssets();
       refreshDexMenus(null);
       setupAutoGas();
+      refreshSummary();
     } catch(e){
       console.warn("Init error (non-fatal):", e);
     }

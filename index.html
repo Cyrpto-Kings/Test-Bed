@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v7.9.4</title>
+<title>Crypto Kings Test Bed v7.9.5</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box}
@@ -17,10 +17,9 @@
   .spacer{flex:1}
   .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,#7c5cff,#1d9bf0)}
   .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.18)}
-  .addr-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid rgba(255,255,255,.14);border-radius:999px;cursor:pointer}
   .chip{display:inline-block;padding:4px 8px;border:1px solid rgba(255,255,255,.15);border-radius:999px;font-size:12px}
 
-  /* Wallet menu */
+  /* Wallet menu (dummy) */
   .wallet-menu{position:absolute;top:52px;right:16px;z-index:50;background:#0f1322;border:1px solid rgba(255,255,255,.12);border-radius:14px;min-width:300px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
   .wallet-item{display:flex;gap:10px;align-items:center;padding:10px 12px;cursor:pointer}
   .wallet-item:hover{background:#141a2e}
@@ -28,7 +27,6 @@
   .wallet-title{font-weight:700}
   .wallet-sub{font-size:12px;color:var(--muted)}
 
-  /* Page layout */
   .wrap{max-width:1100px;margin:0 auto;padding:24px 16px 120px}
   h1{margin:4px 0 14px;font-size:20px}
   .card{background:#111422;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px}
@@ -47,7 +45,6 @@
   .hidden{display:none}
   .price-pill{font-size:12px;border:1px solid rgba(255,255,255,.14);padding:6px 10px;border-radius:999px;display:inline-flex;gap:8px;align-items:center}
 
-  /* KPIs & table */
   .kpi{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
   .kpi .box{border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px}
   .kpi .label{font-size:11px;color:var(--muted)} .kpi .value{font-weight:700}
@@ -77,7 +74,7 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v7.9.4</span>
+      <span class="chip">v7.9.5</span>
       <div class="spacer"></div>
       <button id="btnOpenWalletMenu" class="btn">Connect Wallet</button>
       <div id="walletMenu" class="wallet-menu hidden" role="menu" aria-label="Select a wallet">
@@ -209,7 +206,7 @@
         <div class="kpi">
           <div class="box"><div class="label">Best Buy</div><div class="value" id="kpiBestBuy">—</div></div>
           <div class="box"><div class="label">Best Sell</div><div class="value" id="kpiBestSell">—</div></div>
-          <div class="box"><div class="label">Profit (excl. gas, incl. 0.9% fee)</div><div class="value" id="kpiProfitNoGas">—</div></div>
+          <div class="box"><div class="label">Profit (excl. gas, incl. <span id="feeRateLabel">fee</span>)</div><div class="value" id="kpiProfitNoGas">—</div></div>
           <div class="box"><div class="label">Profit (incl. gas)</div><div class="value" id="kpiProfit">—</div></div>
         </div>
         <!-- P/L debugger -->
@@ -290,7 +287,25 @@
   const debounce = (fn, wait=300)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; };
 
   /* ===== Settings ===== */
-  const LOAN_CAP_USD=10000, LOAN_FEE_RATE=0.009; // 0.9%
+  const LOAN_CAP_USD=10000; // $10k cap (UI demo)
+  // Per-platform flash-loan fee (one-off), realistic defaults
+  const LOAN_FEE_RATE_BY_PLATFORM = {
+    "Aave v3": 0.0009,                   // 0.09%
+    "Radiant": 0.0009,                   // example default
+    "Balancer": 0.0009,                  // default-ish
+    "Uniswap V3 (Uni Flash)": 0.0005,    // example; pool-specific in reality
+    "Trader Joe (flash via router)": 0.0009,
+    "PancakeSwap (flash via router)": 0.0009,
+    "Solend": 0.0009,
+    "MarginFi": 0.0009,
+    "Other / Custom": 0.0009
+  };
+  function currentFeeRate(){
+    const plat = $("platform").value || "Other / Custom";
+    return LOAN_FEE_RATE_BY_PLATFORM[plat] ?? 0.0009;
+  }
+  function feePctText(){ return (currentFeeRate()*100).toFixed(3).replace(/\.?0+$/,'') + "%"; }
+
   const ONE_PER_DEX=true, PREFERRED_QUOTES=["USDC","USDT"], MIN_LIQ_USD=10000;
   const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
 
@@ -447,6 +462,7 @@
     setOptions($("loanAsset"), []);
     updateLoanUnitLabels("");
     $("loanAssetPrice").textContent="";
+    updateFeeLabel();
     refreshSummary();
   }
   function refreshLoanAssets(){
@@ -464,6 +480,7 @@
     else { setOptions($("buyDex"), dex); setOptions($("sellDex"), dex); }
     refreshSummary();
   }
+  function updateFeeLabel(){ $("feeRateLabel").textContent = feePctText(); }
 
   /* ===== Loan unit UI / converters ===== */
   function updateLoanUnitLabels(sym){
@@ -527,7 +544,7 @@
     el.innerHTML=`<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
     window.__ck_prices[sym+"_USD"]=p;
     if(sym==="WETH"||sym==="ETH"){ window.__ck_prices.ETH_USD=p; calcGas(); }
-    syncLoanTokenToUsd(); // refresh USD side
+    syncLoanTokenToUsd();
     updateProfitKPIs(); refreshSummary();
   }
   async function updateDesiredTokenPriceUI(){
@@ -766,12 +783,10 @@
     if(bestBuy)  selectDEXInto($("buyDex"),  bestBuy.dexId);
     if(bestSell) selectDEXInto($("sellDex"), bestSell.dexId);
 
-    // Ensure different DEXes by default
     ensureDifferentDexes();
-
     applyGasPresetFromRoute();
-    if (!parseFloat($("gasLimit").value)) applyGasPresetFromRoute(); // mobile fallback
-    calcGas(); // ensure USD gas ready
+    if (!parseFloat($("gasLimit").value)) applyGasPresetFromRoute();
+    calcGas();
     updateProfitKPIs();
   }
   function updateBestKPI(buyPair, sellPair){
@@ -810,15 +825,19 @@
     const units=principalUSD / buyPrice;
     const grossReturnUSD=units * sellPrice;
     const grossProfitUSD=grossReturnUSD - principalUSD;
-    const flashFeeUSD=principalUSD * LOAN_FEE_RATE;
+
+    const FEE=currentFeeRate();
+    const flashFeeUSD=principalUSD * FEE;
+
     const noGasProfitUSD=grossProfitUSD - flashFeeUSD;
     const gasUSD=ps.GAS_USD || 0;
     const withGasProfitUSD=noGasProfitUSD - gasUSD;
-    return { ok:true, principalUSD, buyP:buyPrice, sellP:sellPrice, flashFeeUSD, noGasProfitUSD, gasUSD, withGasProfitUSD };
+    return { ok:true, principalUSD, buyP:buyPrice, sellP:sellPrice, flashFeeUSD, noGasProfitUSD, gasUSD, withGasProfitUSD, feeRate:FEE };
   }
   function updateProfitKPIs(){
     const r=computeProfits();
     const dbg=$("plDebug");
+    $("feeRateLabel").textContent = feePctText();
     if(!r.ok){
       $("kpiProfitNoGas").textContent="—";
       $("kpiProfit").textContent="—";
@@ -826,14 +845,13 @@
       refreshSummary();
       return;
     }
-    $("kpiProfitNoGas").textContent=`${fmtUSD(r.noGasProfitUSD)} (fee ${fmtUSD(r.flashFeeUSD)})`;
+    $("kpiProfitNoGas").textContent=`${fmtUSD(r.noGasProfitUSD)} (fee ${fmtUSD(r.flashFeeUSD)} @ ${feePctText()})`;
     $("kpiProfit").textContent=`${fmtUSD(r.withGasProfitUSD)} (gas ~ ${fmtUSD(r.gasUSD)})`;
     if(dbg){
       dbg.textContent =
         `principal=${fmtUSD(r.principalUSD)} | buy=${fmtUSD(r.buyP)} | sell=${fmtUSD(r.sellP)} | `
-        + `fee(0.9%)=${fmtUSD(r.flashFeeUSD)} | gas≈${fmtUSD(r.gasUSD)} | net=${fmtUSD(r.withGasProfitUSD)}`;
+        + `fee(${feePctText()})=${fmtUSD(r.flashFeeUSD)} | gas≈${fmtUSD(r.gasUSD)} | net=${fmtUSD(r.withGasProfitUSD)}`;
     }
-    // gates
     if (enforceUsdCapAndUpdateProceed()) return;
     if (handleSameAssetPL()) return;
     refreshSummary();
@@ -875,17 +893,17 @@
     const v = $("validation");
     if (loanSym && wantSym && loanSym === wantSym) {
       v.classList.add("warn");
-      v.textContent = "Borrow token equals desired token — there’s no price edge. P/L = −flash-loan fee − gas.";
+      v.textContent = `Borrow token equals desired token — there’s no price edge. P/L = −flash-loan fee (${feePctText()}) − gas.`;
       const amt = parseFloat($("loanAmount").value);
       const px  = window.__ck_prices?.[loanSym+"_USD"];
       if (amt>0 && px>0){
         const principalUSD = amt*px;
-        const feeUSD = principalUSD * LOAN_FEE_RATE;
+        const feeUSD = principalUSD * currentFeeRate();
         const gasUSD = window.__ck_prices?.GAS_USD || 0;
-        $("kpiProfitNoGas").textContent = `${fmtUSD(-feeUSD)} (fee ${fmtUSD(feeUSD)})`;
+        $("kpiProfitNoGas").textContent = `${fmtUSD(-feeUSD)} (fee ${fmtUSD(feeUSD)} @ ${feePctText()})`;
         $("kpiProfit").textContent     = `${fmtUSD(-(feeUSD+gasUSD))} (gas ~ ${fmtUSD(gasUSD)})`;
         const dbg = $("plDebug");
-        if (dbg) dbg.textContent = `principal=${fmtUSD(principalUSD)} | buy=— | sell=— | fee(0.9%)=${fmtUSD(feeUSD)} | gas≈${fmtUSD(gasUSD)} | net=${fmtUSD(-(feeUSD+gasUSD))}`;
+        if (dbg) dbg.textContent = `principal=${fmtUSD(principalUSD)} | buy=— | sell=— | fee(${feePctText()})=${fmtUSD(feeUSD)} | gas≈${fmtUSD(gasUSD)} | net=${fmtUSD(-(feeUSD+gasUSD))}`;
       }
       return true;
     }
@@ -917,9 +935,9 @@
     refreshPlatforms(); refreshDexMenus(null); setupAutoGas();
     $("tokenPrice").textContent = ""; $("loanAmount").value = ""; $("loanAmountUsd").value="";
     $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—"; $("plDebug").textContent="";
-    updateDexQuotes(); refreshSummary();
+    updateDexQuotes(); updateFeeLabel(); refreshSummary();
   });
-  $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); refreshSummary(); });
+  $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); updateFeeLabel(); updateProfitKPIs(); refreshSummary(); });
   $("loanAsset").addEventListener("change", ()=>{ updateLoanAssetUI(); enforceUsdCapAndUpdateProceed(); if (!handleSameAssetPL()) updateProfitKPIs(); });
   $("token").addEventListener("change", ()=>{ updateDesiredTokenPriceUI(); updateDexQuotes(); if (!handleSameAssetPL()) updateProfitKPIs(); });
   $("buyDex").addEventListener("change", ()=>{ ensureDifferentDexes(); applyGasPresetFromRoute(); updateProfitKPIs(); });
@@ -975,7 +993,7 @@
     setTimeout(()=>{ try {
       refreshPlatforms(); refreshLoanAssets(); refreshDexMenus(null);
       updateLoanAssetUI(); updateDesiredTokenPriceUI();
-      setupAutoGas(); updateDexQuotes();
+      setupAutoGas(); updateDexQuotes(); updateFeeLabel();
       window.__ck_prices = { ETH_USD: window.__ck_prices?.ETH_USD || null, GAS_USD: 0 };
       $("loanAmount").value = ""; $("loanAmountUsd").value=""; $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
       $("plDebug").textContent = ""; $("loanEquivNote").textContent="";
@@ -1019,6 +1037,7 @@
       refreshLoanAssets();
       refreshDexMenus(null);
       setupAutoGas();
+      updateFeeLabel();
       refreshSummary();
     }catch(e){ console.warn("Init error:", e); }
   }

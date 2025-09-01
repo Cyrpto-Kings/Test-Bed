@@ -3,36 +3,26 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v8.2.0 — Multi-Network Tabs</title>
+<title>Crypto Kings Test Bed v8.2.1 — Multi-Network Tabs (hotfix)</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  a{color:inherit;text-decoration:none}
-
-  /* Top bar */
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .topbar{position:sticky;top:0;z-index:40;background:#0c0f1a;border-bottom:1px solid rgba(255,255,255,.08)}
   .topbar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 16px}
   .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#7c5cff,#1d9bf0);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(29,155,240,.25)}
-  .logo span{font-size:14px;font-weight:900;color:white;letter-spacing:.5px}
+  .logo span{font-size:14px;font-weight:900;color:white}
   .brand{font-weight:800;letter-spacing:.3px}
   .chip{display:inline-block;padding:4px 8px;border:1px solid rgba(255,255,255,.15);border-radius:999px;font-size:12px}
   .spacer{flex:1}
   .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,#7c5cff,#1d9bf0)}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.18)}
-
-  /* Tabs */
   .tabs{max-width:1200px;margin:12px auto 0;padding:0 16px}
   .tabbar{display:flex;gap:8px;flex-wrap:wrap}
   .tabbar button{appearance:none;background:#111422;border:1px solid rgba(255,255,255,.10);color:var(--ink);padding:10px 12px;border-radius:10px;cursor:pointer}
   .tabbar button.active{background:linear-gradient(135deg,#7c5cff,#1d9bf0);border-color:transparent}
   .tabpanes{margin-top:12px}
-
-  /* Cards / controls */
   .wrap{max-width:1200px;margin:0 auto;padding:0 16px 120px}
   .card{background:#111422;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input,select,button{font:inherit}
   input,select{width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:#0e1220;color:var(--ink);outline:none}
   input[readonly]{opacity:.85}
   input:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
@@ -40,8 +30,7 @@
   @media (min-width:900px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
   .help{font-size:12px;color:var(--muted)}
   .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
-  .hidden{display:none}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .hidden{display:none}
   .price-pill{font-size:12px;border:1px solid rgba(255,255,255,.14);padding:6px 10px;border-radius:999px;display:inline-flex;gap:8px;align-items:center}
   .kpi{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
   .kpi .box{border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px}
@@ -52,28 +41,23 @@
   .right{text-align:right}
   .tag{display:inline-block;padding:4px 8px;border:1px solid rgba(255,255,255,.15);border-radius:999px;font-size:12px}
   .best{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.35)}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
   @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-
-  /* Toast */
   .toast {position:fixed;right:16px;bottom:16px;background:#161a2b;border:1px solid rgba(255,255,255,.12);
     padding:10px 12px;border-radius:10px;opacity:0;transform:translateY(8px);transition:.25s;z-index:30}
   .toast.show{opacity:1;transform:translateY(0)}
 </style>
 </head>
 <body>
-  <!-- Top bar -->
   <div class="topbar">
     <div class="topbar-inner">
-      <div class="logo" aria-label="Logo placeholder"><span>CK</span></div>
+      <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v8.2.0</span>
+      <span class="chip">v8.2.1</span>
       <div class="spacer"></div>
       <button id="btnConnect" class="btn">Connect Wallet</button>
     </div>
   </div>
 
-  <!-- Tabs -->
   <div class="tabs">
     <div class="tabbar" id="tabbar"></div>
     <div class="tabpanes" id="tabpanes"></div>
@@ -86,16 +70,12 @@
   const NETWORKS = ["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
   const NET_LABEL = { ethereum:"Ethereum", arbitrum:"Arbitrum", polygon:"Polygon", bsc:"BSC", avalanche:"Avalanche", solana:"Solana" };
   const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
+  const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
+  const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const toast = (msg)=>{ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2200); };
 
-  /* ====== Shared reference data (trimmed to essentials) ====== */
-  const PLATFORMS={
-    ethereum:["Aave v3","Balancer","Uniswap V3 (Uni Flash)","Other / Custom"],
-    arbitrum:["Aave v3","Radiant","Balancer","Other / Custom"],
-    polygon:["Aave v3","Balancer","Other / Custom"],
-    bsc:["PancakeSwap (flash via router)","Other / Custom"],
-    avalanche:["Trader Joe (flash via router)","Other / Custom"],
-    solana:["Solend","MarginFi","Other / Custom"],
-  };
+  /* Reference data */
+  const PLATFORMS={ ethereum:["Aave v3","Balancer","Uniswap V3 (Uni Flash)","Other / Custom"], arbitrum:["Aave v3","Radiant","Balancer","Other / Custom"], polygon:["Aave v3","Balancer","Other / Custom"], bsc:["PancakeSwap (flash via router)","Other / Custom"], avalanche:["Trader Joe (flash via router)","Other / Custom"], solana:["Solend","MarginFi","Other / Custom"] };
   const BORROW_ASSETS={
     ethereum:{"Aave v3":["USDC","USDT","WETH","DAI","WBTC"],"Balancer":["USDC","WETH","DAI"],"Uniswap V3 (Uni Flash)":["USDC","WETH"],"Other / Custom":["USDC","USDT","WETH","DAI","WBTC"]},
     arbitrum:{"Aave v3":["USDC","USDT","WETH","DAI","ARB"],"Radiant":["USDC","USDT","WETH"],"Balancer":["USDC","WETH","DAI"],"Other / Custom":["USDC","USDT","WETH","DAI","ARB"]},
@@ -104,530 +84,315 @@
     avalanche:{"Trader Joe (flash via router)":["USDC","USDT","WETH","WBTC","DAI"],"Other / Custom":["USDC","USDT","WETH","WBTC","DAI"]},
     solana:{"Solend":["USDC","USDT","SOL"],"MarginFi":["USDC","USDT","SOL"],"Other / Custom":["USDC","USDT","SOL"]}
   };
-  const DEXES={
-    ethereum:["Uniswap V3","SushiSwap","Curve","Balancer","Other / Custom"],
-    arbitrum:["Uniswap V3","SushiSwap","Camelot","Balancer","Other / Custom"],
-    polygon:["Uniswap V3","SushiSwap","QuickSwap","Balancer","Other / Custom"],
-    bsc:["PancakeSwap","ApeSwap","Other / Custom"],
-    avalanche:["Trader Joe","Pangolin","Other / Custom"],
-    solana:["Jupiter","Raydium","Orca","Other / Custom"]
-  };
+  const DEXES={ ethereum:["Uniswap V3","SushiSwap","Curve","Balancer","Other / Custom"], arbitrum:["Uniswap V3","SushiSwap","Camelot","Balancer","Other / Custom"], polygon:["Uniswap V3","SushiSwap","QuickSwap","Balancer","Other / Custom"], bsc:["PancakeSwap","ApeSwap","Other / Custom"], avalanche:["Trader Joe","Pangolin","Other / Custom"], solana:["Jupiter","Raydium","Orca","Other / Custom"] };
   const DEX_ALIAS=new Map([["uniswap","uniswap v3"],["uniswapv3","uniswap v3"],["sushiswap","sushiswap"],["curve","curve"],["balancer","balancer"],["camelot","camelot"],["quickswap","quickswap"],["pancakeswap","pancakeswap"],["pancakeswapv3","pancakeswap"],["traderjoe","trader joe"],["pangolin","pangolin"],["apeswap","apeswap"],["jupiter","jupiter"],["raydium","raydium"],["orca","orca"]]);
   const TOKEN_ADDR = {
-    ethereum:{USDC:"0xa0b8...6eb48",USDT:"0xdac1...31ec7",WETH:"0xC02a...6Cc2",WBTC:"0x2260...C599",DAI:"0x6B17...1d0F"},
-    arbitrum:{USDC:"0xaf88...e5831",USDT:"0xfd08...9fb9",WETH:"0x82af...bab1",ARB:"0x912C...6548",DAI:"0xda10...0da1"},
-    polygon:{USDC:"0x2791...4174",USDT:"0xc213...5e8f",WETH:"0x7ceB...f619",MATIC:"0x0d50...270",DAI:"0x8f3C...A063"},
-    bsc:{USDC:"0x8ac7...580d",USDT:"0x55d3...97955",WBNB:"0xbb4C...95c"},
-    avalanche:{USDC:"0xB97E...8a6E",USDT:"0x9702...a8c7",WETH:"0x49D5...0bAB",WBTC:"0x50b7...B218",DAI:"0xd586...8d70"},
-    solana:{USDC:"EPjF...Dt1v",USDT:"Es9v...QG7hH",SOL:"So11...11112"}
+    ethereum:{USDC:"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",USDT:"0xdac17f958d2ee523a2206206994597c13d831ec7",WETH:"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",WBTC:"0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",DAI:"0x6B175474E89094C44Da98b954EedeAC495271d0F"},
+    arbitrum:{USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"},
+    polygon:{USDC:"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",USDT:"0xc2132d05d31c914a87c6611c10748aeb04b58e8f",WETH:"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",MATIC:"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",DAI:"0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"},
+    bsc:{USDC:"0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",USDT:"0x55d398326f99059ff775485246999027b3197955",WBNB:"0xbb4CdB9CBd36B01dCbAEBF2De08d9173bc095c"},
+    avalanche:{USDC:"0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",USDT:"0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",WETH:"0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB",WBTC:"0x50b7545627a5162F82A992c33b87aDc75187B218",DAI:"0xd586E7F844cEa2F87f50152665BCbc2C279D8d70"},
+    solana:{USDC:"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",USDT:"Es9vMFrzaCERz8X7Xw1m5Q6VZ1G7QAEGQ5u6GY4QG7hH",SOL:"So11111111111111111111111111111111111111112"}
   };
   const CG_IDS={"WETH":"ethereum","ETH":"ethereum","BTC":"bitcoin","WBTC":"wrapped-bitcoin","USDC":"usd-coin","USDT":"tether","DAI":"dai","SOL":"solana","ARB":"arbitrum","MATIC":"matic-network","WBNB":"binancecoin"};
-  const RPC={
-    ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"],
-    arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"],
-    polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"],
-    bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"],
-    avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"]
-  };
-
+  const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"], arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"], polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"], bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"], avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
   const LOAN_CAP_USD=10000;
-  const LOAN_FEE_RATE_BY_PLATFORM={
-    "Aave v3":0.0009,"Radiant":0.0009,"Balancer":0.0009,
-    "Uniswap V3 (Uni Flash)":0.0005,"Trader Joe (flash via router)":0.0009,
-    "PancakeSwap (flash via router)":0.0009,"Solend":0.0009,"MarginFi":0.0009,"Other / Custom":0.0009
-  };
+  const LOAN_FEE_RATE_BY_PLATFORM={ "Aave v3":0.0009,"Radiant":0.0009,"Balancer":0.0009,"Uniswap V3 (Uni Flash)":0.0005,"Trader Joe (flash via router)":0.0009,"PancakeSwap (flash via router)":0.0009,"Solend":0.0009,"MarginFi":0.0009,"Other / Custom":0.0009 };
 
-  const sleep = (ms)=> new Promise(r=>setTimeout(r, ms));
-  const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
-  const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
-  const toast = (msg)=>{ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2200); };
-
-  /* ====== Instance (one per network) ====== */
-  class TestBed {
-    constructor(network, mount) {
-      this.net = network;
-      this.root = mount;
-      this.state = {
-        prices:{ ETH_USD:null, GAS_USD:0 },
-        pairs:[],
-        best:{ buyIdx:-1, sellIdx:-1 },
-        gasTimer:null
-      };
-      this.render();
-      this.bind();
-      this.init();
+  /* Helpers */
+  async function coingeckoUSD(symbol){ const id=CG_IDS[symbol]; if(!id) return null; try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=usd`,{cache:"no-store"}); if(!r.ok) return null; const j=await r.json(); const p=j?.[id]?.usd; return typeof p==="number"?p:null; }catch(_){return null;} }
+  async function gasSuggestGwei(net){
+    const eps=RPC[net]; if(!eps) throw 0;
+    const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
+    for(const url of eps){
+      try{ const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(feeHist)});
+        if(!r.ok) continue; const j=await r.json(); const bh=j?.result; if(!bh?.baseFeePerGas||!bh?.reward) continue;
+        const base=parseInt(bh.baseFeePerGas.at(-1),16)/1e9; const tip=parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
+        return { baseGwei:base, tipGwei:tip, gasPriceGwei:base+tip };
+      }catch(_){}
     }
+    const gp={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
+    for(const url of eps){
+      try{ const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(gp)}); if(!r.ok) continue;
+        const j=await r.json(); const wei=parseInt(j?.result||"0x0",16); return { baseGwei:wei/1e9, tipGwei:0, gasPriceGwei:wei/1e9 }; }catch(_){}
+    }
+    throw 0;
+  }
+  async function dexscreenerByToken(net, symbol){
+    const addr=(TOKEN_ADDR[net]||{})[symbol]; if(!addr) return {ok:false,reason:"No token address"};
+    try{
+      const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`,{cache:"no-store"});
+      if(!r.ok) return {ok:false,reason:`HTTP ${r.status}`};
+      const j=await r.json(); let pairs=(j?.pairs||[]).filter(p=>p.chainId===net);
+      // uniq by dex|pair
+      const seen=new Set(), uniq=[]; for(const p of pairs){ const key=`${p.dexId||""}|${p.pairAddress||p.url||""}`; if(seen.has(key)) continue; seen.add(key); uniq.push(p); }
+      // best per dex by USDC/USDT quote pref + liquidity
+      const byDex=new Map();
+      for(const p of uniq){
+        const dex=(p?.dexId||"").toLowerCase(); if(!dex) continue;
+        const liq=p?.liquidity?.usd||0; if(liq<10000) continue;
+        const quote=(p?.quoteToken?.symbol||"").toUpperCase(); const rank=(quote==="USDC")?0:(quote==="USDT")?1:99;
+        const cur=byDex.get(dex); if(!cur || rank<cur.rank || (rank===cur.rank && liq>cur.liq)) byDex.set(dex,{rec:p,liq,rank});
+      }
+      const rows=Array.from(byDex.values()).map(x=>x.rec).sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
+      return {ok:true,pairs:rows};
+    }catch(_){ return {ok:false,reason:"Network error"}; }
+  }
+  function dexPretty(p){
+    const raw=(p?.dexId||"").toLowerCase();
+    if(/^0x[0-9a-f]{6,}$/i.test(raw)){
+      try{const host=new URL(p?.url||"").hostname||""; if(host.includes("uniswap")) return "Uniswap V3"; if(host.includes("sushi")) return "SushiSwap"; if(host.includes("balancer")) return "Balancer"; if(host.includes("curve")) return "Curve"; if(host.includes("camelot")) return "Camelot"; if(host.includes("quick")) return "QuickSwap"; if(host.includes("pancake")) return "PancakeSwap"; if(host.includes("traderjoe")) return "Trader Joe"; if(host.includes("pangolin")) return "Pangolin"; if(host.includes("jupiter")) return "Jupiter"; if(host.includes("raydium")) return "Raydium"; if(host.includes("orca")) return "Orca"; }catch(_){}
+      return "DEX";
+    }
+    const alias=DEX_ALIAS.get(norm(raw))||raw; return alias.split(/[\s-]/).map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(" ");
+  }
 
-    q(sel){ return this.root.querySelector(sel); }
-
+  class Instance{
+    constructor(net, mount){
+      this.net=net; this.mount=mount;
+      this.state={ prices:{ETH_USD:null,GAS_USD:0}, pairs:[], best:{buyIdx:-1,sellIdx:-1} };
+      this.render(); this.bind(); this.init();
+    }
+    q(sel){ return this.mount.querySelector(sel); }
     render(){
-      const label = NET_LABEL[this.net] || this.net;
-      this.root.innerHTML = `
-        <div class="card">
-          <div class="row row-3">
-            <div>
-              <label>Network</label>
-              <input value="${label}" readonly />
-            </div>
-            <div>
-              <label>Flash Loan Platform</label>
-              <select data-id="platform"><option value="" disabled selected>Select…</option></select>
-            </div>
-            <div>
-              <label>Loan Asset</label>
-              <select data-id="loanAsset"><option value="" disabled selected>Select…</option></select>
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:10px">
-            <div class="row row-2">
-              <div>
-                <label>Loan Amount (<span data-id="loanUnit">—</span>)</label>
-                <input data-id="loanAmount" type="number" min="0" step="any" placeholder="e.g., 1000" />
-                <div class="help">Token units sent to contract</div>
-              </div>
-              <div>
-                <label>≈ USD</label>
-                <input data-id="loanAmountUsd" type="number" min="0" step="any" placeholder="≈ USD" />
-                <div class="help">Used for $10k cap</div>
-              </div>
-            </div>
-            <div class="help" data-id="loanAssetPrice" style="margin-top:6px"></div>
-            <div class="help" data-id="loanEquivNote" style="margin-top:6px"></div>
-          </div>
-
-          <div class="row row-2" style="margin-top:10px">
-            <div>
-              <label>Desired Token</label>
-              <select data-id="token">
-                <option value="" disabled selected>Select a token</option>
-                <option>USDC</option><option>USDT</option><option>WETH</option>
-                <option>WBTC</option><option>DAI</option><option>SOL</option>
-                <option>ARB</option><option>MATIC</option><option>WBNB</option>
-                <option>Other / Custom</option>
-              </select>
-              <div class="help" data-id="tokenPrice" style="margin-top:6px"></div>
-            </div>
-            <div>
-              <label>DEXes (auto-selects best)</label>
-              <div class="row row-2">
-                <div>
-                  <label>Purchase from DEX</label>
-                  <select data-id="buyDex"><option value="" disabled selected>Select…</option></select>
-                </div>
-                <div>
-                  <label>Sell to DEX</label>
-                  <select data-id="sellDex"><option value="" disabled selected>Select…</option></select>
-                </div>
-              </div>
-              <div class="help">Best pool per DEX by liq, USDC/USDT quote preference.</div>
-            </div>
-          </div>
-
-          <div class="row row-4" style="margin-top:10px">
-            <div>
-              <label>Gas Price (Gwei) <span class="help" data-id="gasAutoNote"></span></label>
-              <input data-id="gasPrice" type="number" min="0" step="0.1" placeholder="Auto" readonly />
-            </div>
-            <div>
-              <label>Gas Limit (units) <span class="help" data-id="gasLimitNote"></span></label>
-              <input data-id="gasLimit" type="number" min="0" step="1000" placeholder="Auto" />
-              <div class="help"><label><input data-id="gasAutoToggle" type="checkbox" checked /> Auto gas limit</label></div>
-            </div>
-            <div>
-              <label>Estimated Gas Fee</label>
-              <input data-id="gasFeeEth" type="text" placeholder="Auto" readonly />
-              <div class="help" data-id="gasExplain" style="margin-top:6px"></div>
-            </div>
-            <div>
-              <label>Max Gas Spend (ETH)</label>
-              <input data-id="maxGasEth" type="number" min="0" step="any" placeholder="e.g., 0.02" />
-            </div>
-          </div>
-
-          <div class="kpi">
-            <div class="box"><div class="label">Best Buy</div><div class="value" data-id="kpiBestBuy">—</div></div>
-            <div class="box"><div class="label">Best Sell</div><div class="value" data-id="kpiBestSell">—</div></div>
-            <div class="box"><div class="label">Profit (excl. gas, incl. <span data-id="feeRateLabel">fee</span>)</div><div class="value" data-id="kpiProfitNoGas">—</div></div>
-            <div class="box"><div class="label">Profit (incl. gas)</div><div class="value" data-id="kpiProfit">—</div></div>
-          </div>
-          <div class="help mono" data-id="plDebug"></div>
-
-          <div style="margin-top:8px">
-            <label>DEX Quotes <span class="help" data-id="dexStatus"></span></label>
-            <div class="help">One row per DEX (best pool).</div>
-            <div data-id="dexTableWrap" class="hidden">
-              <table class="table">
-                <thead><tr><th>DEX</th><th>Pair</th><th class="right">Price (USD)</th><th class="right">Liquidity</th><th class="right">Vol 24h</th></tr></thead>
-                <tbody data-id="dexBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="row row-2" style="margin-top:10px">
-            <div>
-              <label>Reward Wallet (optional)</label>
-              <input data-id="rewardWallet" type="text" placeholder="0x… or Solana" />
-            </div>
-            <div>
-              <label>Fee Wallet (optional)</label>
-              <input data-id="feeWallet" type="text" placeholder="0x… or Solana" />
-            </div>
-          </div>
-
-          <div class="cta">
-            <button data-id="btnProceed" type="button">Proceed</button>
-            <button data-id="btnReset" class="ghost" type="button">Reset</button>
-          </div>
-
-          <div data-id="spinner" class="hidden" style="margin-top:10px;text-align:center;">
-            <div style="border:4px solid rgba(255,255,255,.2);border-top:4px solid #7c5cff;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;margin:0 auto;"></div>
-            <div class="help">Quoting → Building route → Simulating…</div>
-          </div>
-
-          <div class="help" data-id="validation" style="margin-top:10px" aria-live="assertive"></div>
+      this.mount.innerHTML = `
+      <div class="card">
+        <div class="row row-3">
+          <div><label>Network</label><input value="${NET_LABEL[this.net]}" readonly /></div>
+          <div><label>Flash Loan Platform</label><select data-x="platform"><option value="" disabled selected>Select…</option></select></div>
+          <div><label>Loan Asset</label><select data-x="loanAsset"><option value="" disabled selected>Select…</option></select></div>
         </div>
-      `;
-    }
 
+        <div class="row" style="margin-top:10px">
+          <div class="row row-2">
+            <div>
+              <label>Loan Amount (<span data-x="loanUnit">—</span>)</label>
+              <input data-x="loanAmount" type="number" min="0" step="any" placeholder="e.g., 1000" />
+              <div class="help">Token units</div>
+            </div>
+            <div>
+              <label>≈ USD</label>
+              <input data-x="loanAmountUsd" type="number" min="0" step="any" placeholder="≈ USD" />
+              <div class="help">Used for $10k cap</div>
+            </div>
+          </div>
+          <div class="help" data-x="loanAssetPrice" style="margin-top:6px"></div>
+          <div class="help" data-x="loanEquivNote" style="margin-top:6px"></div>
+        </div>
+
+        <div class="row row-2" style="margin-top:10px">
+          <div>
+            <label>Desired Token</label>
+            <select data-x="token">
+              <option value="" disabled selected>Select a token</option>
+              <option>USDC</option><option>USDT</option><option>WETH</option>
+              <option>WBTC</option><option>DAI</option><option>SOL</option>
+              <option>ARB</option><option>MATIC</option><option>WBNB</option>
+              <option>Other / Custom</option>
+            </select>
+            <div class="help" data-x="tokenPrice" style="margin-top:6px"></div>
+          </div>
+          <div>
+            <label>DEXes (auto-select best)</label>
+            <div class="row row-2">
+              <div><label>Purchase from DEX</label><select data-x="buyDex"><option value="" disabled selected>Select…</option></select></div>
+              <div><label>Sell to DEX</label><select data-x="sellDex"><option value="" disabled selected>Select…</option></select></div>
+            </div>
+            <div class="help">Best pool per DEX, prices shown in menu.</div>
+          </div>
+        </div>
+
+        <div class="row row-4" style="margin-top:10px">
+          <div><label>Gas Price (Gwei) <span class="help" data-x="gasAutoNote"></span></label><input data-x="gasPrice" type="number" min="0" step="0.1" placeholder="Auto" readonly /></div>
+          <div><label>Gas Limit (units) <span class="help" data-x="gasLimitNote"></span></label><input data-x="gasLimit" type="number" min="0" step="1000" placeholder="Auto" /><div class="help"><label><input data-x="gasAutoToggle" type="checkbox" checked /> Auto gas limit</label></div></div>
+          <div><label>Estimated Gas Fee</label><input data-x="gasFeeEth" type="text" placeholder="Auto" readonly /><div class="help" data-x="gasExplain" style="margin-top:6px"></div></div>
+          <div><label>Max Gas Spend (ETH)</label><input data-x="maxGasEth" type="number" min="0" step="any" placeholder="e.g., 0.02" /></div>
+        </div>
+
+        <div class="kpi">
+          <div class="box"><div class="label">Best Buy</div><div class="value" data-x="kpiBestBuy">—</div></div>
+          <div class="box"><div class="label">Best Sell</div><div class="value" data-x="kpiBestSell">—</div></div>
+          <div class="box"><div class="label">Profit (excl. gas, incl. <span data-x="feeRateLabel">fee</span>)</div><div class="value" data-x="kpiProfitNoGas">—</div></div>
+          <div class="box"><div class="label">Profit (incl. gas)</div><div class="value" data-x="kpiProfit">—</div></div>
+        </div>
+        <div class="help" data-x="plDebug"></div>
+
+        <div style="margin-top:8px">
+          <label>DEX Quotes <span class="help" data-x="dexStatus"></span></label>
+          <div data-x="dexTableWrap" class="hidden">
+            <table class="table">
+              <thead><tr><th>DEX</th><th>Pair</th><th class="right">Price (USD)</th><th class="right">Liquidity</th><th class="right">Vol 24h</th></tr></thead>
+              <tbody data-x="dexBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="cta">
+          <button data-x="btnProceed" type="button">Proceed</button>
+          <button data-x="btnReset" class="btn ghost" type="button">Reset</button>
+        </div>
+
+        <div data-x="spinner" class="hidden" style="margin-top:10px;text-align:center;">
+          <div style="border:4px solid rgba(255,255,255,.2);border-top:4px solid #7c5cff;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;margin:0 auto;"></div>
+          <div class="help">Quoting → Building route → Simulating…</div>
+        </div>
+
+        <div class="help" data-x="validation" style="margin-top:10px" aria-live="assertive"></div>
+      </div>`;
+    }
     bind(){
-      const q = (s)=>this.q(`[data-id="${s}"]`);
-      this.el = {
-        platform:q("platform"), loanAsset:q("loanAsset"), loanUnit:this.q('[data-id="loanUnit"]'),
-        loanAmount:q("loanAmount"), loanAmountUsd:q("loanAmountUsd"), loanAssetPrice:q("loanAssetPrice"),
-        loanEquivNote:q("loanEquivNote"), token:q("token"), tokenPrice:q("tokenPrice"),
-        buyDex:q("buyDex"), sellDex:q("sellDex"),
-        gasPrice:q("gasPrice"), gasLimit:q("gasLimit"), gasFeeEth:q("gasFeeEth"),
-        gasExplain:q("gasExplain"), gasAutoToggle:q("gasAutoToggle"), gasLimitNote:q("gasLimitNote"), gasAutoNote:q("gasAutoNote"),
+      const q=(k)=>this.q(`[data-x="${k}"]`);
+      this.el={ platform:q("platform"), loanAsset:q("loanAsset"), loanUnit:q("loanUnit"),
+        loanAmount:q("loanAmount"), loanAmountUsd:q("loanAmountUsd"), loanAssetPrice:q("loanAssetPrice"), loanEquivNote:q("loanEquivNote"),
+        token:q("token"), tokenPrice:q("tokenPrice"), buyDex:q("buyDex"), sellDex:q("sellDex"),
+        gasPrice:q("gasPrice"), gasLimit:q("gasLimit"), gasFeeEth:q("gasFeeEth"), gasExplain:q("gasExplain"),
+        gasAutoToggle:q("gasAutoToggle"), gasLimitNote:q("gasLimitNote"), gasAutoNote:q("gasAutoNote"),
         kpiBestBuy:q("kpiBestBuy"), kpiBestSell:q("kpiBestSell"), kpiProfitNoGas:q("kpiProfitNoGas"), kpiProfit:q("kpiProfit"),
         feeRateLabel:q("feeRateLabel"), plDebug:q("plDebug"),
         dexStatus:q("dexStatus"), dexWrap:q("dexTableWrap"), dexBody:q("dexBody"),
-        btnProceed:q("btnProceed"), btnReset:q("btnReset"), spinner:q("spinner"), validation:q("validation")
-      };
+        btnProceed:q("btnProceed"), btnReset:q("btnReset"), spinner:q("spinner"), validation:q("validation") };
 
-      // Events
-      this.el.platform.addEventListener("change", ()=>{ this.refreshLoanAssets(); this.updateFeeLabel(); this.updateProfitKPIs(); });
-      this.el.loanAsset.addEventListener("change", ()=>{ this.updateLoanAssetUI(); this.enforceCap(); this.updateProfitKPIs(); });
-      this.el.token.addEventListener("change", ()=>{ this.updateDesiredTokenPriceUI(); this.updateDexQuotes(); this.updateProfitKPIs(); });
-      this.el.buyDex.addEventListener("change", ()=>{ this.applyGasPresetFromRoute(); this.updateProfitKPIs(); });
-      this.el.sellDex.addEventListener("change", ()=>{ this.applyGasPresetFromRoute(); this.updateProfitKPIs(); });
-
-      this.el.loanAmount.addEventListener("input", ()=>{ this.syncTokenToUsd(); this.updateProfitKPIs(); });
-      this.el.loanAmountUsd.addEventListener("input", ()=>{ this.syncUsdToToken(); this.updateProfitKPIs(); });
-
-      this.el.gasLimit.addEventListener("input", ()=>{ this.calcGas(); this.updateProfitKPIs(); });
-      this.el.gasPrice.addEventListener("input", ()=>{ this.calcGas(); this.updateProfitKPIs(); });
-      this.el.gasAutoToggle.addEventListener("change", ()=> this.applyGasPresetFromRoute());
-
+      this.el.platform.addEventListener("change", ()=>{ this.refreshLoanAssets(); this.updateFeeLabel(); this.updateProfit(); });
+      this.el.loanAsset.addEventListener("change", ()=>{ this.updateLoanAssetUI(); this.enforceCap(); this.updateProfit(); });
+      this.el.token.addEventListener("change", ()=>{ this.updateDesiredTokenPriceUI(); this.loadDexQuotes(); });
+      this.el.buyDex.addEventListener("change", ()=>{ this.applyGasPreset(); this.updateProfit(); });
+      this.el.sellDex.addEventListener("change", ()=>{ this.applyGasPreset(); this.updateProfit(); });
+      this.el.loanAmount.addEventListener("input", ()=>{ this.syncTokenToUsd(); this.updateProfit(); });
+      this.el.loanAmountUsd.addEventListener("input", ()=>{ this.syncUsdToToken(); this.updateProfit(); });
+      this.el.gasLimit.addEventListener("input", ()=>{ this.calcGas(); this.updateProfit(); });
+      this.el.gasPrice.addEventListener("input", ()=>{ this.calcGas(); this.updateProfit(); });
+      this.el.gasAutoToggle.addEventListener("change", ()=> this.applyGasPreset());
       this.el.btnProceed.addEventListener("click", ()=> this.proceed());
       this.el.btnReset.addEventListener("click", ()=> this.reset());
     }
-
-    setOptions(select, list){
-      select.innerHTML = `<option value="" disabled selected>Select…</option>${(list||[]).map(v=>`<option>${v}</option>`).join("")}`;
-    }
-    setOptionsWithPrices(select, list, map){
-      select.innerHTML = `<option value="" disabled selected>Select…</option>${
+    setOptions(sel, list){ sel.innerHTML = `<option value="" disabled selected>Select…</option>${(list||[]).map(v=>`<option>${v}</option>`).join("")}`; }
+    setOptionsWithPrices(sel, list, priceMap){
+      sel.innerHTML = `<option value="" disabled selected>Select…</option>${
         (list||[]).map(v=>{
-          const k = norm(v);
-          const p = map?.get(k);
-          const label = p ? `${v} — $${Number(p).toLocaleString(undefined,{maximumFractionDigits:6})}` : `${v} — —`;
-          return `<option value="${v}">${label}</option>`;
-        }).join("")
-      }`;
+          const k=norm(v); const p=priceMap?.get(k);
+          return `<option value="${v}">${v}${p?` — $${Number(p).toLocaleString(undefined,{maximumFractionDigits:6})}`:" — —"}</option>`;
+        }).join("")}`;
     }
-    feeRate(){ return LOAN_FEE_RATE_BY_PLATFORM[this.el.platform.value] ?? 0.0009; }
-    feePctText(){ return (this.feeRate()*100).toFixed(3).replace(/\.?0+$/,'') + "%"; }
+    feeRate(){ const p=this.el.platform.value || "Other / Custom"; return LOAN_FEE_RATE_BY_PLATFORM[p] ?? 0.0009; }
+    feeText(){ return (this.feeRate()*100).toFixed(3).replace(/\.?0+$/,"")+"%"; }
+    updateFeeLabel(){ this.el.feeRateLabel.textContent=this.feeText(); }
 
     async init(){
-      // platform + loan assets
       this.setOptions(this.el.platform, PLATFORMS[this.net]);
       this.setOptions(this.el.loanAsset, []);
       this.setOptions(this.el.buyDex, DEXES[this.net]);
       this.setOptions(this.el.sellDex, DEXES[this.net]);
       this.updateFeeLabel();
-      // auto gas
       this.setupAutoGas();
     }
 
-    updateFeeLabel(){ this.el.feeRateLabel.textContent = this.feePctText(); }
-
-    refreshLoanAssets(){
-      const assets = (BORROW_ASSETS[this.net] || {})[this.el.platform.value] || [];
-      this.setOptions(this.el.loanAsset, assets);
-      this.el.loanUnit.textContent = "—";
-      this.el.loanAssetPrice.textContent = "";
-    }
-
-    async fetchTokenPriceUSD(sym){
-      const id = CG_IDS[sym]; if(!id) return null;
-      try{
-        const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=usd`,{cache:"no-store"});
-        if(!r.ok) return null;
-        const j = await r.json(); const price = j?.[id]?.usd;
-        return typeof price === "number" ? price : null;
-      }catch(_){ return null; }
-    }
-
     async updateLoanAssetUI(){
-      const sym = this.el.loanAsset.value;
-      this.el.loanUnit.textContent = sym || "—";
+      const sym=this.el.loanAsset.value; this.el.loanUnit.textContent=sym||"—";
       if(!sym){ this.el.loanAssetPrice.textContent=""; return; }
-      this.el.loanAssetPrice.textContent = "Fetching price…";
-      const p = await this.fetchTokenPriceUSD(sym);
-      if(p==null){ this.el.loanAssetPrice.innerHTML = `<span class="warn">Live price unavailable for ${sym}.</span>`; return; }
-      this.el.loanAssetPrice.innerHTML = `<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
-      this.state.prices[sym+"_USD"] = p;
-      if(sym==="WETH"||sym==="ETH"){ this.state.prices.ETH_USD = p; this.calcGas(); }
+      this.el.loanAssetPrice.textContent="Fetching price…";
+      const p=await coingeckoUSD(sym);
+      if(p==null){ this.el.loanAssetPrice.innerHTML=`<span class="warn">Live price unavailable for ${sym}.</span>`; return; }
+      this.el.loanAssetPrice.innerHTML=`<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
+      this.state.prices[sym+"_USD"]=p;
+      if(sym==="WETH"||sym==="ETH"){ this.state.prices.ETH_USD=p; this.calcGas(); }
       this.syncTokenToUsd();
     }
-
     async updateDesiredTokenPriceUI(){
-      const sym = this.el.token.value;
-      const el = this.el.tokenPrice;
-      if(!sym || sym==="Other / Custom"){ el.textContent = ""; return; }
-      el.textContent = "Fetching price…";
-      const p = await this.fetchTokenPriceUSD(sym);
-      if(p==null){ el.innerHTML = `<span class="warn">Live price unavailable for ${sym}.</span>`; return; }
-      el.innerHTML = `<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
-      this.state.prices[sym+"_USD"] = p;
+      const sym=this.el.token.value; const out=this.el.tokenPrice;
+      if(!sym || sym==="Other / Custom"){ out.textContent=""; return; }
+      out.textContent="Fetching price…";
+      const p=await coingeckoUSD(sym);
+      if(p==null){ out.innerHTML=`<span class="warn">Live price unavailable for ${sym}.</span>`; return; }
+      out.innerHTML=`<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
+      this.state.prices[sym+"_USD"]=p;
     }
 
     syncTokenToUsd(){
-      const sym = this.el.loanAsset.value;
-      const px  = this.state.prices[sym+"_USD"];
-      const amt = parseFloat(this.el.loanAmount.value);
-      if(sym && px>0 && amt>=0){
-        const usd = amt * px;
-        this.el.loanAmountUsd.value = usd ? usd.toFixed(2) : "";
-        this.el.loanEquivNote.textContent = `≈ ${fmtUSD(usd)} at ${sym} ${fmtUSD(px)}/unit`;
-      } else {
-        this.el.loanAmountUsd.value = "";
-        this.el.loanEquivNote.textContent = "";
-      }
+      const sym=this.el.loanAsset.value; const px=this.state.prices[sym+"_USD"]; const amt=parseFloat(this.el.loanAmount.value);
+      if(sym && px>0 && amt>=0){ const usd=amt*px; this.el.loanAmountUsd.value=usd?usd.toFixed(2):""; this.el.loanEquivNote.textContent=`≈ ${fmtUSD(usd)} at ${sym} ${fmtUSD(px)}/unit`; }
+      else { this.el.loanAmountUsd.value=""; this.el.loanEquivNote.textContent=""; }
       this.enforceCap();
     }
     syncUsdToToken(){
-      const sym = this.el.loanAsset.value;
-      const px  = this.state.prices[sym+"_USD"];
-      const usd = parseFloat(this.el.loanAmountUsd.value);
-      if(sym && px>0 && usd>=0){
-        const amt = usd / px;
-        this.el.loanAmount.value = amt ? amt.toFixed(6) : "";
-        this.el.loanEquivNote.textContent = `≈ ${amt.toFixed(6)} ${sym} at ${sym} ${fmtUSD(px)}/unit`;
-      } else {
-        this.el.loanAmount.value = "";
-        this.el.loanEquivNote.textContent = "";
-      }
+      const sym=this.el.loanAsset.value; const px=this.state.prices[sym+"_USD"]; const usd=parseFloat(this.el.loanAmountUsd.value);
+      if(sym && px>0 && usd>=0){ const amt=usd/px; this.el.loanAmount.value=amt?amt.toFixed(6):""; this.el.loanEquivNote.textContent=`≈ ${amt.toFixed(6)} ${sym} at ${sym} ${fmtUSD(px)}/unit`; }
+      else { this.el.loanAmount.value=""; this.el.loanEquivNote.textContent=""; }
       this.enforceCap();
     }
-
     enforceCap(){
-      const amt = parseFloat(this.el.loanAmount.value);
-      const sym = this.el.loanAsset.value;
-      const px  = this.state.prices[sym+"_USD"];
+      const amt=parseFloat(this.el.loanAmount.value), sym=this.el.loanAsset.value, px=this.state.prices[sym+"_USD"];
       if(!(amt>0) || !(px>0)){ this.el.validation.textContent=""; this.el.validation.classList.remove("bad"); return false; }
-      const usd = amt * px;
-      if(usd > LOAN_CAP_USD){
-        this.el.validation.classList.add("bad");
-        this.el.validation.textContent = `Loan limit exceeded: ${fmtUSD(usd)} > ${fmtUSD(LOAN_CAP_USD)}. Reduce amount.`;
-        return true;
-      }
-      if(this.el.validation.textContent.startsWith("Loan limit exceeded")){
-        this.el.validation.textContent = ""; this.el.validation.classList.remove("bad");
-      }
+      const usd=amt*px; if(usd>LOAN_CAP_USD){ this.el.validation.classList.add("bad"); this.el.validation.textContent=`Loan limit exceeded: ${fmtUSD(usd)} > ${fmtUSD(LOAN_CAP_USD)}.`; return true; }
+      if(this.el.validation.textContent.startsWith("Loan limit exceeded")){ this.el.validation.textContent=""; this.el.validation.classList.remove("bad"); }
       return false;
     }
 
-    /* ===== DEX QUOTES (Dexscreener) ===== */
-    tokenAddress(sym){
-      const m = TOKEN_ADDR[this.net] || {}; return m[sym] || null;
-    }
-    dexPretty(p){
-      const raw=(p?.dexId||"").toLowerCase();
-      if(/^0x[0-9a-f]{6,}$/i.test(raw)){
-        try{
-          const host = new URL(p?.url||"").hostname || "";
-          if(host.includes("uniswap")) return "Uniswap V3";
-          if(host.includes("sushi")) return "SushiSwap";
-          if(host.includes("balancer")) return "Balancer";
-          if(host.includes("curve")) return "Curve";
-          if(host.includes("camelot")) return "Camelot";
-          if(host.includes("quickswap")) return "QuickSwap";
-          if(host.includes("pancake")) return "PancakeSwap";
-          if(host.includes("traderjoe")) return "Trader Joe";
-          if(host.includes("pangolin")) return "Pangolin";
-          if(host.includes("jupiter")) return "Jupiter";
-          if(host.includes("raydium")) return "Raydium";
-          if(host.includes("orca")) return "Orca";
-        }catch(_){}
-        return "DEX";
-      }
-      const alias = DEX_ALIAS.get(norm(raw)) || raw;
-      return alias.split(/[\s-]/).map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(" ");
-    }
-    consolidateByDex(pairs){
-      const PREFERRED_QUOTES=["USDC","USDT"], MIN_LIQ_USD=10000;
-      const byDex=new Map();
-      for(const p of pairs){
-        const dex=(p?.dexId||"").toLowerCase(); if(!dex) continue;
-        const liq=p?.liquidity?.usd || 0; if(liq<MIN_LIQ_USD) continue;
-        const quote=(p?.quoteToken?.symbol||"").toUpperCase();
-        const rank=PREFERRED_QUOTES.includes(quote)?PREFERRED_QUOTES.indexOf(quote):99;
-        const cur=byDex.get(dex);
-        if(!cur){ byDex.set(dex,{rec:p,liq,rank}); continue; }
-        if(rank<cur.rank || (rank===cur.rank && liq>cur.liq)){ byDex.set(dex,{rec:p,liq,rank}); }
-      }
-      return Array.from(byDex.values()).map(x=>x.rec)
-        .sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
-    }
-    async fetchDexQuotes(symbol){
-      const addr=this.tokenAddress(symbol);
-      if(!addr){ this.el.dexStatus.textContent = "No token address mapped."; return { ok:false, reason:"No token address" }; }
-      try{
-        const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`,{cache:"no-store"});
-        if(!r.ok) return { ok:false, reason:`HTTP ${r.status}` };
-        const j=await r.json();
-        let pairs=j?.pairs || [];
-        const want = this.net; // same chain only
-        pairs = pairs.filter(p => (p.chainId===want));
-        // unique by dex|pair
-        const seen=new Set(), uniq=[];
-        for(const p of pairs){
-          const key=`${p.dexId||""}|${p.pairAddress || p.url || ""}`;
-          if(seen.has(key)) continue;
-          seen.add(key); uniq.push(p);
-        }
-        const rows=this.consolidateByDex(uniq);
-        return { ok:true, pairs: rows.slice(0,20) };
-      }catch(_){ return { ok:false, reason:"Network error" }; }
-    }
-    buildPriceMap(pairs){
-      const m=new Map();
-      for(const p of (pairs||[])){
-        const raw=(p?.dexId||"");
-        const alias=DEX_ALIAS.get(norm(raw))||raw;
-        const k=norm(alias);
-        const price=Number(p?.priceUsd);
-        if(k && isFinite(price)) m.set(k, price);
-      }
-      return m;
-    }
-    selectDEXInto(select, dexLabel){
-      const wanted=norm(DEX_ALIAS.get(norm(dexLabel))||dexLabel);
-      const opts=[...select.options].filter(o=>o.value);
-      let hit=opts.find(o=>norm(o.textContent).startsWith(wanted));
-      if(!hit) hit=opts.find(o=>norm(o.textContent).includes(wanted));
-      select.value = hit ? hit.value : "Other / Custom";
-    }
-    ensureDifferentDexes(){
-      const b=this.el.buyDex.value, s=this.el.sellDex.value;
-      if(b && s && b===s){
-        const opts=[...this.el.sellDex.options].map(o=>o.value).filter(Boolean);
-        const alt=opts.find(v=>v!==b) || "Other / Custom";
-        this.el.sellDex.value = alt;
-      }
-    }
-
-    async updateDexQuotes(){
-      const sym = this.el.token.value;
-      this.el.dexStatus.textContent = "";
+    async loadDexQuotes(){
+      const sym=this.el.token.value;
       this.el.dexWrap.classList.add("hidden");
-      if(!sym || sym==="Other / Custom"){ this.state.pairs=[]; this.state.best={buyIdx:-1,sellIdx:-1}; this.updatePLBoxes(null,null); return; }
-      this.el.dexStatus.textContent = "Fetching quotes…";
-      const res = await this.fetchDexQuotes(sym);
-      if(!res.ok){ this.el.dexStatus.textContent=`No quotes: ${res.reason}`; this.state.pairs=[]; this.state.best={buyIdx:-1,sellIdx:-1}; this.updatePLBoxes(null,null); return; }
-      const pairs = res.pairs;
-      this.state.pairs = pairs;
-      // best buy/sell on USD price
+      if(!sym || sym==="Other / Custom"){ this.state.pairs=[]; this.state.best={buyIdx:-1,sellIdx:-1}; this.updateBestLabels(null,null); this.updateProfit(); return; }
+      this.el.dexStatus.textContent="Fetching quotes…";
+      const res=await dexscreenerByToken(this.net, sym);
+      if(!res.ok){ this.el.dexStatus.textContent=`No quotes: ${res.reason}`; this.state.pairs=[]; this.state.best={buyIdx:-1,sellIdx:-1}; this.updateBestLabels(null,null); this.updateProfit(); return; }
+      const pairs=res.pairs; this.state.pairs=pairs;
+      // best buy/sell by price
       let min=Infinity,max=-Infinity, bi=-1, si=-1;
-      pairs.forEach((p,i)=>{ const pr=Number(p?.priceUsd); if(isFinite(pr)){ if(pr<min){min=pr;bi=i;} if(pr>max){max=pr;si=i;} } });
-      this.state.best = { buyIdx:bi, sellIdx:si };
+      pairs.forEach((p,i)=>{ const pr=Number(p?.priceUsd); if(isFinite(pr)){ if(pr<min){min=pr;bi=i;} if(pr>max){max=pr;si=i;} }});
+      this.state.best={buyIdx:bi,sellIdx:si};
 
-      // table
+      // table render
       const body=this.el.dexBody; body.innerHTML="";
       pairs.forEach((p,i)=>{
         const tr=document.createElement("tr");
-        const dex=this.dexPretty(p);
-        const pair=`${p?.baseToken?.symbol||""}/${p?.quoteToken?.symbol||""}`;
-        const pr=p?.priceUsd?Number(p.priceUsd):NaN;
-        const liq=p?.liquidity?.usd||0, vol=p?.volume?.h24||0;
-        tr.innerHTML = `
-          <td><span class="tag ${i===bi||i===si?'best':''}">${dex}</span></td>
-          <td><a href="${p?.url||'#'}" target="_blank" rel="noopener">${pair}</a></td>
-          <td class="right">${isFinite(pr)?fmtUSD(pr):"—"}</td>
-          <td class="right">${fmtUSD(liq)}</td>
-          <td class="right">${fmtUSD(vol)}</td>`;
+        const dex=dexPretty(p); const pair=`${p?.baseToken?.symbol||""}/${p?.quoteToken?.symbol||""}`;
+        const pr=p?.priceUsd?Number(p.priceUsd):NaN, liq=p?.liquidity?.usd||0, vol=p?.volume?.h24||0;
+        tr.innerHTML=`<td><span class="tag ${i===bi||i===si?'best':''}">${dex}</span></td>
+                      <td><a href="${p?.url||'#'}" target="_blank" rel="noopener">${pair}</a></td>
+                      <td class="right">${isFinite(pr)?fmtUSD(pr):"—"}</td>
+                      <td class="right">${fmtUSD(liq)}</td>
+                      <td class="right">${fmtUSD(vol)}</td>`;
         body.appendChild(tr);
       });
       this.el.dexWrap.classList.remove("hidden");
-      // fill dropdowns with price labels
-      const map=this.buildPriceMap(pairs);
-      this.setOptionsWithPrices(this.el.buyDex, DEXES[this.net], map);
-      this.setOptionsWithPrices(this.el.sellDex, DEXES[this.net], map);
-      // pick best automatically
+
+      // menu with prices + auto-pick
+      const map=new Map(); for(const p of pairs){ const alias=DEX_ALIAS.get(norm(p?.dexId||""))||p?.dexId||""; const k=norm(alias); const price=Number(p?.priceUsd); if(k && isFinite(price)) map.set(k, price); }
+      const list=DEXES[this.net];
+      const setSel=(sel,label)=>{ sel.innerHTML=`<option value="" disabled selected>Select…</option>${list.map(v=>{const k=norm(v); const pr=map.get(k); return `<option value="${v}">${v}${pr?` — $${pr.toLocaleString(undefined,{maximumFractionDigits:6})}`:" — —"}</option>`}).join("")}`; };
+      setSel(this.el.buyDex,"buy"); setSel(this.el.sellDex,"sell");
       const bestBuy=pairs[bi], bestSell=pairs[si];
-      if(bestBuy)  this.selectDEXInto(this.el.buyDex,  bestBuy.dexId);
-      if(bestSell) this.selectDEXInto(this.el.sellDex, bestSell.dexId);
-      this.ensureDifferentDexes();
-      this.applyGasPresetFromRoute();
-      this.updatePLBoxes(bestBuy, bestSell);
-      this.calcGas();
-      this.updateProfitKPIs();
+      this.updateBestLabels(bestBuy,bestSell);
+      // choose
+      const pickInto=(sel, dexId)=>{ const want=norm(DEX_ALIAS.get(norm(dexId))||dexId); const opt=[...sel.options].find(o=>norm(o.textContent).startsWith(want)) || [...sel.options].find(o=>norm(o.textContent).includes(want)); sel.value = opt ? opt.value : ""; };
+      if(bestBuy) pickInto(this.el.buyDex, bestBuy.dexId);
+      if(bestSell) pickInto(this.el.sellDex, bestSell.dexId);
+      if(this.el.buyDex.value && this.el.sellDex.value && this.el.buyDex.value===this.el.sellDex.value){
+        const opts=[...this.el.sellDex.options].map(o=>o.value).filter(Boolean);
+        const alt=opts.find(v=>v!==this.el.buyDex.value); if(alt) this.el.sellDex.value=alt;
+      }
+      this.applyGasPreset();
+      this.updateProfit();
       this.el.dexStatus.textContent = pairs.length ? `Showing ${pairs.length} DEXes` : "No markets found.";
     }
 
-    updatePLBoxes(buyPair, sellPair){
-      const buyTxt = buyPair?.priceUsd ? `${this.dexPretty(buyPair)} @ ${fmtUSD(Number(buyPair.priceUsd))}` : "—";
-      const sellTxt= sellPair?.priceUsd ? `${this.dexPretty(sellPair)} @ ${fmtUSD(Number(sellPair.priceUsd))}` : "—";
-      this.el.kpiBestBuy.textContent = buyTxt;
-      this.el.kpiBestSell.textContent= sellTxt;
+    updateBestLabels(buyPair,sellPair){
+      this.el.kpiBestBuy.textContent = buyPair?.priceUsd ? `${dexPretty(buyPair)} @ ${fmtUSD(Number(buyPair.priceUsd))}` : "—";
+      this.el.kpiBestSell.textContent= sellPair?.priceUsd ? `${dexPretty(sellPair)} @ ${fmtUSD(Number(sellPair.priceUsd))}` : "—";
     }
 
-    /* ===== Gas ===== */
-    async fetchGasPriceGwei(){
-      const eps = RPC[this.net]; if(!eps) throw new Error("No RPC");
-      const payload={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
-      let last=null;
-      for(const url of eps){
-        try{
-          const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-          if(!r.ok){ last=new Error("HTTP "+r.status); continue; }
-          const j=await r.json(); const bh=j?.result; if(!bh?.baseFeePerGas||!bh?.reward){ last=new Error("bad"); continue; }
-          const baseWei=parseInt(bh.baseFeePerGas.at(-1),16);
-          const tipWei =parseInt((bh.reward.at(-1)||[])[1]||"0x0",16);
-          return { baseGwei:baseWei/1e9, tipGwei:tipWei/1e9, gasPriceGwei:(baseWei+tipWei)/1e9 };
-        }catch(e){ last=e; }
-      }
-      // fallback
-      const payload2={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
-      for(const url of eps){
-        try{
-          const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload2)});
-          if(!r.ok) continue;
-          const j=await r.json(); const wei=parseInt(j?.result||"0x0",16);
-          return { baseGwei:wei/1e9, tipGwei:0, gasPriceGwei:wei/1e9 };
-        }catch(_){}
-      }
-      throw last || new Error("RPC failed");
+    async setupAutoGas(){
+      const note=this.el.gasAutoNote;
+      if(!EVM.has(this.net)){ this.el.gasPrice.value=""; this.el.gasPrice.readOnly=true; note.textContent=""; return; }
+      note.textContent="auto";
+      try{
+        const s=await gasSuggestGwei(this.net);
+        this.el.gasPrice.value=s.gasPriceGwei.toFixed(1);
+        note.textContent=`auto • base ${s.baseGwei.toFixed(1)} + tip ${s.tipGwei.toFixed(1)} gwei`;
+        if(!this.state.prices.ETH_USD){ const p=await coingeckoUSD("WETH"); if(typeof p==="number") this.state.prices.ETH_USD=p; }
+        this.calcGas();
+      }catch(_){ this.el.gasPrice.readOnly=false; note.textContent="auto failed (RPC/CORS). Enter manually."; }
     }
-    calcGas(){
-      const gp=parseFloat(this.el.gasPrice.value), gl=parseFloat(this.el.gasLimit.value);
-      const valid=!isNaN(gp)&&!isNaN(gl)&&gl>0;
-      const eth=valid? (gp*gl)/1e9 : NaN;
-      this.el.gasFeeEth.value = valid ? eth.toFixed(6)+" ETH" : "";
-      let out = valid
-        ? `Gas = (${gp} Gwei × ${gl.toLocaleString()}) ÷ 1e9 = ${eth.toFixed(6)} ETH`
-        : "Enter a gas limit to see ETH & USD cost. Gas price is auto-fetched.";
-      if(valid){
-        const ethUSD=this.state.prices.ETH_USD;
-        if(typeof ethUSD==="number"){
-          const usd=eth*ethUSD; this.state.prices.GAS_USD=usd; out += ` (~${fmtUSD(usd)})`;
-        } else { this.state.prices.GAS_USD=0; }
-      }
-      this.el.gasExplain.textContent = out;
-    }
-    applyGasPresetFromRoute(){
+    applyGasPreset(){
       const PRESETS={
         ethereum:{default:220000,uniswap:190000,sushiswap:205000,curve:340000,balancer:310000},
         arbitrum:{default:170000,uniswap:150000,sushiswap:160000,camelot:160000,balancer:190000},
@@ -635,183 +400,106 @@
         bsc:{default:170000,pancakeswap:150000,apeswap:160000},
         avalanche:{default:185000,traderjoe:165000,pangolin:165000}
       }[this.net] || {default:180000};
-      const buy = (this.state.pairs?.[this.state.best.buyIdx]?.dexId||"").toLowerCase();
-      const sell= (this.state.pairs?.[this.state.best.sellIdx]?.dexId||"").toLowerCase();
-      const dk = (s)=> s.includes("uni")?"uniswap": s.includes("sushi")?"sushiswap": s.includes("curve")?"curve":
-                          s.includes("balance")?"balancer": s.includes("camelot")?"camelot": s.includes("quick")?"quickswap":
-                          s.includes("pancake")?"pancakeswap": s.includes("ape")?"apeswap": s.includes("trader")?"traderjoe":
-                          s.includes("pangolin")?"pangolin": null;
-      let g = PRESETS.default;
-      const g1 = PRESETS[dk(buy)] || null, g2 = PRESETS[dk(sell)] || null;
-      if(g1 && g2) g = Math.max(g1,g2); else if(g1) g=g1; else if(g2) g=g2;
-      if(this.el.gasAutoToggle.checked){ this.el.gasLimit.value=String(g); this.el.gasLimit.readOnly=true; this.el.gasLimitNote.textContent=`auto from route`; }
-      else { this.el.gasLimit.readOnly=false; this.el.gasLimitNote.textContent=`manual override`; }
+      const dk=s=> s.includes("uni")?"uniswap": s.includes("sushi")?"sushiswap": s.includes("curve")?"curve":
+                    s.includes("balance")?"balancer": s.includes("camelot")?"camelot": s.includes("quick")?"quickswap":
+                    s.includes("pancake")?"pancakeswap": s.includes("ape")?"apeswap": s.includes("trader")?"traderjoe":
+                    s.includes("pangolin")?"pangolin": null;
+      const buy=(this.state.pairs?.[this.state.best.buyIdx]?.dexId||"").toLowerCase();
+      const sell=(this.state.pairs?.[this.state.best.sellIdx]?.dexId||"").toLowerCase();
+      let g=PRESETS.default; const g1=PRESETS[dk(buy)]||null, g2=PRESETS[dk(sell)]||null; if(g1&&g2) g=Math.max(g1,g2); else if(g1) g=g1; else if(g2) g=g2;
+      if(this.el.gasAutoToggle.checked){ this.el.gasLimit.value=String(g); this.el.gasLimit.readOnly=true; this.el.gasLimitNote.textContent="auto from route"; } else { this.el.gasLimit.readOnly=false; this.el.gasLimitNote.textContent="manual override"; }
       this.calcGas();
     }
-    setupAutoGas(){
-      const note=this.el.gasAutoNote;
-      const run = async ()=>{
-        if(!EVM.has(this.net)){ this.el.gasPrice.value=""; this.el.gasPrice.readOnly=true; note.textContent=""; return; }
-        note.textContent = "auto";
-        try{
-          const s = await this.fetchGasPriceGwei();
-          this.el.gasPrice.value = s.gasPriceGwei.toFixed(1);
-          note.textContent = `auto • base ${s.baseGwei.toFixed(1)} + tip ${s.tipGwei.toFixed(1)} gwei`;
-          if(!this.state.prices.ETH_USD){
-            const p = await this.fetchTokenPriceUSD("WETH");
-            if(typeof p==="number") this.state.prices.ETH_USD=p;
-          }
-          this.calcGas();
-        }catch(_){
-          this.el.gasPrice.readOnly=false;
-          note.textContent = "auto failed (RPC/CORS). Enter manually.";
-        }
-      };
-      run();
-      this.state.gasTimer && clearInterval(this.state.gasTimer);
-      this.state.gasTimer = setInterval(run, 20000);
+    calcGas(){
+      const gp=parseFloat(this.el.gasPrice.value), gl=parseFloat(this.el.gasLimit.value);
+      const ok=!isNaN(gp)&&!isNaN(gl)&&gl>0; const eth=ok?(gp*gl)/1e9:NaN;
+      this.el.gasFeeEth.value = ok ? eth.toFixed(6)+" ETH" : "";
+      let out = ok ? `Gas = (${gp} Gwei × ${gl.toLocaleString()}) ÷ 1e9 = ${eth.toFixed(6)} ETH` : "Enter a gas limit to see ETH & USD cost.";
+      if(ok){ const ethUSD=this.state.prices.ETH_USD; if(typeof ethUSD==="number"){ const usd=eth*ethUSD; this.state.prices.GAS_USD=usd; out+=` (~${fmtUSD(usd)})`; } else { this.state.prices.GAS_USD=0; } }
+      this.el.gasExplain.textContent=out;
     }
 
-    /* ===== Profit ===== */
+    // ----- Profit -----
     computeProfit(){
-      const amt=parseFloat(this.el.loanAmount.value);
-      const loanSym=this.el.loanAsset.value;
-      const pxs=this.state.prices;
-      if(!(amt>0) || !loanSym || !(pxs[loanSym+"_USD"]>0)) return null;
-      const principalUSD=amt*pxs[loanSym+"_USD"];
-
-      // buy/sell price from selected dropdowns (fallback to best)
-      const selToPrice = (which) => {
-        const pick = which==="buy" ? this.el.buyDex.value : this.el.sellDex.value;
-        const wanted = norm(DEX_ALIAS.get(norm(pick)) || pick);
+      const amt=parseFloat(this.el.loanAmount.value); const loanSym=this.el.loanAsset.value;
+      const loanPx=this.state.prices[loanSym+"_USD"]; if(!(amt>0) || !(loanPx>0)) return null;
+      const principalUSD=amt*loanPx;
+      const pickPrice=(which)=>{
+        const sel=(which==="buy"?this.el.buyDex:this.el.sellDex).value; const wanted=norm(sel);
         let price=null;
-        for(const p of (this.state.pairs||[])){
-          const alias = DEX_ALIAS.get(norm(p?.dexId||"")) || p?.dexId || "";
-          if(norm(alias)===wanted){ const pr=Number(p?.priceUsd); if(isFinite(pr)) price=pr; }
-        }
-        if(price==null){
-          const idx = which==="buy" ? this.state.best.buyIdx : this.state.best.sellIdx;
-          const pr = Number(this.state.pairs?.[idx]?.priceUsd);
-          if(isFinite(pr)) price=pr;
-        }
+        for(const p of (this.state.pairs||[])){ const alias=DEX_ALIAS.get(norm(p?.dexId||""))||p?.dexId||""; if(norm(alias)===norm(wanted)){ const pr=Number(p?.priceUsd); if(isFinite(pr)) price=pr; } }
+        if(price==null){ const idx=which==="buy"?this.state.best.buyIdx:this.state.best.sellIdx; const pr=Number(this.state.pairs?.[idx]?.priceUsd); if(isFinite(pr)) price=pr; }
         return price;
       };
-
-      const buyP = selToPrice("buy"), sellP = selToPrice("sell");
-      if(!isFinite(buyP)||!isFinite(sellP)) return null;
-
-      const units = principalUSD / buyP;
-      const grossReturnUSD = units * sellP;
-      const grossProfitUSD = grossReturnUSD - principalUSD;
-
-      const fee = this.feeRate();
-      const flashFeeUSD = principalUSD * fee;
-
-      const noGasProfitUSD = grossProfitUSD - flashFeeUSD;
-      const gasUSD = pxs.GAS_USD || 0;
-      const withGasProfitUSD = noGasProfitUSD - gasUSD;
-      return { principalUSD, buyP, sellP, flashFeeUSD, noGasProfitUSD, gasUSD, withGasProfitUSD, fee };
+      const buyP=pickPrice("buy"), sellP=pickPrice("sell"); if(!isFinite(buyP)||!isFinite(sellP)) return null;
+      const units=principalUSD/buyP, grossReturnUSD=units*sellP, grossProfitUSD=grossReturnUSD-principalUSD;
+      const fee= (LOAN_FEE_RATE_BY_PLATFORM[this.el.platform.value] ?? 0.0009); const flashFeeUSD=principalUSD*fee;
+      const noGasProfitUSD=grossProfitUSD-flashFeeUSD;
+      const gasUSD=this.state.prices.GAS_USD||0; const withGasProfitUSD=noGasProfitUSD-gasUSD;
+      return {principalUSD,buyP,sellP,flashFeeUSD,noGasProfitUSD,gasUSD,withGasProfitUSD,fee};
     }
-
-    updateProfitKPIs(){
-      this.el.feeRateLabel.textContent = this.feePctText();
-      const r = this.computeProfit();
+    updateProfit(){
+      const r=this.computeProfit();
       if(!r){ this.el.kpiProfitNoGas.textContent="—"; this.el.kpiProfit.textContent="—"; this.el.plDebug.textContent=""; return; }
-      this.el.kpiProfitNoGas.textContent = `${fmtUSD(r.noGasProfitUSD)} (fee ${fmtUSD(r.flashFeeUSD)} @ ${this.feePctText()})`;
+      this.el.kpiProfitNoGas.textContent = `${fmtUSD(r.noGasProfitUSD)} (fee ${fmtUSD(r.flashFeeUSD)} @ ${(r.fee*100).toFixed(3).replace(/\.?0+$/,"")}%)`;
       this.el.kpiProfit.textContent     = `${fmtUSD(r.withGasProfitUSD)} (gas ~ ${fmtUSD(r.gasUSD)})`;
       this.el.plDebug.textContent = `principal=${fmtUSD(r.principalUSD)} | buy=${fmtUSD(r.buyP)} | sell=${fmtUSD(r.sellP)} | fee=${fmtUSD(r.flashFeeUSD)} | gas≈${fmtUSD(r.gasUSD)} | net=${fmtUSD(r.withGasProfitUSD)}`;
     }
 
-    /* ===== Actions ===== */
     async proceed(){
       if(this.enforceCap()) return;
-      // minimal validation
-      const v=[];
-      if(!this.el.platform.value) v.push("platform"); if(!this.el.loanAsset.value) v.push("loan asset");
-      if(!this.el.token.value) v.push("desired token");
-      if(!this.el.loanAmount.value || Number(this.el.loanAmount.value)<=0) v.push("amount");
-      if(!this.el.buyDex.value) v.push("buy DEX"); if(!this.el.sellDex.value) v.push("sell DEX");
-      if(v.length){ this.el.validation.classList.add("warn"); this.el.validation.textContent="Missing: "+v.join(", "); return; }
+      const miss=[];
+      if(!this.el.platform.value) miss.push("platform");
+      if(!this.el.loanAsset.value) miss.push("loan asset");
+      if(!this.el.token.value) miss.push("desired token");
+      if(!this.el.loanAmount.value || Number(this.el.loanAmount.value)<=0) miss.push("amount");
+      if(!this.el.buyDex.value) miss.push("buy DEX");
+      if(!this.el.sellDex.value) miss.push("sell DEX");
+      if(miss.length){ this.el.validation.classList.add("warn"); this.el.validation.textContent="Missing: "+miss.join(", "); return; }
       this.el.validation.textContent=""; this.el.validation.classList.remove("warn","bad","ok");
 
-      this.el.btnProceed.disabled = true;
-      this.el.spinner.classList.remove("hidden");
-      await sleep(5000);
-      this.el.spinner.classList.add("hidden");
-      const txid = "0x"+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,"0")).join("");
-
-      const r=this.computeProfit();
-      const fail = !r || r.withGasProfitUSD<=0;
-      if(fail){ this.el.validation.classList.add("bad"); this.el.validation.textContent=`Transaction failed. TxID: ${txid}`; toast(`${NET_LABEL[this.net]}: failed`); }
-      else    { this.el.validation.classList.add("ok");  this.el.validation.textContent=`Transaction successful. TxID: ${txid}`; toast(`${NET_LABEL[this.net]}: success`); }
-      this.el.btnProceed.disabled = false;
+      this.el.btnProceed.disabled=true; this.el.spinner.classList.remove("hidden");
+      setTimeout(()=>{
+        this.el.spinner.classList.add("hidden");
+        const txid="0x"+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,"0")).join("");
+        const r=this.computeProfit(); const fail=!r || r.withGasProfitUSD<=0;
+        if(fail){ this.el.validation.classList.add("bad"); this.el.validation.textContent=`Transaction failed. TxID: ${txid}`; toast(`${NET_LABEL[this.net]}: failed`); }
+        else{ this.el.validation.classList.add("ok"); this.el.validation.textContent=`Transaction successful. TxID: ${txid}`; toast(`${NET_LABEL[this.net]}: success`); }
+        this.el.btnProceed.disabled=false;
+      },5000);
     }
 
     reset(){
-      this.setOptions(this.el.platform, PLATFORMS[this.net]);
-      this.setOptions(this.el.loanAsset, []);
-      this.setOptions(this.el.buyDex, DEXES[this.net]);
-      this.setOptions(this.el.sellDex, DEXES[this.net]);
-      this.el.loanUnit.textContent="—";
-      this.el.loanAmount.value=""; this.el.loanAmountUsd.value="";
+      this.setOptions(this.el.platform, PLATFORMS[this.net]); this.setOptions(this.el.loanAsset, []);
+      this.setOptions(this.el.buyDex, DEXES[this.net]); this.setOptions(this.el.sellDex, DEXES[this.net]);
+      this.el.loanUnit.textContent="—"; this.el.loanAmount.value=""; this.el.loanAmountUsd.value="";
       this.el.loanAssetPrice.textContent=""; this.el.loanEquivNote.textContent="";
       this.el.token.value=""; this.el.tokenPrice.textContent="";
       this.el.kpiBestBuy.textContent="—"; this.el.kpiBestSell.textContent="—";
-      this.el.kpiProfitNoGas.textContent="—"; this.el.kpiProfit.textContent="—";
-      this.el.plDebug.textContent=""; this.el.validation.textContent="";
-      this.el.gasLimit.value=""; this.el.gasPrice.value=""; this.el.gasFeeEth.value="";
-      this.el.gasLimitNote.textContent=""; this.el.gasAutoNote.textContent="";
-      this.el.dexBody.innerHTML=""; this.el.dexWrap.classList.add("hidden");
-      this.state.prices = { ETH_USD:null, GAS_USD:0 }; this.state.pairs=[]; this.state.best={buyIdx:-1,sellIdx:-1};
+      this.el.kpiProfitNoGas.textContent="—"; this.el.kpiProfit.textContent="—"; this.el.plDebug.textContent="";
+      this.el.gasLimit.value=""; this.el.gasPrice.value=""; this.el.gasFeeEth.value=""; this.el.gasLimitNote.textContent=""; this.el.gasAutoNote.textContent="";
+      this.el.dexBody.innerHTML=""; this.el.dexWrap.classList.add("hidden"); this.el.validation.textContent="";
+      this.state={ prices:{ETH_USD:null,GAS_USD:0}, pairs:[], best:{buyIdx:-1,sellIdx:-1} };
       this.setupAutoGas();
     }
   }
 
-  /* ====== Tabs + Instances ====== */
-  const tabbar = document.getElementById("tabbar");
-  const panes  = document.getElementById("tabpanes");
-  const instances = {};
-
+  // Tabs + mount instances
+  const tabbar=document.getElementById("tabbar"), panes=document.getElementById("tabpanes"), instances={};
   for(const net of NETWORKS){
-    const btn = document.createElement("button");
-    btn.textContent = NET_LABEL[net];
-    btn.dataset.net = net;
-    tabbar.appendChild(btn);
-
-    const pane = document.createElement("div");
-    pane.id = `pane-${net}`;
-    pane.className = "wrap";
-    pane.innerHTML = `<div class="card" style="text-align:center;padding:24px;">
-        <div style="border:4px solid rgba(255,255,255,.2);border-top:4px solid #7c5cff;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto;"></div>
-        <div class="help" style="margin-top:8px">Booting ${NET_LABEL[net]}…</div>
-      </div>`;
+    const b=document.createElement("button"); b.textContent=NET_LABEL[net]; b.dataset.net=net; tabbar.appendChild(b);
+    const pane=document.createElement("div"); pane.id=`pane-${net}`; pane.className="wrap";
+    pane.innerHTML=`<div class="card" style="text-align:center;padding:24px;">
+      <div style="border:4px solid rgba(255,255,255,.2);border-top:4px solid #7c5cff;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto;"></div>
+      <div class="help" style="margin-top:8px">Booting ${NET_LABEL[net]}…</div></div>`;
     panes.appendChild(pane);
-
-    // mount actual instance after a tiny delay (to keep UI snappy)
-    setTimeout(() => {
-      const mount = document.getElementById(`pane-${net}`);
-      instances[net] = new TestBed(net, mount);
-    }, 60);
+    setTimeout(()=>{ instances[net]=new Instance(net, pane); }, 80);
   }
-
-  function activate(net){
-    [...tabbar.children].forEach(b => b.classList.toggle("active", b.dataset.net===net));
-    [...panes.children].forEach(p => p.style.display = (p.id === `pane-${net}` ? "block" : "none"));
-  }
-
-  tabbar.addEventListener("click", (e)=>{
-    const b = e.target.closest("button[data-net]"); if(!b) return;
-    activate(b.dataset.net);
-  });
-
-  // default active
+  function activate(net){ [...tabbar.children].forEach(x=>x.classList.toggle("active",x.dataset.net===net)); [...panes.children].forEach(p=>p.style.display=(p.id===`pane-${net}`?"block":"none")); }
+  tabbar.addEventListener("click",(e)=>{ const b=e.target.closest("button[data-net]"); if(!b) return; activate(b.dataset.net); });
   activate("ethereum");
 
-  // dummy connect button
-  document.getElementById("btnConnect").addEventListener("click", ()=>{
-    toast("Wallet connect coming soon (MetaMask / WalletConnect / Phantom)");
-  });
-
+  document.getElementById("btnConnect").addEventListener("click", ()=> toast("Wallet connect coming soon (v8.3.0)"));
 })();
 </script>
 </body>

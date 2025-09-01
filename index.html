@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v7.9.3</title>
+<title>Crypto Kings Test Bed v7.9.4</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box}
@@ -77,7 +77,7 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v7.9.3</span>
+      <span class="chip">v7.9.4</span>
       <div class="spacer"></div>
       <button id="btnOpenWalletMenu" class="btn">Connect Wallet</button>
       <div id="walletMenu" class="wallet-menu hidden" role="menu" aria-label="Select a wallet">
@@ -92,7 +92,7 @@
   <div class="wrap">
     <h1>Test Bed</h1>
 
-    <!-- Boot loader spinner (optional) -->
+    <!-- Boot loader spinner -->
     <div id="bootWrap" style="text-align:center;padding:24px 0;">
       <div style="border:4px solid rgba(255,255,255,.2);
                   border-top:4px solid #7c5cff;border-radius:50%;
@@ -131,12 +131,22 @@
           </div>
         </div>
 
-        <!-- Loan amount -->
-        <div class="row">
+        <!-- Loan amount (token ⇄ USD) -->
+        <div class="row" style="margin-top:10px">
           <div>
             <label for="loanAmount">Loan Amount (<span id="loanUnit">—</span>)</label>
-            <input id="loanAmount" type="number" min="0" step="any" placeholder="e.g., 1000" required />
+            <div class="row row-2">
+              <div>
+                <input id="loanAmount" type="number" min="0" step="any" placeholder="e.g., 1000" />
+                <div class="help">Amount in <strong id="loanUnit2">—</strong> (token units sent to the contract)</div>
+              </div>
+              <div>
+                <input id="loanAmountUsd" type="number" min="0" step="any" placeholder="≈ USD" />
+                <div class="help">USD equivalent (for clarity & $10k cap)</div>
+              </div>
+            </div>
             <div id="loanAssetPrice" class="help" style="margin-top:6px"></div>
+            <div id="loanEquivNote" class="help" style="margin-top:6px"></div>
           </div>
         </div>
 
@@ -374,6 +384,7 @@
     ["traderjoe","trader joe"],["pangolin","pangolin"],["apeswap","apeswap"]
   ]);
 
+  /* ===== Utilities & helpers ===== */
   function setOptions(select, list){
     if(!select) return;
     const opts=(list||["Other / Custom"]).map(v=>`<option>${v}</option>`).join('');
@@ -404,13 +415,37 @@
     if(s.includes("pangolin"))return "pangolin";
     return null;
   }
+  function dexPrettyName(p){
+    const raw = (p?.dexId || "").toLowerCase();
+    if (/^0x[0-9a-f]{6,}$/i.test(raw)) {
+      try {
+        const host = new URL(p?.url || "").hostname || "";
+        if (host.includes("uniswap"))  return "Uniswap V3";
+        if (host.includes("sushi"))    return "SushiSwap";
+        if (host.includes("balancer")) return "Balancer";
+        if (host.includes("camelot"))  return "Camelot";
+        if (host.includes("quickswap"))return "QuickSwap";
+        if (host.includes("pancake"))  return "PancakeSwap";
+        if (host.includes("traderjoe"))return "Trader Joe";
+        if (host.includes("pangolin")) return "Pangolin";
+        if (host.includes("curve"))    return "Curve";
+        if (host.includes("raydium"))  return "Raydium";
+        if (host.includes("orca"))     return "Orca";
+        if (host.includes("jupiter"))  return "Jupiter";
+      } catch(_) {}
+      return "DEX";
+    }
+    const alias = DEX_ALIAS.get(norm(raw)) || raw;
+    const n = alias.replace(/\bv3\b/,"V3").replace(/\bv2\b/,"V2");
+    return n.split(/[\s-]/).map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(" ");
+  }
 
   /* ===== Dropdown flow ===== */
   function refreshPlatforms(){
     const net=$("network").value;
     setOptions($("platform"), PLATFORMS[net]);
     setOptions($("loanAsset"), []);
-    $("loanUnit").textContent="—";
+    updateLoanUnitLabels("");
     $("loanAssetPrice").textContent="";
     refreshSummary();
   }
@@ -418,7 +453,7 @@
     const net=$("network").value, plat=$("platform").value;
     const assets=(BORROW_ASSETS[net]||{})[plat]||[];
     setOptions($("loanAsset"), assets);
-    $("loanUnit").textContent="—";
+    updateLoanUnitLabels("");
     $("loanAssetPrice").textContent="";
     refreshSummary();
   }
@@ -427,6 +462,44 @@
     const dex=DEXES[net];
     if(priceMap){ setOptionsWithPrices($("buyDex"), dex, priceMap); setOptionsWithPrices($("sellDex"), dex, priceMap); }
     else { setOptions($("buyDex"), dex); setOptions($("sellDex"), dex); }
+    refreshSummary();
+  }
+
+  /* ===== Loan unit UI / converters ===== */
+  function updateLoanUnitLabels(sym){
+    $("loanUnit").textContent = sym || "—";
+    $("loanUnit2").textContent = sym || "—";
+  }
+  function syncLoanTokenToUsd(){
+    const sym = $("loanAsset").value;
+    const px  = window.__ck_prices?.[sym+"_USD"];
+    const amt = parseFloat($("loanAmount").value);
+    if (sym && px>0 && amt>=0){
+      const usd = amt * px;
+      $("loanAmountUsd").value = usd ? usd.toFixed(2) : "";
+      $("loanEquivNote").textContent = `≈ ${fmtUSD(usd)} at ${sym} ${fmtUSD(px)}/unit`;
+    } else {
+      $("loanAmountUsd").value = "";
+      $("loanEquivNote").textContent = "";
+    }
+    enforceUsdCapAndUpdateProceed();
+    if (!handleSameAssetPL()) updateProfitKPIs();
+    refreshSummary();
+  }
+  function syncLoanUsdToToken(){
+    const sym = $("loanAsset").value;
+    const px  = window.__ck_prices?.[sym+"_USD"];
+    const usd = parseFloat($("loanAmountUsd").value);
+    if (sym && px>0 && usd>=0){
+      const amt = usd / px;
+      $("loanAmount").value = amt ? amt.toFixed(6) : "";
+      $("loanEquivNote").textContent = `≈ ${amt.toFixed(6)} ${sym} at ${sym} ${fmtUSD(px)}/unit`;
+    } else {
+      $("loanAmount").value = "";
+      $("loanEquivNote").textContent = "";
+    }
+    enforceUsdCapAndUpdateProceed();
+    if (!handleSameAssetPL()) updateProfitKPIs();
     refreshSummary();
   }
 
@@ -445,7 +518,7 @@
   }
   async function updateLoanAssetUI(){
     const sym=$("loanAsset").value;
-    $("loanUnit").textContent=sym||"—";
+    updateLoanUnitLabels(sym);
     const el=$("loanAssetPrice");
     if(!sym){ el.textContent=""; return; }
     el.textContent="Fetching loan asset price…";
@@ -454,6 +527,7 @@
     el.innerHTML=`<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
     window.__ck_prices[sym+"_USD"]=p;
     if(sym==="WETH"||sym==="ETH"){ window.__ck_prices.ETH_USD=p; calcGas(); }
+    syncLoanTokenToUsd(); // refresh USD side
     updateProfitKPIs(); refreshSummary();
   }
   async function updateDesiredTokenPriceUI(){
@@ -488,6 +562,8 @@
       }
       explain.textContent=out;
     } else {
+      const net=$("network").value;
+      if (EVM.has(net) && !$("gasLimit").value) $("gasLimit").value="180000"; // safe fallback
       window.__ck_prices.GAS_USD=0;
       explain.textContent="Enter a gas limit to see ETH and USD cost. Gas price is auto-fetched.";
     }
@@ -665,7 +741,7 @@
     window.__ck_best={ buyIdx:bestBuyIdx, sellIdx:bestSellIdx };
     pairs.forEach((p,i)=>{
       const tr=document.createElement("tr");
-      const dex=(p?.dexId||"").toUpperCase();
+      const dex=dexPrettyName(p);
       const pair=`${p?.baseToken?.symbol||""}/${p?.quoteToken?.symbol||""}`;
       const pr=p?.priceUsd?Number(p.priceUsd):NaN;
       const url=p?.url||"#";
@@ -682,7 +758,9 @@
     });
     const bestBuy = pairs[bestBuyIdx] || null;
     const bestSell = pairs[bestSellIdx] || null;
-    updateBestKPI(bestBuy, bestSell);
+    $("kpiBestBuy").textContent  = bestBuy ?.priceUsd ? `${dexPrettyName(bestBuy)} @ ${fmtUSD(Number(bestBuy.priceUsd))}`   : "—";
+    $("kpiBestSell").textContent = bestSell?.priceUsd ? `${dexPrettyName(bestSell)} @ ${fmtUSD(Number(bestSell.priceUsd))}` : "—";
+
     const priceMap=buildDexPriceMap(pairs);
     refreshDexMenus(priceMap);
     if(bestBuy)  selectDEXInto($("buyDex"),  bestBuy.dexId);
@@ -692,11 +770,13 @@
     ensureDifferentDexes();
 
     applyGasPresetFromRoute();
+    if (!parseFloat($("gasLimit").value)) applyGasPresetFromRoute(); // mobile fallback
+    calcGas(); // ensure USD gas ready
     updateProfitKPIs();
   }
   function updateBestKPI(buyPair, sellPair){
-    $("kpiBestBuy").textContent  = buyPair?.priceUsd ? `${buyPair.dexId.toUpperCase()} @ ${fmtUSD(Number(buyPair.priceUsd))}` : "—";
-    $("kpiBestSell").textContent = sellPair?.priceUsd ? `${sellPair.dexId.toUpperCase()} @ ${fmtUSD(Number(sellPair.priceUsd))}` : "—";
+    $("kpiBestBuy").textContent  = buyPair?.priceUsd ? `${dexPrettyName(buyPair)} @ ${fmtUSD(Number(buyPair.priceUsd))}` : "—";
+    $("kpiBestSell").textContent = sellPair?.priceUsd ? `${dexPrettyName(sellPair)} @ ${fmtUSD(Number(sellPair.priceUsd))}` : "—";
   }
 
   /* ===== Profit calc ===== */
@@ -753,22 +833,13 @@
         `principal=${fmtUSD(r.principalUSD)} | buy=${fmtUSD(r.buyP)} | sell=${fmtUSD(r.sellP)} | `
         + `fee(0.9%)=${fmtUSD(r.flashFeeUSD)} | gas≈${fmtUSD(r.gasUSD)} | net=${fmtUSD(r.withGasProfitUSD)}`;
     }
+    // gates
+    if (enforceUsdCapAndUpdateProceed()) return;
+    if (handleSameAssetPL()) return;
     refreshSummary();
   }
 
-  /* ===== Sanity helpers you asked for ===== */
-  function sanityWarnSameAsset() {
-    const loanSym = $("loanAsset").value;
-    const wantSym = $("token").value;
-    const v = $("validation");
-    if (loanSym && wantSym && loanSym === wantSym) {
-      v.classList.add("warn");
-      v.textContent = "Heads up: Borrow token equals desired token. Spread is ≈ 0, so P/L will be ~ -0.9% fee minus gas.";
-    } else if (v.textContent.includes("Heads up: Borrow token equals desired token")) {
-      v.textContent = "";
-      v.classList.remove("warn");
-    }
-  }
+  /* ===== Sanity helpers & gates ===== */
   function ensureDifferentDexes() {
     const b = $("buyDex").value;
     const s = $("sellDex").value;
@@ -777,6 +848,51 @@
       const alt = opts.find(v => v !== b) || "Other / Custom";
       $("sellDex").value = alt;
     }
+  }
+  function enforceUsdCapAndUpdateProceed(){
+    const amt = parseFloat($("loanAmount").value);
+    const sym = $("loanAsset").value;
+    const px  = window.__ck_prices?.[sym+"_USD"];
+    const btn = $("processBtn");
+    const v   = $("validation");
+    if (!(amt>0) || !(px>0)) { btn.disabled=false; return false; }
+    const usd = amt*px;
+    const over = usd > LOAN_CAP_USD;
+    btn.disabled = over;
+    if (over){
+      v.classList.remove("ok"); v.classList.add("bad");
+      v.textContent = `Loan limit exceeded: ${fmtUSD(usd)} > ${fmtUSD(LOAN_CAP_USD)}. Reduce amount.`;
+      $("kpiProfitNoGas").textContent="—";
+      $("kpiProfit").textContent="—";
+    } else if (v.textContent.startsWith("Loan limit exceeded")) {
+      v.textContent = ""; v.classList.remove("bad");
+    }
+    return over;
+  }
+  function handleSameAssetPL(){
+    const loanSym = $("loanAsset").value;
+    const wantSym = $("token").value;
+    const v = $("validation");
+    if (loanSym && wantSym && loanSym === wantSym) {
+      v.classList.add("warn");
+      v.textContent = "Borrow token equals desired token — there’s no price edge. P/L = −flash-loan fee − gas.";
+      const amt = parseFloat($("loanAmount").value);
+      const px  = window.__ck_prices?.[loanSym+"_USD"];
+      if (amt>0 && px>0){
+        const principalUSD = amt*px;
+        const feeUSD = principalUSD * LOAN_FEE_RATE;
+        const gasUSD = window.__ck_prices?.GAS_USD || 0;
+        $("kpiProfitNoGas").textContent = `${fmtUSD(-feeUSD)} (fee ${fmtUSD(feeUSD)})`;
+        $("kpiProfit").textContent     = `${fmtUSD(-(feeUSD+gasUSD))} (gas ~ ${fmtUSD(gasUSD)})`;
+        const dbg = $("plDebug");
+        if (dbg) dbg.textContent = `principal=${fmtUSD(principalUSD)} | buy=— | sell=— | fee(0.9%)=${fmtUSD(feeUSD)} | gas≈${fmtUSD(gasUSD)} | net=${fmtUSD(-(feeUSD+gasUSD))}`;
+      }
+      return true;
+    }
+    if (v.textContent.includes("Borrow token equals desired token")){
+      v.textContent = ""; v.classList.remove("warn");
+    }
+    return false;
   }
 
   /* ===== Validation & flow ===== */
@@ -799,47 +915,42 @@
   /* ===== Events ===== */
   $("network").addEventListener("change", ()=>{
     refreshPlatforms(); refreshDexMenus(null); setupAutoGas();
-    $("tokenPrice").textContent = ""; $("loanAmount").value = "";
-    $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
+    $("tokenPrice").textContent = ""; $("loanAmount").value = ""; $("loanAmountUsd").value="";
+    $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—"; $("plDebug").textContent="";
     updateDexQuotes(); refreshSummary();
   });
   $("platform").addEventListener("change", ()=>{ refreshLoanAssets(); refreshSummary(); });
-  $("loanAsset").addEventListener("change", ()=>{ updateLoanAssetUI(); updateProfitKPIs(); sanityWarnSameAsset(); });
-  $("token").addEventListener("change", ()=>{ updateDesiredTokenPriceUI(); updateDexQuotes(); sanityWarnSameAsset(); });
+  $("loanAsset").addEventListener("change", ()=>{ updateLoanAssetUI(); enforceUsdCapAndUpdateProceed(); if (!handleSameAssetPL()) updateProfitKPIs(); });
+  $("token").addEventListener("change", ()=>{ updateDesiredTokenPriceUI(); updateDexQuotes(); if (!handleSameAssetPL()) updateProfitKPIs(); });
   $("buyDex").addEventListener("change", ()=>{ ensureDifferentDexes(); applyGasPresetFromRoute(); updateProfitKPIs(); });
   $("sellDex").addEventListener("change", ()=>{ ensureDifferentDexes(); applyGasPresetFromRoute(); updateProfitKPIs(); });
   $("gasAutoToggle")?.addEventListener("change", applyGasPresetFromRoute);
-  ["loanAmount","gasLimit","gasPrice"].forEach(id => {
+  ["gasLimit","gasPrice"].forEach(id => {
     const el=$(id); if(el) el.addEventListener("input", ()=>{ calcGas(); updateProfitKPIs(); });
   });
+
+  // Dual loan inputs
+  $("loanAmount").addEventListener("input", syncLoanTokenToUsd);
+  $("loanAmountUsd").addEventListener("input", syncLoanUsdToToken);
 
   /* ===== Proceed (simulated) ===== */
   form.addEventListener("submit", async (e)=>{
     e.preventDefault();
     calcGas();
     if(!validate()) return;
-
-    // $10k cap
-    const amt=parseFloat($("loanAmount").value);
-    const loanSym=$("loanAsset").value;
-    const px=window.__ck_prices?.[loanSym+"_USD"];
-    if(amt > 0 && typeof px === "number" && (amt*px) > LOAN_CAP_USD){
-      validation.classList.remove("ok"); validation.classList.add("bad");
-      validation.textContent = `Transaction failed. Loan limit exceeded (max $${LOAN_CAP_USD.toLocaleString()}).`;
-      return;
-    }
+    if (enforceUsdCapAndUpdateProceed()) return;
+    if (handleSameAssetPL()) { return; }
 
     processBtn.disabled = true;
     $("loadingSpinner").classList.remove("hidden");
     validation.textContent = "";
 
-    await sleep(5000); // loading wheel for 5 seconds
+    await sleep(5000);
     $("loadingSpinner").classList.add("hidden");
 
     const txid = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(16)))
                      .map(b=>b.toString(16).padStart(2,"0")).join("");
 
-    // Simple success/fail flip based on profit sign (incl gas); if <= 0, mark failed
     const r=computeProfits();
     const fail = !r.ok || r.withGasProfitUSD <= 0;
 
@@ -866,8 +977,8 @@
       updateLoanAssetUI(); updateDesiredTokenPriceUI();
       setupAutoGas(); updateDexQuotes();
       window.__ck_prices = { ETH_USD: window.__ck_prices?.ETH_USD || null, GAS_USD: 0 };
-      $("loanAmount").value = ""; $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
-      $("plDebug").textContent = "";
+      $("loanAmount").value = ""; $("loanAmountUsd").value=""; $("kpiProfit").textContent = "—"; $("kpiProfitNoGas").textContent = "—";
+      $("plDebug").textContent = ""; $("loanEquivNote").textContent="";
     } catch(e){} }, 0);
   });
 
@@ -889,8 +1000,11 @@
 
   /* ===== Summary bar ===== */
   function refreshSummary(){
+    const sym = $("loanAsset").value || "—";
+    const amt = $("loanAmount").value || "—";
+    const usd = $("loanAmountUsd").value ? `$${Number($("loanAmountUsd").value).toLocaleString()}` : "—";
     $("sumNetwork").textContent = $("network").value || "—";
-    $("sumLoan").textContent = `Loan: ${$("loanAmount").value||"—"} ${$("loanAsset").value||"—"}`;
+    $("sumLoan").textContent = `Loan: ${amt} ${sym} (~${usd})`;
     $("sumRoute").textContent = `Buy: ${$("buyDex").value||"—"} • Sell: ${$("sellDex").value||"—"}`;
     $("sumPL").textContent = `Net P/L: ${$("kpiProfit").textContent || "—"}`;
   }
@@ -910,8 +1024,8 @@
   }
   function startBootTimer(){
     initApp();
-    setTimeout(showForm, 5000); // show after 5s
-    setTimeout(showForm, 8000); // hard stop fallback
+    setTimeout(showForm, 5000);
+    setTimeout(showForm, 8000); // hard fallback
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", startBootTimer);

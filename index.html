@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v8.2.2 — Hotfix</title>
+<title>Crypto Kings Test Bed v8.2.3 — Price Fallback</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
@@ -52,7 +52,7 @@
     <div class="topbar-inner">
       <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v8.2.2</span>
+      <span class="chip">v8.2.3</span>
       <div class="spacer"></div>
       <button id="btnConnect" class="btn">Connect Wallet</button>
     </div>
@@ -85,7 +85,6 @@
     solana:{"Solend":["USDC","USDT","SOL"],"MarginFi":["USDC","USDT","SOL"],"Other / Custom":["USDC","USDT","SOL"]}
   };
   const DEXES={ ethereum:["Uniswap V3","SushiSwap","Curve","Balancer","Other / Custom"], arbitrum:["Uniswap V3","SushiSwap","Camelot","Balancer","Other / Custom"], polygon:["Uniswap V3","SushiSwap","QuickSwap","Balancer","Other / Custom"], bsc:["PancakeSwap","ApeSwap","Other / Custom"], avalanche:["Trader Joe","Pangolin","Other / Custom"], solana:["Jupiter","Raydium","Orca","Other / Custom"] };
-  const DEX_ALIAS=new Map([["uniswap","uniswap v3"],["uniswapv3","uniswap v3"],["sushiswap","sushiswap"],["curve","curve"],["balancer","balancer"],["camelot","camelot"],["quickswap","quickswap"],["pancakeswap","pancakeswap"],["pancakeswapv3","pancakeswap"],["traderjoe","trader joe"],["pangolin","pangolin"],["apeswap","apeswap"],["jupiter","jupiter"],["raydium","raydium"],["orca","orca"]]);
   const TOKEN_ADDR = {
     ethereum:{USDC:"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",USDT:"0xdac17f958d2ee523a2206206994597c13d831ec7",WETH:"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",WBTC:"0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",DAI:"0x6B175474E89094C44Da98b954EedeAC495271d0F"},
     arbitrum:{USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"},
@@ -109,6 +108,39 @@
       return typeof p==="number"?p:null;
     }catch(_){ return null; }
   }
+  async function dexscreenerPriceUSD(net, symbol){
+    const addr=(TOKEN_ADDR[net]||{})[symbol]; if(!addr) return null;
+    try{
+      const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`,{cache:"no-store"});
+      if(!r.ok) return null;
+      const j=await r.json(); let pairs=(j?.pairs||[]).filter(p=>p.chainId===net);
+      if(!pairs.length) return null;
+      // Prefer USDC/USDT quotes with highest liquidity
+      let best=null, bestRank=99, bestLiq=-1;
+      for(const p of pairs){
+        const liq=p?.liquidity?.usd||0;
+        const quote=(p?.quoteToken?.symbol||"").toUpperCase();
+        const rank=(quote==="USDC")?0:(quote==="USDT")?1:99;
+        if(best===null || rank<bestRank || (rank===bestRank && liq>bestLiq)){
+          const price=Number(p?.priceUsd);
+          if(isFinite(price)){ best=p; bestRank=rank; bestLiq=liq; }
+        }
+      }
+      return best ? { price:Number(best.priceUsd), source:"dex" } : null;
+    }catch(_){ return null; }
+  }
+  // Unified price fetch with fallback
+  async function priceUSD(symbol, net){
+    const cg=await coingeckoUSD(symbol);
+    if(typeof cg==="number") return { price: cg, source:"cg" };
+    const ds=await dexscreenerPriceUSD(net, symbol);
+    if(ds) return ds;
+    return null;
+  }
+
+  const DEXES={ ethereum:["Uniswap V3","SushiSwap","Curve","Balancer","Other / Custom"], arbitrum:["Uniswap V3","SushiSwap","Camelot","Balancer","Other / Custom"], polygon:["Uniswap V3","SushiSwap","QuickSwap","Balancer","Other / Custom"], bsc:["PancakeSwap","ApeSwap","Other / Custom"], avalanche:["Trader Joe","Pangolin","Other / Custom"], solana:["Jupiter","Raydium","Orca","Other / Custom"] };
+  const DEX_ALIAS=new Map([["uniswap","uniswap v3"],["uniswapv3","uniswap v3"],["sushiswap","sushiswap"],["curve","curve"],["balancer","balancer"],["camelot","camelot"],["quickswap","quickswap"],["pancakeswap","pancakeswap"],["pancakeswapv3","pancakeswap"],["traderjoe","trader joe"],["pangolin","pangolin"],["apeswap","apeswap"],["jupiter","jupiter"],["raydium","raydium"],["orca","orca"]]);
+
   async function gasSuggestGwei(net){
     const eps=RPC[net]; if(!eps) throw 0;
     const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
@@ -297,7 +329,6 @@
       this.el.btnReset.addEventListener("click", ()=> this.reset());
     }
 
-    /* FIX: populate Loan Asset options based on platform selection */
     refreshLoanAssets(){
       const plat=this.el.platform.value;
       const assets=(BORROW_ASSETS[this.net]||{})[plat] || [];
@@ -305,7 +336,6 @@
       this.el.loanUnit.textContent="—";
       this.el.loanAssetPrice.textContent= assets.length ? "Select a loan asset to fetch USD price…" : "";
       this.el.loanAmount.value=""; this.el.loanAmountUsd.value=""; this.el.loanEquivNote.textContent="";
-      // Clear profit until we have fresh data
       this.el.kpiProfitNoGas.textContent="—"; this.el.kpiProfit.textContent="—"; this.el.plDebug.textContent="";
     }
 
@@ -334,21 +364,28 @@
       const sym=this.el.loanAsset.value; this.el.loanUnit.textContent=sym||"—";
       if(!sym){ this.el.loanAssetPrice.textContent=""; return; }
       this.el.loanAssetPrice.textContent="Fetching price…";
-      const p=await coingeckoUSD(sym);
-      if(p==null){ this.el.loanAssetPrice.innerHTML=`<span class="warn">Live price unavailable for ${sym}.</span>`; return; }
-      this.el.loanAssetPrice.innerHTML=`<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
-      this.state.prices[sym+"_USD"]=p;
-      if(sym==="WETH"||sym==="ETH"){ this.state.prices.ETH_USD=p; this.calcGas(); }
+      const pr=await priceUSD(sym, this.net);
+      if(!pr){ this.el.loanAssetPrice.innerHTML=`<span class="warn">USD price unavailable for ${sym}.</span>`; return; }
+      const via = pr.source==="cg" ? "" : " <span class='help'>(via Dexscreener)</span>";
+      this.el.loanAssetPrice.innerHTML=`<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(pr.price)}</span>${via}`;
+      this.state.prices[sym+"_USD"]=pr.price;
+      if(sym==="WETH"||sym==="ETH"){ this.state.prices.ETH_USD=pr.price; this.calcGas(); }
       this.syncTokenToUsd();
+      // If we still don't have ETH_USD (for gas), attempt to fetch WETH as fallback
+      if(!this.state.prices.ETH_USD && EVM.has(this.net)){
+        const ethPr=await priceUSD("WETH", this.net);
+        if(ethPr?.price) { this.state.prices.ETH_USD=ethPr.price; this.calcGas(); }
+      }
     }
     async updateDesiredTokenPriceUI(){
       const sym=this.el.token.value; const out=this.el.tokenPrice;
       if(!sym || sym==="Other / Custom"){ out.textContent=""; return; }
       out.textContent="Fetching price…";
-      const p=await coingeckoUSD(sym);
-      if(p==null){ out.innerHTML=`<span class="warn">Live price unavailable for ${sym}.</span>`; return; }
-      out.innerHTML=`<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(p)}</span>`;
-      this.state.prices[sym+"_USD"]=p;
+      const pr=await priceUSD(sym, this.net);
+      if(!pr){ out.innerHTML=`<span class="warn">USD price unavailable for ${sym}.</span>`; return; }
+      const via = pr.source==="cg" ? "" : " <span class='help'>(via Dexscreener)</span>";
+      out.innerHTML=`<span class="price-pill"><strong>${sym}</strong> ≈ ${fmtUSD(pr.price)}</span>${via}`;
+      this.state.prices[sym+"_USD"]=pr.price;
     }
 
     syncTokenToUsd(){
@@ -458,7 +495,10 @@
         const s=await gasSuggestGwei(this.net);
         this.el.gasPrice.value=s.gasPriceGwei.toFixed(1);
         note.textContent=`auto • base ${s.baseGwei.toFixed(1)} + tip ${s.tipGwei.toFixed(1)} gwei`;
-        if(!this.state.prices.ETH_USD){ const p=await coingeckoUSD("WETH"); if(typeof p==="number") this.state.prices.ETH_USD=p; }
+        if(!this.state.prices.ETH_USD){
+          const ethPr=await priceUSD("WETH", this.net);
+          if(ethPr?.price) this.state.prices.ETH_USD=ethPr.price;
+        }
         this.calcGas();
       }catch(_){ this.el.gasPrice.readOnly=false; note.textContent="auto failed (RPC/CORS). Enter manually."; }
     }
@@ -514,7 +554,7 @@
       };
       const buyP=pickPrice("buy"), sellP=pickPrice("sell"); if(!isFinite(buyP)||!isFinite(sellP)) return null;
       const units=principalUSD/buyP, grossReturnUSD=units*sellP, grossProfitUSD=grossReturnUSD-principalUSD;
-      const fee= (LOAN_FEE_RATE_BY_PLATFORM[this.el.platform.value] ?? 0.0009); const flashFeeUSD=principalUSD*fee;
+      const fee=(LOAN_FEE_RATE_BY_PLATFORM[this.el.platform.value] ?? 0.0009); const flashFeeUSD=principalUSD*fee;
       const noGasProfitUSD=grossProfitUSD-flashFeeUSD;
       const gasUSD=this.state.prices.GAS_USD||0; const withGasProfitUSD=noGasProfitUSD-gasUSD;
       return {principalUSD,buyP,sellP,flashFeeUSD,noGasProfitUSD,gasUSD,withGasProfitUSD,fee};

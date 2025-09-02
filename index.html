@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v8.7.0 — Auto-Execute (Local)</title>
+<title>Crypto Kings Test Bed v8.7.1 — Auto-Execute (Local)</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
@@ -53,6 +53,10 @@
   .result{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
   .result.ok{border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.08)}
   .result.bad{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)}
+  /* crash overlay */
+  #crash {position:fixed;inset:0;background:#0b0d12f0;color:#e8eef9;display:none;align-items:center;justify-content:center;text-align:left;padding:24px;z-index:9999}
+  #crash .box{max-width:900px;background:#111422;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:16px}
+  #crash pre{white-space:pre-wrap;word-break:break-word;background:#0e1220;border:1px solid rgba(255,255,255,.15);padding:10px;border-radius:8px;max-height:45vh;overflow:auto}
 </style>
 </head>
 <body>
@@ -60,7 +64,7 @@
     <div class="topbar-inner">
       <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v8.7.0</span>
+      <span class="chip">v8.7.1</span>
       <div class="spacer"></div>
       <button id="btnConnect" class="btn">Connect Wallet</button>
     </div>
@@ -73,619 +77,659 @@
 
   <div id="toast" class="toast" aria-live="polite"></div>
 
+  <div id="crash">
+    <div class="box">
+      <h3>Something went wrong loading the app</h3>
+      <p class="help">If this keeps happening, send the error details below.</p>
+      <pre id="crash-msg"></pre>
+      <div class="cta"><button onclick="location.reload()" class="btn small">Reload</button></div>
+    </div>
+  </div>
+
 <script>
 (() => {
-  /* ============ TUNABLE LIMITS (local) ============ */
-  const MAX_ADDRESSES_PER_SCAN = 200;   // bigger sample (be mindful of rate limits)
-  const CONCURRENCY            = 8;     // parallel Dexscreener requests
-  const REQ_DELAY_MS           = 120;   // small pause between requests per worker
-  const MIN_LIQ_USD            = 20000;
-  const MIN_VOL24H_USD         = 5000;
-  const LOAN_CAP_USD           = 10000;
-  const DEFAULT_PLATFORM       = "Aave v3";
-  const PLATFORM_FEE           = 0.0009; // 0.09%
-
-  // Sim execution tuning
-  const ALWAYS_FAIL = false;
-  const RANDOM_FAIL_RATIO = 0.0;
-  const PROFIT_MUST_SUCCEED = true;
-
-  /* ============ Static refs & helpers ============ */
-  const NETWORKS = ["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
-  const NET_LABEL = { ethereum:"Ethereum", arbitrum:"Arbitrum", polygon:"Polygon", bsc:"BSC", avalanche:"Avalanche", solana:"Solana" };
-  const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
-  const DS_BASE = "https://api.dexscreener.com";
-  const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
-  const toast = (msg)=>{ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2200); };
-
-  const TOKENLISTS = {
-    ethereum: [
-      "https://tokens.uniswap.org",
-      "https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"
-    ],
-    arbitrum: [
-      "https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"
-    ],
-    polygon: [
-      "https://unpkg.com/quickswap-default.token-list@latest/build/quickswap-default.tokenlist.json",
-      "https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"
-    ],
-    bsc: [
-      "https://tokens.pancakeswap.finance/pancakeswap-extended.json"
-    ],
-    avalanche: [
-      "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/joe.tokenlist.json"
-    ],
-    solana: []
+  const showCrash = (err) => {
+    try {
+      console.error(err);
+      const box = document.getElementById('crash');
+      const pre = document.getElementById('crash-msg');
+      pre.textContent = (err && err.stack) ? err.stack : String(err);
+      box.style.display = 'flex';
+    } catch (_) {}
   };
 
-  const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"], arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"], polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"], bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"], avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
-  const GAS_NATIVE = { ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
-  const CG_IDS={"ETH":"ethereum","WETH":"ethereum","MATIC":"matic-network","BNB":"binancecoin","AVAX":"avalanche-2"};
-  async function cgUSD(symbol){
-    const id = CG_IDS[symbol]; if(!id) return null;
-    try{
-      const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`);
-      if(!r.ok) return null; const j=await r.json(); return j?.[id]?.usd ?? null;
-    }catch(_){ return null; }
-  }
+  try {
+    /* ============ TUNABLE LIMITS (local) ============ */
+    const MAX_ADDRESSES_PER_SCAN = 200;
+    const CONCURRENCY            = 8;
+    const REQ_DELAY_MS           = 120;
+    const MIN_LIQ_USD            = 20000;
+    const MIN_VOL24H_USD         = 5000;
+    const LOAN_CAP_USD           = 10000;
+    const DEFAULT_PLATFORM       = "Aave v3";
+    const PLATFORM_FEE           = 0.0009;
 
-  async function getJSON(url, ttl=60){
-    const r = await fetch(url, { cf:{ cacheEverything:true, cacheTtl:ttl } }).catch(()=>null);
-    if(!r || !r.ok) throw new Error(`GET ${url} -> ${r?.status||"ERR"}`);
-    return r.json();
-  }
-  async function loadTokenAddresses(network){
-    const lists = TOKENLISTS[network] || [];
-    const addrs = new Set();
-    for(const url of lists){
-      try{
-        const tl = await getJSON(url, 300);
-        const tokens = tl?.tokens || [];
-        for(const t of tokens){
-          if(!t.address) continue;
-          const ok =
-            (network === "ethereum" && (t.chainId == 1)) ||
-            (network === "arbitrum" && (t.chainId == 42161)) ||
-            (network === "polygon" && (t.chainId == 137)) ||
-            (network === "bsc" && (t.chainId == 56)) ||
-            (network === "avalanche" && (t.chainId == 43114));
-          if(ok) addrs.add(t.address);
-        }
-      }catch(_){}
-    }
-    const arr = Array.from(addrs);
-    return arr.slice(0, Math.min(arr.length, MAX_ADDRESSES_PER_SCAN));
-  }
+    const ALWAYS_FAIL = false;
+    const RANDOM_FAIL_RATIO = 0.0;
+    const PROFIT_MUST_SUCCEED = true;
 
-  async function dsByToken(addr){
-    const url = `${DS_BASE}/latest/dex/tokens/${addr}`;
-    const r = await fetch(url, { cache:"no-store" }).catch(()=>null);
-    if(!r || !r.ok) return null;
-    return r.json();
-  }
+    /* ============ Static refs & helpers ============ */
+    const NETWORKS = ["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
+    const NET_LABEL = { ethereum:"Ethereum", arbitrum:"Arbitrum", polygon:"Polygon", bsc:"BSC", avalanche:"Avalanche", solana:"Solana" };
+    const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
+    const DS_BASE = "https://api.dexscreener.com";
+    const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
+    const toast = (msg)=>{ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2200); };
 
-  function consolidatePerDex(pairs){
-    const preferred = ["USDC","USDT"];
-    const byDex = new Map();
-    for(const p of (pairs||[])){
-      const dex = (p?.dexId||"").toLowerCase(); if(!dex) continue;
-      const liq = p?.liquidity?.usd || 0; if(liq < MIN_LIQ_USD) continue;
-      const vol = p?.volume?.h24 || 0; if(vol < MIN_VOL24H_USD) continue;
-      const quote = (p?.quoteToken?.symbol||"").toUpperCase();
-      const rank = preferred.includes(quote) ? (preferred.indexOf(quote)) : 99;
-      const cur = byDex.get(dex);
-      if(!cur || rank < cur.rank || (rank === cur.rank && liq > cur.liq)){
-        byDex.set(dex, { rec:p, liq, rank });
-      }
-    }
-    return Array.from(byDex.values()).map(x=>x.rec);
-  }
-
-  function prettyDexId(p){
-    const raw=(p?.dexId||"").toLowerCase();
-    const map={ uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",curve:"Curve",balancer:"Balancer",camelot:"Camelot",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",jupiter:"Jupiter",raydium:"Raydium",orca:"Orca" };
-    for(const k in map){ if(raw.includes(k)) return map[k]; }
-    return raw ? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
-  }
-
-  async function mapLimit(items, limit, fn){
-    const results = new Array(items.length);
-    let i = 0;
-    const workers = Array.from({length: Math.min(limit, items.length)}, async ()=>{
-      while(i < items.length){
-        const idx = i++;
-        try{
-          results[idx] = await fn(items[idx], idx);
-          if(REQ_DELAY_MS>0) await new Promise(r=>setTimeout(r, REQ_DELAY_MS));
-        }catch(_){ results[idx] = null; }
-      }
-    });
-    await Promise.all(workers);
-    return results;
-  }
-
-  async function gasSuggestGwei(net){
-    const eps=RPC[net]; if(!eps) throw new Error("no rpc");
-    const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
-    for(const url of eps){
-      try{
-        const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(feeHist)});
-        if(!r.ok) continue;
-        const j=await r.json(); const bh=j?.result; if(!bh?.baseFeePerGas||!bh?.reward) continue;
-        const base=parseInt(bh.baseFeePerGas.at(-1)||"0x0",16)/1e9;
-        const tip =parseInt((bh.reward.at(-1)?.[1]||"0x0"),16)/1e9;
-        return { gasPriceGwei: base+tip, baseGwei:base, tipGwei:tip };
-      }catch(_){}
-    }
-    const gp={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
-    for(const url of eps){
-      try{
-        const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(gp)});
-        if(!r.ok) continue; const j=await r.json();
-        const wei=parseInt(j?.result||"0x0",16); return { gasPriceGwei:wei/1e9, baseGwei:wei/1e9, tipGwei:0 };
-      }catch(_){}
-    }
-    throw new Error("rpc failed");
-  }
-
-  /* ============ UI scaffold ============ */
-  const tabbar=document.getElementById("tabbar");
-  const panes=document.getElementById("tabpanes");
-
-  for(const [i,net] of NETWORKS.entries()){
-    const btn=document.createElement("button");
-    btn.textContent=NET_LABEL[net];
-    if(i===0) btn.classList.add("active");
-    tabbar.appendChild(btn);
-
-    const pane=document.createElement("div");
-    pane.id=`pane-${net}`; if(i>0) pane.style.display="none";
-    pane.innerHTML = `
-      <div class="wrap">
-        <div class="card">
-          <div class="row row-4">
-            <div><label>Network</label><input value="${NET_LABEL[net]}" readonly /></div>
-            <div><label>Platform</label><input value="${DEFAULT_PLATFORM}" readonly /></div>
-            <div><label>Gas Currency</label><input value="${GAS_NATIVE[net]||'-'}" readonly /></div>
-            <div><label>Scan</label><button class="btn small" data-scan="${net}">Scan All Tokens (sampled)</button></div>
-          </div>
-          <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-${net}" class="help"></span></div>
-            <div class="help">Filters: Liquidity ≥ ${MIN_LIQ_USD.toLocaleString()} • Vol(24h) ≥ ${MIN_VOL24H_USD.toLocaleString()}</div>
-            <div class="help">Sample size: ${MAX_ADDRESSES_PER_SCAN}, concurrency: ${CONCURRENCY}</div>
-          </div>
-
-          <div class="kpi">
-            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-${net}">—</div></div>
-            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-${net}">—</div></div>
-            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-${net}">—</div></div>
-          </div>
-
-          <div class="row row-4" style="margin-top:8px">
-            <div>
-              <label>Loan Asset</label>
-              <input id="loan-asset-${net}" value="USDC" />
-              <div class="help" id="loan-asset-note-${net}">Loan capped at $10,000.</div>
-            </div>
-            <div>
-              <label>Loan Amount (units)</label>
-              <input id="loan-amt-${net}" type="number" min="0" step="any" placeholder="e.g., 1000" />
-              <div class="help" id="loan-amt-usd-${net}">≈ —</div>
-            </div>
-            <div>
-              <label>Gas (auto)</label>
-              <input id="gas-gwei-${net}" placeholder="Auto" readonly />
-              <div class="help" id="gas-note-${net}">—</div>
-            </div>
-            <div>
-              <label>Gas Limit</label>
-              <input id="gas-limit-${net}" type="number" min="0" step="1000" placeholder="190000" />
-              <div class="help">Uni/Sushi ~150–200k • Curve ~340k • Balancer ~300k+</div>
-            </div>
-          </div>
-
-          <div class="row row-4" style="margin-top:8px">
-            <div>
-              <label>Est. Gas Cost</label>
-              <input id="gas-cost-${net}" placeholder="—" readonly />
-              <div class="help" id="gas-cost-usd-${net}">—</div>
-            </div>
-            <div>
-              <label>Auto-Size Loan</label>
-              <button class="btn small" id="btn-autosize-${net}" type="button">Break-Even +5%</button>
-            </div>
-            <div>
-              <label>Auto-Execute</label>
-              <div class="row">
-                <label class="help"><input type="checkbox" id="autoexec-${net}"> Enable (sim)</label>
-                <label class="help">Min Net P/L (USD) <input id="minnet-${net}" type="number" min="0" step="1" value="5"></label>
-              </div>
-            </div>
-            <div>
-              <label>&nbsp;</label>
-              <div class="row">
-                <label class="help">Max Trades <input id="maxtrades-${net}" type="number" min="1" max="50" value="3"></label>
-                <label class="help">Cooldown (s) <input id="cooldown-${net}" type="number" min="1" max="3600" value="10"></label>
-              </div>
-            </div>
-          </div>
-
-          <div class="help" id="route-${net}" style="margin-top:6px;"></div>
-
-          <div class="cta" style="margin-top:8px">
-            <button class="btn" id="btn-proceed-${net}" type="button">Proceed</button>
-            <button class="btn ghost" id="btn-stop-${net}" type="button">Stop Auto</button>
-            <span id="proceed-note-${net}" class="help"></span>
-          </div>
-
-          <div id="timeline-${net}" class="timeline hidden">
-            <div class="step" id="st1-${net}">Taking loan</div>
-            <div class="step" id="st2-${net}">Buying on DEX</div>
-            <div class="step" id="st3-${net}">Selling on DEX</div>
-            <div class="step" id="st4-${net}">Repaying loan + fee</div>
-            <div class="step" id="st5-${net}">Sending profit</div>
-          </div>
-          <div id="tx-result-${net}" class="result hidden"></div>
-
-          <table class="table" style="margin-top:10px">
-            <thead>
-              <tr>
-                <th>Token</th>
-                <th>Buy (DEX @ $)</th>
-                <th>Sell (DEX @ $)</th>
-                <th class="right">Spread %</th>
-              </tr>
-            </thead>
-            <tbody id="rows-${net}"></tbody>
-          </table>
-        </div>
-      </div>
-    `;
-    panes.appendChild(pane);
-
-    btn.addEventListener("click",()=>{
-      [...tabbar.children].forEach(b=>b.classList.remove("active"));
-      btn.classList.add("active");
-      [...panes.children].forEach(p=>p.style.display="none");
-      pane.style.display="block";
-    });
-  }
-
-  /* ============ per-network state ============ */
-  const state = {};
-  for(const net of NETWORKS){
-    state[net] = {
-      best: null,
-      gasUsd: 0,
-      gasNativeUsd: null,
-      gasGwei: null,
-      autoTimer: null,
-      remainingTrades: 0
+    const TOKENLISTS = {
+      ethereum: [
+        "https://tokens.uniswap.org",
+        "https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"
+      ],
+      arbitrum: [
+        "https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"
+      ],
+      polygon: [
+        "https://unpkg.com/quickswap-default.token-list@latest/build/quickswap-default.tokenlist.json",
+        "https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"
+      ],
+      bsc: [
+        "https://tokens.pancakeswap.finance/pancakeswap-extended.json"
+      ],
+      avalanche: [
+        "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/joe.tokenlist.json"
+      ],
+      solana: []
     };
-  }
 
-  /* ============ gas & loan helpers ============ */
-  async function initGas(net){
-    if(!EVM.has(net)) return;
-    const g = await gasSuggestGwei(net).catch(()=>null);
-    const native = GAS_NATIVE[net];
-    const nativeUsd = await cgUSD(native).catch(()=>null);
+    const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"], arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"], polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"], bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"], avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
+    const GAS_NATIVE = { ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
+    const CG_IDS={"ETH":"ethereum","WETH":"ethereum","MATIC":"matic-network","BNB":"binancecoin","AVAX":"avalanche-2"};
 
-    const gEl = document.getElementById(`gas-gwei-${net}`);
-    const note = document.getElementById(`gas-note-${net}`);
-    state[net].gasGwei = g?.gasPriceGwei ?? null;
-    state[net].gasNativeUsd = nativeUsd ?? null;
-
-    if(g){
-      gEl.value = `${g.gasPriceGwei.toFixed(1)} Gwei`;
-      note.textContent = `base ${g.baseGwei.toFixed(1)} + tip ${g.tipGwei.toFixed(1)} • ${native} ≈ ${fmtUSD(nativeUsd)}`;
-    }else{
-      gEl.value = "";
-      note.textContent = "auto gas failed (RPC/CORS). Enter gas limit to estimate cost.";
+    async function cgUSD(symbol){
+      const id = CG_IDS[symbol]; if(!id) return null;
+      try{
+        const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`);
+        if(!r.ok) return null; const j=await r.json(); return j && j[id] ? j[id].usd : null;
+      }catch(_){ return null; }
     }
-  }
 
-  function calcGasUsd(net){
-    if(!EVM.has(net)) return 0;
-    const gwei = state[net].gasGwei;
-    const gl = parseFloat(document.getElementById(`gas-limit-${net}`).value || "0");
-    const nativeUsd = state[net].gasNativeUsd;
-    if(!(gwei>0) || !(gl>0) || !(nativeUsd>0)) return 0;
-    const eth = (gwei * gl) / 1e9;
-    const usd = eth * nativeUsd;
-    state[net].gasUsd = usd;
-    document.getElementById(`gas-cost-${net}`).value = `${eth.toFixed(6)} ${GAS_NATIVE[net]}`;
-    document.getElementById(`gas-cost-usd-${net}`).textContent = `≈ ${fmtUSD(usd)}`;
-    return usd;
-  }
-
-  async function loanAssetUsdSym(net){
-    const sym = document.getElementById(`loan-asset-${net}`).value.trim().toUpperCase();
-    const id = {USDC:"usd-coin",USDT:"tether",DAI:"dai",WETH:"ethereum",ETH:"ethereum",WBTC:"wrapped-bitcoin",MATIC:"matic-network",WBNB:"binancecoin",AVAX:"avalanche-2",ARB:"arbitrum",SOL:"solana"}[sym];
-    if(!id) return { sym, usd:null };
-    try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); const j=await r.json(); return { sym, usd: j?.[id]?.usd ?? null }; }catch(_){return { sym, usd:null };}
-  }
-
-  function updateLoanUsdNote(net, price, amount){
-    const el = document.getElementById(`loan-amt-usd-${net}`);
-    if(!(price>0) || !(amount>=0)) { el.textContent = "≈ —"; return; }
-    el.textContent = `≈ ${fmtUSD(price*amount)}`;
-  }
-
-  function pickPL(net, principalUsd){
-    const best = state[net].best;
-    if(!best) return null;
-    const spread = (best.sellPrice - best.buyPrice)/best.buyPrice;
-    const gross = principalUsd * spread;
-    const flashFee = principalUsd * PLATFORM_FEE;
-    const gas = state[net].gasUsd || 0;
-    return { spread, gross, flashFee, gas, netNoGas: gross - flashFee, net: gross - flashFee - gas };
-  }
-
-  async function autosizeLoan(net){
-    const { usd:px } = await loanAssetUsdSym(net);
-    if(!(px>0)) { toast("Loan asset price unavailable"); return; }
-    const best = state[net].best;
-    if(!best){ toast("No route selected"); return; }
-    const spread = (best.sellPrice - best.buyPrice)/best.buyPrice;
-    const gas = calcGasUsd(net);
-    const denom = spread - PLATFORM_FEE;
-    if(!(denom>0)){ toast("Not profitable even before gas"); return; }
-    const pMin = gas / denom;
-    const target = Math.min(Math.max(pMin*1.05, 100), LOAN_CAP_USD);
-    const units = target / px;
-    document.getElementById(`loan-amt-${net}`).value = units.toFixed(6);
-    updateLoanUsdNote(net, px, units);
-    updateKPIs(net);
-  }
-
-  async function updateKPIs(net){
-    const best = state[net].best;
-    const kBest = document.getElementById(`kpi-best-${net}`);
-    const kSp   = document.getElementById(`kpi-spread-${net}`);
-    const kNet  = document.getElementById(`kpi-net-${net}`);
-    if(!best){ kBest.textContent="—"; kSp.textContent="—"; kNet.textContent="—"; return; }
-
-    const amt = parseFloat(document.getElementById(`loan-amt-${net}`).value || "0");
-    const { usd:px } = await loanAssetUsdSym(net);
-    updateLoanUsdNote(net, px||0, isFinite(amt)?amt:0);
-    const principalUsd = (isFinite(amt)&&px>0) ? amt*px : 0;
-    const r = pickPL(net, principalUsd || 1000);
-
-    kBest.textContent = `${best.base} | Buy ${best.buyDex} @ ${fmtUSD(best.buyPrice)} → Sell ${best.sellDex} @ ${fmtUSD(best.sellPrice)}`;
-    kSp.textContent   = `${(r.spread*100).toFixed(2)}%`;
-    kNet.textContent  = (principalUsd>0)
-      ? `${fmtUSD(r.net)} (fee ${fmtUSD(r.flashFee)}, gas ~ ${fmtUSD(r.gas)})`
-      : `set amount to see net (fee ${fmtUSD(r.flashFee)}, gas ~ ${fmtUSD(r.gas)})`;
-  }
-
-  /* ============ scan flow ============ */
-  async function scanAll(net){
-    const status = document.getElementById(`status-${net}`);
-    const rowsEl = document.getElementById(`rows-${net}`);
-    const route  = document.getElementById(`route-${net}`);
-    rowsEl.innerHTML = "";
-    route.textContent = "";
-    state[net].best = null;
-
-    status.innerHTML = `<span class="spinner"></span> Loading token addresses…`;
-    const addrs = await loadTokenAddresses(net).catch(()=>[]);
-    if(!addrs.length){ status.textContent = "Could not load token list."; return; }
-
-    let done=0;
-    status.innerHTML = `<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
-
-    const results = await mapLimit(addrs, CONCURRENCY, async (addr) => {
-      const j = await dsByToken(addr);
-      done++;
-      if(done % 5 === 0) status.innerHTML = `<span class="spinner"></span> Scanned ${done}/${addrs.length}…`;
-      if(!j || !j.pairs || !j.pairs.length) return null;
-      const onNet = j.pairs.filter(p=>p.chainId===net);
-      const perDex = consolidatePerDex(onNet);
-      if(!perDex.length) return null;
-
-      let min=Infinity, max=-Infinity, buy=null, sell=null;
-      for(const p of perDex){
-        const pr = Number(p?.priceUsd);
-        if(!isFinite(pr)) continue;
-        if(pr < min){ min=pr; buy=p; }
-        if(pr > max){ max=pr; sell=p; }
+    async function getJSON(url){
+      const r = await fetch(url).catch(()=>null);
+      if(!r || !r.ok) throw new Error(`GET ${url} -> ${r ? r.status : "ERR"}`);
+      return r.json();
+    }
+    async function loadTokenAddresses(network){
+      const lists = TOKENLISTS[network] || [];
+      const addrs = new Set();
+      for(const url of lists){
+        try{
+          const tl = await getJSON(url);
+          const tokens = tl && tl.tokens ? tl.tokens : [];
+          for(const t of tokens){
+            if(!t.address) continue;
+            const ok =
+              (network === "ethereum" && (t.chainId == 1)) ||
+              (network === "arbitrum" && (t.chainId == 42161)) ||
+              (network === "polygon" && (t.chainId == 137)) ||
+              (network === "bsc" && (t.chainId == 56)) ||
+              (network === "avalanche" && (t.chainId == 43114));
+            if(ok) addrs.add(t.address);
+          }
+        }catch(_){}
       }
-      if(!buy || !sell || !isFinite(min) || !isFinite(max)) return null;
-      const spread = (max - min)/min;
-      const base = buy?.baseToken?.symbol || sell?.baseToken?.symbol || "";
-      return {
-        base,
-        buyDex: prettyDexId(buy), buyPrice: min, buyUrl: buy?.url || null,
-        sellDex: prettyDexId(sell), sellPrice: max, sellUrl: sell?.url || null,
-        spread
+      const arr = Array.from(addrs);
+      return arr.slice(0, Math.min(arr.length, MAX_ADDRESSES_PER_SCAN));
+    }
+
+    async function dsByToken(addr){
+      const url = `${DS_BASE}/latest/dex/tokens/${addr}`;
+      const r = await fetch(url).catch(()=>null);
+      if(!r || !r.ok) return null;
+      return r.json();
+    }
+
+    function consolidatePerDex(pairs){
+      const preferred = ["USDC","USDT"];
+      const byDex = new Map();
+      for(const p of (pairs||[])){
+        const dex = (p && p.dexId ? String(p.dexId) : "").toLowerCase(); if(!dex) continue;
+        const liq = (p && p.liquidity && p.liquidity.usd) ? p.liquidity.usd : 0; if(liq < MIN_LIQ_USD) continue;
+        const vol = (p && p.volume && p.volume.h24) ? p.volume.h24 : 0; if(vol < MIN_VOL24H_USD) continue;
+        const quote = (p && p.quoteToken && p.quoteToken.symbol) ? String(p.quoteToken.symbol).toUpperCase() : "";
+        const rank = preferred.indexOf(quote) >= 0 ? preferred.indexOf(quote) : 99;
+        const cur = byDex.get(dex);
+        if(!cur || rank < cur.rank || (rank === cur.rank && liq > cur.liq)){
+          byDex.set(dex, { rec:p, liq, rank });
+        }
+      }
+      const out = [];
+      byDex.forEach(v => out.push(v.rec));
+      return out;
+    }
+
+    function prettyDexId(p){
+      const raw=(p && p.dexId ? String(p.dexId) : "").toLowerCase();
+      const map={ uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",curve:"Curve",balancer:"Balancer",camelot:"Camelot",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",jupiter:"Jupiter",raydium:"Raydium",orca:"Orca" };
+      for(const k in map){ if(raw.indexOf(k) !== -1) return map[k]; }
+      return raw ? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
+    }
+
+    async function mapLimit(items, limit, fn){
+      const results = new Array(items.length);
+      let i = 0;
+      const workers = [];
+      const runner = async () => {
+        while(i < items.length){
+          const idx = i++;
+          try{
+            results[idx] = await fn(items[idx], idx);
+            if(REQ_DELAY_MS>0) await new Promise(r=>setTimeout(r, REQ_DELAY_MS));
+          }catch(_){ results[idx] = null; }
+        }
       };
-    });
+      for(let k=0;k<Math.min(limit, items.length);k++) workers.push(runner());
+      await Promise.all(workers);
+      return results;
+    }
 
-    const usable = results.filter(Boolean).sort((a,b)=>b.spread - a.spread).slice(0, 150);
-    status.textContent = usable.length ? `Found ${usable.length} opportunities` : "No viable routes (filters).`;
+    async function gasSuggestGwei(net){
+      const eps=RPC[net]; if(!eps) throw new Error("no rpc");
+      const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
+      for(const url of eps){
+        try{
+          const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(feeHist)});
+          if(!r.ok) continue;
+          const j=await r.json(); const bh=j && j.result ? j.result : null; if(!bh || !bh.baseFeePerGas || !bh.reward) continue;
+          const lastBaseHex = bh.baseFeePerGas[bh.baseFeePerGas.length-1];
+          const base = parseInt(lastBaseHex || "0x0",16)/1e9;
+          const rewards = bh.reward[bh.reward.length-1] || [];
+          const tip = parseInt(rewards[1] || "0x0",16)/1e9;
+          return { gasPriceGwei: base+tip, baseGwei:base, tipGwei:tip };
+        }catch(_){}
+      }
+      const gp={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
+      for(const url of eps){
+        try{
+          const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(gp)});
+          if(!r.ok) continue; const j=await r.json();
+          const wei=parseInt((j && j.result) ? j.result : "0x0",16); return { gasPriceGwei:wei/1e9, baseGwei:wei/1e9, tipGwei:0 };
+        }catch(_){}
+      }
+      throw new Error("rpc failed");
+    }
 
-    usable.forEach((r)=>{
-      const tr=document.createElement("tr");
-      tr.innerHTML = `
-        <td>${r.base}</td>
-        <td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td>
-        <td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td>
-        <td class="right">${(r.spread*100).toFixed(2)}%</td>
+    /* ============ UI scaffold ============ */
+    const tabbar=document.getElementById("tabbar");
+    const panes=document.getElementById("tabpanes");
+
+    for(let i=0;i<NETWORKS.length;i++){
+      const net = NETWORKS[i];
+      const btn=document.createElement("button");
+      btn.textContent=NET_LABEL[net];
+      if(i===0) btn.classList.add("active");
+      tabbar.appendChild(btn);
+
+      const pane=document.createElement("div");
+      pane.id=`pane-${net}`; if(i>0) pane.style.display="none";
+      pane.innerHTML = `
+        <div class="wrap">
+          <div class="card">
+            <div class="row row-4">
+              <div><label>Network</label><input value="${NET_LABEL[net]}" readonly /></div>
+              <div><label>Platform</label><input value="${DEFAULT_PLATFORM}" readonly /></div>
+              <div><label>Gas Currency</label><input value="${GAS_NATIVE[net]||'-'}" readonly /></div>
+              <div><label>Scan</label><button class="btn small" data-scan="${net}">Scan All Tokens (sampled)</button></div>
+            </div>
+            <div class="row row-3" style="margin-top:8px">
+              <div><span id="status-${net}" class="help"></span></div>
+              <div class="help">Filters: Liquidity ≥ ${MIN_LIQ_USD.toLocaleString()} • Vol(24h) ≥ ${MIN_VOL24H_USD.toLocaleString()}</div>
+              <div class="help">Sample size: ${MAX_ADDRESSES_PER_SCAN}, concurrency: ${CONCURRENCY}</div>
+            </div>
+
+            <div class="kpi">
+              <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-${net}">—</div></div>
+              <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-${net}">—</div></div>
+              <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-${net}">—</div></div>
+            </div>
+
+            <div class="row row-4" style="margin-top:8px">
+              <div>
+                <label>Loan Asset</label>
+                <input id="loan-asset-${net}" value="USDC" />
+                <div class="help" id="loan-asset-note-${net}">Loan capped at $10,000.</div>
+              </div>
+              <div>
+                <label>Loan Amount (units)</label>
+                <input id="loan-amt-${net}" type="number" min="0" step="any" placeholder="e.g., 1000" />
+                <div class="help" id="loan-amt-usd-${net}">≈ —</div>
+              </div>
+              <div>
+                <label>Gas (auto)</label>
+                <input id="gas-gwei-${net}" placeholder="Auto" readonly />
+                <div class="help" id="gas-note-${net}">—</div>
+              </div>
+              <div>
+                <label>Gas Limit</label>
+                <input id="gas-limit-${net}" type="number" min="0" step="1000" placeholder="190000" />
+                <div class="help">Uni/Sushi ~150–200k • Curve ~340k • Balancer ~300k+</div>
+              </div>
+            </div>
+
+            <div class="row row-4" style="margin-top:8px">
+              <div>
+                <label>Est. Gas Cost</label>
+                <input id="gas-cost-${net}" placeholder="—" readonly />
+                <div class="help" id="gas-cost-usd-${net}">—</div>
+              </div>
+              <div>
+                <label>Auto-Size Loan</label>
+                <button class="btn small" id="btn-autosize-${net}" type="button">Break-Even +5%</button>
+              </div>
+              <div>
+                <label>Auto-Execute</label>
+                <div class="row">
+                  <label class="help"><input type="checkbox" id="autoexec-${net}"> Enable (sim)</label>
+                  <label class="help">Min Net P/L (USD) <input id="minnet-${net}" type="number" min="0" step="1" value="5"></label>
+                </div>
+              </div>
+              <div>
+                <label>&nbsp;</label>
+                <div class="row">
+                  <label class="help">Max Trades <input id="maxtrades-${net}" type="number" min="1" max="50" value="3"></label>
+                  <label class="help">Cooldown (s) <input id="cooldown-${net}" type="number" min="1" max="3600" value="10"></label>
+                </div>
+              </div>
+            </div>
+
+            <div class="help" id="route-${net}" style="margin-top:6px;"></div>
+
+            <div class="cta" style="margin-top:8px">
+              <button class="btn" id="btn-proceed-${net}" type="button">Proceed</button>
+              <button class="btn ghost" id="btn-stop-${net}" type="button">Stop Auto</button>
+              <span id="proceed-note-${net}" class="help"></span>
+            </div>
+
+            <div id="timeline-${net}" class="timeline hidden">
+              <div class="step" id="st1-${net}">Taking loan</div>
+              <div class="step" id="st2-${net}">Buying on DEX</div>
+              <div class="step" id="st3-${net}">Selling on DEX</div>
+              <div class="step" id="st4-${net}">Repaying loan + fee</div>
+              <div class="step" id="st5-${net}">Sending profit</div>
+            </div>
+            <div id="tx-result-${net}" class="result hidden"></div>
+
+            <table class="table" style="margin-top:10px">
+              <thead>
+                <tr>
+                  <th>Token</th>
+                  <th>Buy (DEX @ $)</th>
+                  <th>Sell (DEX @ $)</th>
+                  <th class="right">Spread %</th>
+                </tr>
+              </thead>
+              <tbody id="rows-${net}"></tbody>
+            </table>
+          </div>
+        </div>
       `;
-      tr.style.cursor="pointer";
-      tr.addEventListener("click", ()=>{
-        state[net].best = r;
-        route.innerHTML = `<span class="tag">Selected</span> ${r.base}: Buy ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → Sell ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (spread ${(r.spread*100).toFixed(2)}%)`;
-        updateKPIs(net);
-      });
-      rowsEl.appendChild(tr);
-    });
+      panes.appendChild(pane);
 
-    if(usable[0]){
-      state[net].best = usable[0];
-      route.innerHTML = `<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (spread ${(usable[0].spread*100).toFixed(2)}%)`;
+      btn.addEventListener("click",()=>{
+        const buttons = tabbar.children;
+        for(let k=0;k<buttons.length;k++) buttons[k].classList.remove("active");
+        btn.classList.add("active");
+        const allPanes = panes.children;
+        for(let k=0;k<allPanes.length;k++) allPanes[k].style.display="none";
+        pane.style.display="block";
+      });
+    }
+
+    /* ============ per-network state ============ */
+    const state = {};
+    for(let i=0;i<NETWORKS.length;i++){
+      const net = NETWORKS[i];
+      state[net] = {
+        best: null,
+        gasUsd: 0,
+        gasNativeUsd: null,
+        gasGwei: null,
+        autoTimer: null,
+        remainingTrades: 0
+      };
+    }
+
+    /* ============ gas & loan helpers ============ */
+    async function initGas(net){
+      if(!EVM.has(net)) return;
+      const g = await gasSuggestGwei(net).catch(()=>null);
+      const native = GAS_NATIVE[net];
+      const nativeUsd = await cgUSD(native).catch(()=>null);
+
+      const gEl = document.getElementById(`gas-gwei-${net}`);
+      const note = document.getElementById(`gas-note-${net}`);
+      state[net].gasGwei = g ? g.gasPriceGwei : null;
+      state[net].gasNativeUsd = (nativeUsd || null);
+
+      if(g){
+        gEl.value = `${g.gasPriceGwei.toFixed(1)} Gwei`;
+        note.textContent = `base ${g.baseGwei.toFixed(1)} + tip ${g.tipGwei.toFixed(1)} • ${native} ≈ ${fmtUSD(nativeUsd)}`;
+      }else{
+        gEl.value = "";
+        note.textContent = "auto gas failed (RPC/CORS). Enter gas limit to estimate cost.";
+      }
+    }
+
+    function calcGasUsd(net){
+      if(!EVM.has(net)) return 0;
+      const gwei = state[net].gasGwei;
+      const gl = parseFloat(document.getElementById(`gas-limit-${net}`).value || "0");
+      const nativeUsd = state[net].gasNativeUsd;
+      if(!(gwei>0) || !(gl>0) || !(nativeUsd>0)) return 0;
+      const eth = (gwei * gl) / 1e9;
+      const usd = eth * nativeUsd;
+      state[net].gasUsd = usd;
+      document.getElementById(`gas-cost-${net}`).value = `${eth.toFixed(6)} ${GAS_NATIVE[net]}`;
+      document.getElementById(`gas-cost-usd-${net}`).textContent = `≈ ${fmtUSD(usd)}`;
+      return usd;
+    }
+
+    async function loanAssetUsdSym(net){
+      const sym = document.getElementById(`loan-asset-${net}`).value.trim().toUpperCase();
+      const idMap = {USDC:"usd-coin",USDT:"tether",DAI:"dai",WETH:"ethereum",ETH:"ethereum",WBTC:"wrapped-bitcoin",MATIC:"matic-network",WBNB:"binancecoin",AVAX:"avalanche-2",ARB:"arbitrum",SOL:"solana"};
+      const id = idMap[sym];
+      if(!id) return { sym, usd:null };
+      try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); const j=await r.json(); return { sym, usd:(j && j[id]) ? j[id].usd : null }; }catch(_){return { sym, usd:null };}
+    }
+
+    function updateLoanUsdNote(net, price, amount){
+      const el = document.getElementById(`loan-amt-usd-${net}`);
+      if(!(price>0) || !(amount>=0)) { el.textContent = "≈ —"; return; }
+      el.textContent = `≈ ${fmtUSD(price*amount)}`;
+    }
+
+    function pickPL(net, principalUsd){
+      const best = state[net].best;
+      if(!best) return null;
+      const spread = (best.sellPrice - best.buyPrice)/best.buyPrice;
+      const gross = principalUsd * spread;
+      const flashFee = principalUsd * PLATFORM_FEE;
+      const gas = state[net].gasUsd || 0;
+      return { spread, gross, flashFee, gas, netNoGas: gross - flashFee, net: gross - flashFee - gas };
+    }
+
+    async function autosizeLoan(net){
+      const { usd:px } = await loanAssetUsdSym(net);
+      if(!(px>0)) { toast("Loan asset price unavailable"); return; }
+      const best = state[net].best;
+      if(!best){ toast("No route selected"); return; }
+      const spread = (best.sellPrice - best.buyPrice)/best.buyPrice;
+      const gas = calcGasUsd(net);
+      const denom = spread - PLATFORM_FEE;
+      if(!(denom>0)){ toast("Not profitable even before gas"); return; }
+      const pMin = gas / denom;
+      const target = Math.min(Math.max(pMin*1.05, 100), LOAN_CAP_USD);
+      const units = target / px;
+      document.getElementById(`loan-amt-${net}`).value = units.toFixed(6);
+      updateLoanUsdNote(net, px, units);
       updateKPIs(net);
     }
 
-    // Auto-exec if enabled
-    if(document.getElementById(`autoexec-${net}`).checked){
-      tryAutoTrade(net);
-    }
-  }
+    async function updateKPIs(net){
+      const best = state[net].best;
+      const kBest = document.getElementById(`kpi-best-${net}`);
+      const kSp   = document.getElementById(`kpi-spread-${net}`);
+      const kNet  = document.getElementById(`kpi-net-${net}`);
+      if(!best){ kBest.textContent="—"; kSp.textContent="—"; kNet.textContent="—"; return; }
 
-  /* ============ proceed (sim) ============ */
-  function randTxId(){ const a=new Uint8Array(16); crypto.getRandomValues(a); return "0x"+Array.from(a).map(b=>b.toString(16).padStart(2,"0")).join(""); }
+      const amt = parseFloat(document.getElementById(`loan-amt-${net}`).value || "0");
+      const { usd:px } = await loanAssetUsdSym(net);
+      updateLoanUsdNote(net, px||0, isFinite(amt)?amt:0);
+      const principalUsd = (isFinite(amt)&&px>0) ? amt*px : 0;
+      const r = pickPL(net, principalUsd || 1000);
 
-  async function proceed(net, overridePrincipalUsd=null){
-    const best = state[net].best;
-    if(!best){ toast("Select a route first"); return false; }
-
-    let amt = parseFloat(document.getElementById(`loan-amt-${net}`).value || "0");
-    const { usd:px } = await loanAssetUsdSym(net);
-    if(!(px>0)){ toast("Loan asset price unavailable"); return false; }
-
-    // If override provided (from auto-size), use it
-    if(overridePrincipalUsd && overridePrincipalUsd>0){
-      amt = overridePrincipalUsd / px;
-      document.getElementById(`loan-amt-${net}`).value = amt.toFixed(6);
+      kBest.textContent = `${best.base} | Buy ${best.buyDex} @ ${fmtUSD(best.buyPrice)} → Sell ${best.sellDex} @ ${fmtUSD(best.sellPrice)}`;
+      kSp.textContent   = `${(r.spread*100).toFixed(2)}%`;
+      kNet.textContent  = (principalUsd>0)
+        ? `${fmtUSD(r.net)} (fee ${fmtUSD(r.flashFee)}, gas ~ ${fmtUSD(r.gas)})`
+        : `set amount to see net (fee ${fmtUSD(r.flashFee)}, gas ~ ${fmtUSD(r.gas)})`;
     }
 
-    const principalUsd = amt * px;
-    if(principalUsd > LOAN_CAP_USD){ toast(`Loan limit exceeded (max $${LOAN_CAP_USD.toLocaleString()})`); return false; }
+    /* ============ scan flow ============ */
+    async function scanAll(net){
+      const status = document.getElementById(`status-${net}`);
+      const rowsEl = document.getElementById(`rows-${net}`);
+      const route  = document.getElementById(`route-${net}`);
+      rowsEl.innerHTML = "";
+      route.textContent = "";
+      state[net].best = null;
 
-    calcGasUsd(net);
-    const pl = pickPL(net, principalUsd);
+      status.innerHTML = `<span class="spinner"></span> Loading token addresses…`;
+      const addrs = await loadTokenAddresses(net).catch(()=>[]);
+      if(!addrs.length){ status.textContent = "Could not load token list."; return; }
 
-    const tl = document.getElementById(`timeline-${net}`);
-    const res = document.getElementById(`tx-result-${net}`);
-    const steps = [1,2,3,4,5].map(i=>document.getElementById(`st${i}-${net}`));
-    steps.forEach(s=>s.classList.remove("active"));
-    res.classList.add("hidden"); res.classList.remove("ok","bad"); res.textContent="";
+      let done=0;
+      status.innerHTML = `<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
-    tl.classList.remove("hidden");
-    let step=0;
-    const txid = randTxId();
+      const results = await mapLimit(addrs, CONCURRENCY, async (addr) => {
+        const j = await dsByToken(addr);
+        done++;
+        if(done % 5 === 0) status.innerHTML = `<span class="spinner"></span> Scanned ${done}/${addrs.length}…`;
+        if(!j || !j.pairs || !j.pairs.length) return null;
+        const onNet = j.pairs.filter(p=>p.chainId===net);
+        const perDex = consolidatePerDex(onNet);
+        if(!perDex.length) return null;
 
-    const finish = () => {
-      tl.classList.add("hidden");
-      let success;
-      if(ALWAYS_FAIL) success=false;
-      else if(PROFIT_MUST_SUCCEED && pl.net>0) success=true;
-      else success = Math.random() > (RANDOM_FAIL_RATIO||0);
+        let min=Infinity, max=-Infinity, buy=null, sell=null;
+        for(let z=0; z<perDex.length; z++){
+          const p = perDex[z];
+          const pr = Number(p && p.priceUsd ? p.priceUsd : NaN);
+          if(!isFinite(pr)) continue;
+          if(pr < min){ min=pr; buy=p; }
+          if(pr > max){ max=pr; sell=p; }
+        }
+        if(!buy || !sell || !isFinite(min) || !isFinite(max)) return null;
+        const spread = (max - min)/min;
+        const base = (buy && buy.baseToken && buy.baseToken.symbol) ? buy.baseToken.symbol
+                    : (sell && sell.baseToken && sell.baseToken.symbol) ? sell.baseToken.symbol : "";
+        return {
+          base,
+          buyDex: prettyDexId(buy), buyPrice: min, buyUrl: (buy && buy.url) ? buy.url : null,
+          sellDex: prettyDexId(sell), sellPrice: max, sellUrl: (sell && sell.url) ? sell.url : null,
+          spread
+        };
+      });
 
-      if(success){
-        res.classList.remove("hidden","bad"); res.classList.add("ok","result");
-        res.innerHTML = `✅ Transaction successful<br>
-          <span class="help">TxID:</span> <code>${txid}</code><br>
-          <span class="help">Summary:</span> Principal ${fmtUSD(principalUsd)}, Fee ${fmtUSD(pl.flashFee)}, Gas ~ ${fmtUSD(pl.gas)}<br>
-          <strong>Net P/L:</strong> ${fmtUSD(pl.net)} (spread ${(pl.spread*100).toFixed(2)}%)`;
-      } else {
-        res.classList.remove("hidden","ok"); res.classList.add("bad","result");
-        res.innerHTML = `❌ Transaction failed<br>
-          <span class="help">TxID:</span> <code>${txid}</code><br>
-          Likely reason: slippage or gas spike exceeded spread. Try a different route, auto-size the loan, or reduce gas limit.`;
+      const usable = results.filter(Boolean).sort((a,b)=>b.spread - a.spread).slice(0, 150);
+      status.textContent = usable.length ? `Found ${usable.length} opportunities` : "No viable routes (filters).`;
+
+      usable.forEach((r)=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.base}</td>
+          <td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td>
+          <td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td>
+          <td class="right">${(r.spread*100).toFixed(2)}%</td>
+        `;
+        tr.style.cursor="pointer";
+        tr.addEventListener("click", ()=>{
+          state[net].best = r;
+          route.innerHTML = `<span class="tag">Selected</span> ${r.base}: Buy ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → Sell ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (spread ${(r.spread*100).toFixed(2)}%)`;
+          updateKPIs(net);
+        });
+        rowsEl.appendChild(tr);
+      });
+
+      if(usable[0]){
+        state[net].best = usable[0];
+        route.innerHTML = `<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (spread ${(usable[0].spread*100).toFixed(2)}%)`;
+        updateKPIs(net);
       }
-    };
 
-    const tick = () => {
-      if(step>0) steps[step-1].classList.remove("active");
-      if(step<steps.length){ steps[step].classList.add("active"); step++; if(step<steps.length) setTimeout(tick, 1000); else setTimeout(finish, 1000); }
-    };
-    setTimeout(tick, 50);
-
-    // return whether projected net is positive (for autoexec logic)
-    return pl.net > 0;
-  }
-
-  /* ============ auto-execute loop (sim) ============ */
-  async function tryAutoTrade(net){
-    // Ensure gas/price are ready
-    await initGas(net);
-    calcGasUsd(net);
-
-    const minNet = parseFloat(document.getElementById(`minnet-${net}`).value || "0");
-    const maxTrades = parseInt(document.getElementById(`maxtrades-${net}`).value || "1", 10);
-    const cooldown = Math.max(1, parseInt(document.getElementById(`cooldown-${net}`).value || "10", 10));
-
-    // Auto-size to at least break even
-    const { usd:px } = await loanAssetUsdSym(net);
-    const best = state[net].best;
-    if(!(px>0) || !best){ return; }
-    const spread = (best.sellPrice - best.buyPrice)/best.buyPrice;
-    const denom = spread - PLATFORM_FEE;
-    if(!(denom>0)){ toast("Top route not profitable before gas"); return; }
-
-    const gas = state[net].gasUsd || 0;
-    const pMinUsd = gas / denom;
-    const targetUsd = Math.min(Math.max(pMinUsd*1.05, 100), LOAN_CAP_USD);
-
-    const doOne = async () => {
-      if(state[net].remainingTrades <= 0 || !document.getElementById(`autoexec-${net}`).checked){
-        state[net].remainingTrades = 0; return;
+      if(document.getElementById(`autoexec-${net}`).checked){
+        tryAutoTrade(net);
       }
-      // Re-scan before each trade (market may shift)
-      await scanAll(net);
-      // recompute target principal quickly (uses state set by scanAll)
+    }
+
+    /* ============ proceed (sim) ============ */
+    function randTxId(){ const a=new Uint8Array(16); crypto.getRandomValues(a); return "0x"+Array.from(a).map(b=>b.toString(16).padStart(2,"0")).join(""); }
+
+    async function proceed(net, overridePrincipalUsd=null){
+      const best = state[net].best;
+      if(!best){ toast("Select a route first"); return false; }
+
+      let amt = parseFloat(document.getElementById(`loan-amt-${net}`).value || "0");
+      const tmp = await loanAssetUsdSym(net);
+      const px = tmp.usd;
+      if(!(px>0)){ toast("Loan asset price unavailable"); return false; }
+
+      if(overridePrincipalUsd && overridePrincipalUsd>0){
+        amt = overridePrincipalUsd / px;
+        document.getElementById(`loan-amt-${net}`).value = amt.toFixed(6);
+      }
+
+      const principalUsd = amt * px;
+      if(principalUsd > LOAN_CAP_USD){ toast(`Loan limit exceeded (max $${LOAN_CAP_USD.toLocaleString()})`); return false; }
+
       calcGasUsd(net);
-      const bestNow = state[net].best;
-      if(!bestNow){ scheduleNext(); return; }
-      const spreadNow = (bestNow.sellPrice - bestNow.buyPrice)/bestNow.buyPrice;
-      const denomNow = spreadNow - PLATFORM_FEE;
-      if(!(denomNow>0)){ scheduleNext(); return; }
-      const gasNow = state[net].gasUsd || 0;
-      const pMinNow = gasNow / denomNow;
-      const targetNow = Math.min(Math.max(pMinNow*1.05, 100), LOAN_CAP_USD);
+      const pl = pickPL(net, principalUsd);
 
-      const ok = await proceed(net, targetNow);
-      if(ok){
-        state[net].remainingTrades--;
-      }
+      const tl = document.getElementById(`timeline-${net}`);
+      const res = document.getElementById(`tx-result-${net}`);
+      const steps = [1,2,3,4,5].map(i=>document.getElementById(`st${i}-${net}`));
+      steps.forEach(s=>s.classList.remove("active"));
+      res.classList.add("hidden"); res.classList.remove("ok","bad"); res.textContent="";
+
+      tl.classList.remove("hidden");
+      let step=0;
+      const txid = randTxId();
+
+      const finish = () => {
+        tl.classList.add("hidden");
+        let success;
+        if(ALWAYS_FAIL) success=false;
+        else if(PROFIT_MUST_SUCCEED && pl.net>0) success=true;
+        else success = Math.random() > (RANDOM_FAIL_RATIO||0);
+
+        if(success){
+          res.classList.remove("hidden","bad"); res.classList.add("ok","result");
+          res.innerHTML = `✅ Transaction successful<br>
+            <span class="help">TxID:</span> <code>${txid}</code><br>
+            <span class="help">Summary:</span> Principal ${fmtUSD(principalUsd)}, Fee ${fmtUSD(pl.flashFee)}, Gas ~ ${fmtUSD(pl.gas)}<br>
+            <strong>Net P/L:</strong> ${fmtUSD(pl.net)} (spread ${(pl.spread*100).toFixed(2)}%)`;
+        } else {
+          res.classList.remove("hidden","ok"); res.classList.add("bad","result");
+          res.innerHTML = `❌ Transaction failed<br>
+            <span class="help">TxID:</span> <code>${txid}</code><br>
+            Likely reason: slippage or gas spike exceeded spread. Try a different route, auto-size the loan, or reduce gas limit.`;
+        }
+      };
+
+      const tick = () => {
+        if(step>0) steps[step-1].classList.remove("active");
+        if(step<steps.length){ steps[step].classList.add("active"); step++; if(step<steps.length) setTimeout(tick, 1000); else setTimeout(finish, 1000); }
+      };
+      setTimeout(tick, 50);
+
+      return pl.net > 0;
+    }
+
+    /* ============ auto-execute loop (sim) ============ */
+    async function tryAutoTrade(net){
+      await initGas(net);
+      calcGasUsd(net);
+
+      const minNet = parseFloat(document.getElementById(`minnet-${net}`).value || "0");
+      const maxTrades = parseInt(document.getElementById(`maxtrades-${net}`).value || "1", 10);
+      const cooldown = Math.max(1, parseInt(document.getElementById(`cooldown-${net}`).value || "10", 10));
+
+      const tmp = await loanAssetUsdSym(net);
+      const px = tmp.usd;
+      const best = state[net].best;
+      if(!(px>0) || !best){ return; }
+      const spread = (best.sellPrice - best.buyPrice)/best.buyPrice;
+      const denom = spread - PLATFORM_FEE;
+      if(!(denom>0)){ toast("Top route not profitable before gas"); return; }
+
+      const gas = state[net].gasUsd || 0;
+      const pMinUsd = gas / denom;
+      const targetUsd = Math.min(Math.max(pMinUsd*1.05, 100), LOAN_CAP_USD);
+
+      const doOne = async () => {
+        if(state[net].remainingTrades <= 0 || !document.getElementById(`autoexec-${net}`).checked){
+          state[net].remainingTrades = 0; return;
+        }
+        await scanAll(net);
+        calcGasUsd(net);
+        const bestNow = state[net].best;
+        if(!bestNow){ scheduleNext(); return; }
+        const spreadNow = (bestNow.sellPrice - bestNow.buyPrice)/bestNow.buyPrice;
+        const denomNow = spreadNow - PLATFORM_FEE;
+        if(!(denomNow>0)){ scheduleNext(); return; }
+        const gasNow = state[net].gasUsd || 0;
+        const pMinNow = gasNow / denomNow;
+        const targetNow = Math.min(Math.max(pMinNow*1.05, 100), LOAN_CAP_USD);
+
+        const ok = await proceed(net, targetNow);
+        // require min net if provided (approx using current calc)
+        const principalNow = targetNow;
+        const plNow = pickPL(net, principalNow);
+        if(!(plNow && plNow.net >= minNet)) {
+          scheduleNext(); return;
+        }
+        if(ok){
+          state[net].remainingTrades--;
+        }
+        scheduleNext();
+      };
+
+      const scheduleNext = () => {
+        if(state[net].remainingTrades <= 0 || !document.getElementById(`autoexec-${net}`).checked){
+          toast("Auto-exec stopped");
+          return;
+        }
+        clearTimeout(state[net].autoTimer);
+        state[net].autoTimer = setTimeout(doOne, cooldown * 1000);
+      };
+
+      state[net].remainingTrades = maxTrades;
+      toast(`Auto-exec armed: up to ${maxTrades} trades, cooldown ${cooldown}s`);
       scheduleNext();
-    };
+    }
 
-    const scheduleNext = () => {
-      if(state[net].remainingTrades <= 0 || !document.getElementById(`autoexec-${net}`).checked){
-        toast("Auto-exec stopped");
-        return;
-      }
+    function stopAuto(net){
       clearTimeout(state[net].autoTimer);
-      state[net].autoTimer = setTimeout(doOne, cooldown * 1000);
-    };
+      state[net].remainingTrades = 0;
+      document.getElementById(`autoexec-${net}`).checked = false;
+      toast("Auto-exec stopped");
+    }
 
-    state[net].remainingTrades = maxTrades;
-    toast(`Auto-exec armed: up to ${maxTrades} trades, cooldown ${cooldown}s`);
-    scheduleNext();
-  }
-
-  function stopAuto(net){
-    clearTimeout(state[net].autoTimer);
-    state[net].remainingTrades = 0;
-    document.getElementById(`autoexec-${net}`).checked = false;
-    toast("Auto-exec stopped");
-  }
-
-  /* ============ wiring ============ */
-  document.querySelectorAll("[data-scan]").forEach(btn=>{
-    btn.addEventListener("click", ()=> scanAll(btn.dataset.scan));
-  });
-
-  for(const net of NETWORKS){
-    initGas(net);
-    document.getElementById(`gas-limit-${net}`).addEventListener("input", ()=>{ calcGasUsd(net); updateKPIs(net); });
-    document.getElementById(`loan-amt-${net}`).addEventListener("input", async ()=>{
-      const { usd:px } = await loanAssetUsdSym(net); const amt = parseFloat(document.getElementById(`loan-amt-${net}`).value||"0");
-      updateLoanUsdNote(net, px||0, isFinite(amt)?amt:0); updateKPIs(net);
+    /* ============ wiring ============ */
+    document.querySelectorAll("[data-scan]").forEach(btn=>{
+      btn.addEventListener("click", ()=> scanAll(btn.dataset.scan));
     });
-    document.getElementById(`btn-autosize-${net}`).addEventListener("click", ()=> autosizeLoan(net));
-    document.getElementById(`btn-proceed-${net}`).addEventListener("click", ()=> proceed(net));
-    document.getElementById(`btn-stop-${net}`).addEventListener("click", ()=> stopAuto(net));
+
+    for(let i=0;i<NETWORKS.length;i++){
+      const net = NETWORKS[i];
+      initGas(net);
+      document.getElementById(`gas-limit-${net}`).addEventListener("input", ()=>{ calcGasUsd(net); updateKPIs(net); });
+      document.getElementById(`loan-amt-${net}`).addEventListener("input", async ()=>{
+        const tmp = await loanAssetUsdSym(net); const px = tmp.usd;
+        const amt = parseFloat(document.getElementById(`loan-amt-${net}`).value||"0");
+        updateLoanUsdNote(net, px||0, isFinite(amt)?amt:0); updateKPIs(net);
+      });
+      document.getElementById(`btn-autosize-${net}`).addEventListener("click", ()=> autosizeLoan(net));
+      document.getElementById(`btn-proceed-${net}`).addEventListener("click", ()=> proceed(net));
+      document.getElementById(`btn-stop-${net}`).addEventListener("click", ()=> stopAuto(net));
+    }
+
+    document.getElementById("btnConnect").addEventListener("click", ()=> toast("Wallet connect coming soon"));
+
+    window.__CKDBG__ = { state };
+
+  } catch (err) {
+    showCrash(err);
   }
-
-  document.getElementById("btnConnect").addEventListener("click", ()=> toast("Wallet connect coming soon"));
-
-  window.__CKDBG__ = { state };
 })();
 </script>
 </body>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v8.7.2 — Safe Boot</title>
+<title>Crypto Kings Test Bed v8.7.4 — Safe Boot + Seed Fallback</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
@@ -54,13 +54,13 @@
     <div class="topbar-inner">
       <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v8.7.2</span>
+      <span class="chip">v8.7.4</span>
       <div class="spacer"></div>
       <button id="btnConnect" class="btn">Connect Wallet</button>
     </div>
   </div>
 
-  <!-- Error banner (hidden until used) -->
+  <!-- Error banner (only shown on script error) -->
   <div id="errbar" class="errbar" style="display:none;">
     <div class="box">
       <strong>App error</strong>
@@ -80,7 +80,7 @@
     </div>
 
     <div class="tabpanes" id="tabpanes">
-      <!-- Each pane is pre-rendered; JS only enhances behaviors -->
+      <!-- Ethereum -->
       <div id="pane-ethereum" class="wrap">
         <div class="card">
           <div class="row row-4">
@@ -115,11 +115,8 @@
           <div class="cta" style="margin-top:8px">
             <button class="btn" id="btn-proceed-ethereum" type="button">Proceed</button>
             <button class="btn ghost" id="btn-stop-ethereum" type="button">Stop Auto</button>
-            <span id="proceed-note-ethereum" class="help"></span>
           </div>
-          <div id="timeline-ethereum" class="hidden" style="margin-top:8px">
-            <span class="help">Timeline will appear here during execution…</span>
-          </div>
+          <div id="timeline-ethereum" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
           <div id="tx-result-ethereum" class="hidden"></div>
           <table class="table" style="margin-top:10px">
             <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead>
@@ -128,7 +125,7 @@
         </div>
       </div>
 
-      <!-- Duplicate panes for other networks (static) -->
+      <!-- Arbitrum -->
       <div id="pane-arbitrum" class="wrap" style="display:none;">
         <div class="card">
           <div class="row row-4">
@@ -166,14 +163,11 @@
           </div>
           <div id="timeline-arbitrum" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
           <div id="tx-result-arbitrum" class="hidden"></div>
-          <table class="table" style="margin-top:10px">
-            <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead>
-            <tbody id="rows-arbitrum"></tbody>
-          </table>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-arbitrum"></tbody></table>
         </div>
       </div>
 
-      <!-- Polygon, BSC, Avalanche, Solana panes follow the same pattern -->
+      <!-- Polygon -->
       <div id="pane-polygon" class="wrap" style="display:none;"><div class="card">
         <div class="row row-4">
           <div><label>Network</label><input value="Polygon" readonly /></div>
@@ -213,12 +207,13 @@
         <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-polygon"></tbody></table>
       </div></div>
 
+      <!-- BSC -->
       <div id="pane-bsc" class="wrap" style="display:none;"><div class="card">
         <div class="row row-4">
           <div><label>Network</label><input value="BSC" readonly /></div>
           <div><label>Platform</label><input value="Aave v3" readonly /></div>
           <div><label>Gas Currency</label><input value="BNB" readonly /></div>
-          <div><label>Scan</label><button class="btn small" data-scan="bsc">Scan All Tokens (sampled)</button></div>
+        <div><label>Scan</label><button class="btn small" data-scan="bsc">Scan All Tokens (sampled)</button></div>
         </div>
         <div class="row row-3" style="margin-top:8px">
           <div><span id="status-bsc" class="help">Ready.</span></div>
@@ -252,6 +247,7 @@
         <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-bsc"></tbody></table>
       </div></div>
 
+      <!-- Avalanche -->
       <div id="pane-avalanche" class="wrap" style="display:none;"><div class="card">
         <div class="row row-4">
           <div><label>Network</label><input value="Avalanche" readonly /></div>
@@ -291,6 +287,7 @@
         <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-avalanche"></tbody></table>
       </div></div>
 
+      <!-- Solana (demo scan only) -->
       <div id="pane-solana" class="wrap" style="display:none;"><div class="card">
         <div class="row row-4">
           <div><label>Network</label><input value="Solana" readonly /></div>
@@ -321,7 +318,7 @@
 
 <script>
 (function(){
-  // --- Minimal tab switching that works even if enhancement fails ---
+  // Tabs work even if enhancement fails
   const tabbar = document.getElementById('tabbar');
   const panes  = document.getElementById('tabpanes').children;
   tabbar.addEventListener('click', (e)=>{
@@ -337,21 +334,13 @@
 
 <script>
 (function(){
-  // If something explodes, show an error banner (but keep the page usable)
   const errbar = document.getElementById('errbar');
   const errtxt = document.getElementById('errtxt');
-  const showErr = (e)=>{
-    try{
-      errtxt.textContent = (e && e.stack) ? e.stack : String(e);
-      errbar.style.display = 'block';
-      console.error('[CK SafeBoot]', e);
-    }catch(_){}
-  };
+  const showErr = (e)=>{ try{ errtxt.textContent = (e && e.stack) ? e.stack : String(e); errbar.style.display = 'block'; console.error('[CK SafeBoot]', e);}catch(_){} };
 
   try {
-    // ▼▼▼ Your enhancement script (from 8.7.1) — trimmed to essentials to avoid blank screens ▼▼▼
+    /* ===== Constants ===== */
     const NETWORKS = ["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
-    const NET_LABEL = { ethereum:"Ethereum", arbitrum:"Arbitrum", polygon:"Polygon", bsc:"BSC", avalanche:"Avalanche", solana:"Solana" };
     const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
     const DS_BASE = "https://api.dexscreener.com";
     const LOAN_CAP_USD = 10000, PLATFORM_FEE = 0.0009;
@@ -365,6 +354,7 @@
 
     async function cgUSD(sym){ const id=CG_IDS[sym]; if(!id) return null; try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(!r.ok) return null; const j=await r.json(); return j?.[id]?.usd ?? null; }catch(_){return null;} }
 
+    /* ===== Token lists + seeds ===== */
     const TOKENLISTS = {
       ethereum:["https://tokens.uniswap.org","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
       arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
@@ -373,20 +363,78 @@
       avalanche:["https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/joe.tokenlist.json"],
       solana:[]
     };
+
+    // High-liquidity seeds so scanning always works
+    const SEED_ADDRESSES = {
+      ethereum:[
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "0x6B175474E89094C44Da98b954EedeAC495271d0F","0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+        "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984","0x514910771AF9Ca656af840dff83E8264EcF986CA",
+        "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
+      ],
+      arbitrum:[
+        "0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1","0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"
+      ],
+      polygon:[
+        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174","0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+        "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619","0x0000000000000000000000000000000000001010",
+        "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"
+      ],
+      bsc:[
+        "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d","0x55d398326f99059ff775485246999027b3197955",
+        "0xbb4CdB9CBd36B01dCbAEBF2De08d9173bc095c","0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82"
+      ],
+      avalanche:[
+        "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
+        "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","0x50b7545627a5162F82A992c33b87aDc75187B218",
+        "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70","0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd"
+      ],
+      solana:[]
+    };
+
     async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
+
+    // Fallback-friendly loader
     async function loadTokenAddresses(network){
-      const lists=TOKENLISTS[network]||[]; const addrs=new Set();
-      for(const url of lists){
-        try{ const tl=await getJSON(url); const tokens=tl?.tokens||[];
-          for(const t of tokens){
-            if(!t.address) continue;
-            const ok=(network==="ethereum"&&t.chainId==1)||(network==="arbitrum"&&t.chainId==42161)||(network==="polygon"&&t.chainId==137)||(network==="bsc"&&t.chainId==56)||(network==="avalanche"&&t.chainId==43114);
-            if(ok) addrs.add(t.address);
+      const lists = TOKENLISTS[network] || [];
+      const addrs = new Set();
+
+      for (const url of lists) {
+        try {
+          const tl = await getJSON(url);
+          const tokens = tl && tl.tokens ? tl.tokens : [];
+          for (const t of tokens) {
+            if (!t.address) continue;
+            const ok =
+              (network === "ethereum" && t.chainId == 1) ||
+              (network === "arbitrum" && t.chainId == 42161) ||
+              (network === "polygon" && t.chainId == 137) ||
+              (network === "bsc" && t.chainId == 56) ||
+              (network === "avalanche" && t.chainId == 43114);
+            if (ok) addrs.add(t.address);
           }
-        }catch(_){}
+        } catch (e) {
+          console.warn("[tokens] tokenlist fetch failed:", url, e);
+        }
       }
-      const arr=[...addrs]; return arr.slice(0,Math.min(arr.length,MAX_ADDRESSES_PER_SCAN));
+
+      let arr = Array.from(addrs);
+      if (!arr.length) {
+        console.warn("[tokens] falling back to seed addresses for", network);
+        arr = SEED_ADDRESSES[network] ? [...SEED_ADDRESSES[network]] : [];
+      }
+
+      if (!arr.length && network === "ethereum") {
+        arr = ["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"]; // USDC, WETH
+      }
+
+      return arr.slice(0, Math.min(arr.length, MAX_ADDRESSES_PER_SCAN));
     }
+
+    /* ===== Dexscreener & helpers ===== */
     async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
     function consolidatePerDex(pairs){
       const preferred=["USDC","USDT"]; const byDex=new Map();
@@ -406,6 +454,29 @@
       const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",curve:"Curve",balancer:"Balancer",camelot:"Camelot",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",jupiter:"Jupiter",raydium:"Raydium",orca:"Orca"};
       for(const k in map){ if(raw.includes(k)) return map[k]; } return raw?raw[0].toUpperCase()+raw.slice(1):"DEX";
     }
+    async function mapLimit(items, limit, fn){
+      const out=new Array(items.length); let i=0;
+      const worker=async()=>{ while(i<items.length){ const idx=i++; try{ out[idx]=await fn(items[idx],idx); if(REQ_DELAY_MS) await new Promise(r=>setTimeout(r,REQ_DELAY_MS)); }catch(_){ out[idx]=null; } } };
+      const workers=Array.from({length:Math.min(limit,items.length)}, worker); await Promise.all(workers); return out;
+    }
+
+    /* ===== Per-network state ===== */
+    const state={}; for(const net of NETWORKS){ state[net]={best:null,gasUsd:0,gasNativeUsd:null,gasGwei:null}; }
+
+    function row(net, r){
+      const tr=document.createElement('tr');
+      const spread=((r.sellPrice-r.buyPrice)/r.buyPrice*100);
+      tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${spread.toFixed(2)}%</td>`;
+      tr.style.cursor="pointer";
+      tr.addEventListener('click',()=>{
+        state[net].best=r;
+        document.getElementById(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${r.base}: Buy ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → Sell ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (${spread.toFixed(2)}%)`;
+        updateKPIs(net);
+      });
+      return tr;
+    }
+
+    /* ===== Gas & loan & P/L ===== */
     async function gasSuggestGwei(net){
       const eps=RPC[net]; if(!eps) throw new Error("no rpc");
       const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
@@ -424,26 +495,6 @@
       }
       throw new Error("rpc failed");
     }
-    async function mapLimit(items, limit, fn){
-      const out=new Array(items.length); let i=0;
-      const worker=async()=>{ while(i<items.length){ const idx=i++; try{ out[idx]=await fn(items[idx],idx); if(REQ_DELAY_MS) await new Promise(r=>setTimeout(r,REQ_DELAY_MS)); }catch(_){ out[idx]=null; } } };
-      const workers=Array.from({length:Math.min(limit,items.length)}, worker); await Promise.all(workers); return out;
-    }
-
-    const state={};
-    for(const net of NETWORKS){ state[net]={best:null,gasUsd:0,gasNativeUsd:null,gasGwei:null}; }
-
-    function row(net, r){
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${((r.sellPrice-r.buyPrice)/r.buyPrice*100).toFixed(2)}%</td>`;
-      tr.style.cursor="pointer";
-      tr.addEventListener('click',()=>{
-        state[net].best=r;
-        document.getElementById(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${r.base}: Buy ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → Sell ${r.sellDex} @ ${fmtUSD(r.sellPrice)}`;
-        updateKPIs(net);
-      });
-      return tr;
-    }
 
     async function initGas(net){
       if(!EVM.has(net)) return;
@@ -457,22 +508,28 @@
     function calcGasUsd(net){
       if(!EVM.has(net)) return 0;
       const g=state[net].gasGwei, gl=parseFloat(document.getElementById(`gas-limit-${net}`).value||"0"), usd=state[net].gasNativeUsd;
-      if(!(g>0)&&!(gl>0)&&!(usd>0)) return 0;
-      const native=(g*gl)/1e9; const cost=native*(usd||0); state[net].gasUsd=cost;
-      const sym=GAS_NATIVE[net]; document.getElementById(`gas-cost-${net}`).value=(native||0).toFixed(6)+" "+sym;
-      document.getElementById(`gas-cost-usd-${net}`).textContent=`≈ ${fmtUSD(cost||0)}`; return cost||0;
+      if(!(g>0) || !(gl>0) || !(usd>0)) return 0;
+      const native=(g*gl)/1e9; const cost=native*usd; state[net].gasUsd=cost;
+      const sym=GAS_NATIVE[net]; document.getElementById(`gas-cost-${net}`).value=native.toFixed(6)+" "+sym;
+      document.getElementById(`gas-cost-usd-${net}`).textContent=`≈ ${fmtUSD(cost)}`; return cost;
     }
+
     async function loanAssetUsdSym(net){
       const sym=(document.getElementById(`loan-asset-${net}`).value||"USDC").trim().toUpperCase();
       const map={USDC:"usd-coin",USDT:"tether",DAI:"dai",WETH:"ethereum",ETH:"ethereum",WBTC:"wrapped-bitcoin",MATIC:"matic-network",WBNB:"binancecoin",AVAX:"avalanche-2",ARB:"arbitrum",SOL:"solana"};
       const id=map[sym]; if(!id) return {sym,usd:null};
       try{const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); const j=await r.json(); return {sym,usd:j?.[id]?.usd??null};}catch(_){return {sym,usd:null};}
     }
+
     function pickPL(net, principal){
       const b=state[net].best; if(!b) return null;
-      const spread=(b.sellPrice-b.buyPrice)/b.buyPrice; const gross=principal*spread; const fee=principal*PLATFORM_FEE; const gas=state[net].gasUsd||0;
+      const spread=(b.sellPrice-b.buyPrice)/b.buyPrice;
+      const gross=principal*spread;
+      const fee=principal*PLATFORM_FEE;
+      const gas=state[net].gasUsd||0;
       return {spread,gross,flashFee:fee,gas,netNoGas:gross-fee,net:gross-fee-gas};
     }
+
     async function updateKPIs(net){
       const best=state[net].best;
       const kBest=document.getElementById(`kpi-best-${net}`), kSp=document.getElementById(`kpi-spread-${net}`), kNet=document.getElementById(`kpi-net-${net}`);
@@ -487,11 +544,12 @@
       const usdNote=document.getElementById(`loan-amt-usd-${net}`); if(usdNote) usdNote.textContent = px>0 && amt>0 ? `≈ ${fmtUSD(px*amt)}` : "≈ —";
     }
 
+    /* ===== Scan flow ===== */
     async function scanAll(net){
       const status=document.getElementById(`status-${net}`), body=document.getElementById(`rows-${net}`), route=document.getElementById(`route-${net}`);
-      body.innerHTML=""; route.textContent=""; state[net].best=null; status.innerHTML=`<span class="spinner"></span> Loading token addresses…`;
+      body.innerHTML=""; route.textContent=""; state[net].best=null; status.innerHTML=`<span class="spinner"></span> Loading token addresses… (will fallback if blocked)`;
       const addrs=await loadTokenAddresses(net).catch(()=>[]);
-      if(!addrs.length){ status.textContent="Could not load token list."; return; }
+      if(!addrs.length){ status.textContent="Could not load token addresses."; return; }
       status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
       let done=0;
       const res=await mapLimit(addrs, CONCURRENCY, async (addr)=>{
@@ -501,28 +559,26 @@
         let min=Infinity,max=-Infinity,buy=null,sell=null;
         for(const p of perDex){ const pr=Number(p?.priceUsd); if(!isFinite(pr)) continue; if(pr<min){min=pr;buy=p;} if(pr>max){max=pr;sell=p;} }
         if(!buy||!sell||!isFinite(min)||!isFinite(max)) return null;
-        const base=buy?.baseToken?.symbol || sell?.baseToken?.symbol || ""; 
-        return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max };
+        const base=buy?.baseToken?.symbol || sell?.baseToken?.symbol || "";
+        return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
       });
-      const usable=res.filter(Boolean).map(r=>({ ...r, spread:(r.sellPrice-r.buyPrice)/r.buyPrice })).sort((a,b)=>b.spread-a.spread).slice(0,150);
+      const usable=res.filter(Boolean).sort((a,b)=>b.spread-a.spread).slice(0,150);
       status.textContent=usable.length?`Found ${usable.length} opportunities`:"No viable routes (filters).";
       usable.forEach(r=>body.appendChild(row(net,r)));
-      if(usable[0]){ state[net].best=usable[0]; route.innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)}`; updateKPIs(net); }
+      if(usable[0]){ state[net].best=usable[0]; route.innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`; updateKPIs(net); }
     }
 
-    // Wire minimal events
+    /* ===== Wire up ===== */
     document.querySelectorAll("[data-scan]").forEach(btn=>btn.addEventListener("click", ()=>scanAll(btn.dataset.scan)));
     for(const net of NETWORKS){
       if(EVM.has(net)) initGas(net);
-      const id=(x)=>document.getElementById(`${x}-${net}`);
-      const gl=id('gas-limit'); if(gl) gl.addEventListener('input', ()=>{ calcGasUsd(net); updateKPIs(net); });
-      const la=id('loan-amt'); if(la) la.addEventListener('input', ()=>updateKPIs(net));
-      const auto=id('btn-autosize'); if(auto) auto.addEventListener('click', ()=>toast("Auto-size coming (kept minimal in Safe Boot)"));
-      const go=id('btn-proceed'); if(go) go.addEventListener('click', ()=>toast("Proceed (sim) in Safe Boot"));
-      const stop=id('btn-stop'); if(stop) stop.addEventListener('click', ()=>toast("Auto-exec stopped")));
+      const gl=document.getElementById(`gas-limit-${net}`); if(gl) gl.addEventListener('input', ()=>{ calcGasUsd(net); updateKPIs(net); });
+      const la=document.getElementById(`loan-amt-${net}`); if(la) la.addEventListener('input', ()=>updateKPIs(net));
+      const auto=document.getElementById(`btn-autosize-${net}`); if(auto) auto.addEventListener('click', ()=>toast("Auto-size (full) is in the advanced build; kept minimal here."));
+      const go=document.getElementById(`btn-proceed-${net}`); if(go) go.addEventListener('click', ()=>toast("Proceed (sim) — advanced timeline is in the full build."));
+      const stop=document.getElementById(`btn-stop-${net}`); if(stop) stop.addEventListener('click', ()=>toast("Auto-exec stopped"));
     }
     document.getElementById("btnConnect").addEventListener("click", ()=>toast("Wallet connect coming soon"));
-
   } catch (e) { showErr(e); }
 })();
 </script>

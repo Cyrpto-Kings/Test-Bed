@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v8.7.4 — Safe Boot + Seed Fallback</title>
+<title>Crypto Kings Test Bed v8.8.0 — Login Gate</title>
 <style>
   :root { --bg:#0b0d12; --ink:#e8eef9; --muted:#9aa3af; --brand:#7c5cff; --ring:rgba(124,92,255,.35); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
@@ -47,279 +47,364 @@
   .errbar{max-width:1200px;margin:12px auto 0;padding:0 16px}
   .errbar .box{background:#2a1520;border:1px solid rgba(255,100,120,.35);color:#ffd5db;padding:10px 12px;border-radius:10px}
   .errbar .box pre{white-space:pre-wrap;word-break:break-word;margin:6px 0 0;font-size:12px;color:#ffd5db}
+
+  /* login overlay */
+  #login-screen { position:fixed; inset:0; background:#0b0d12; display:flex; align-items:center; justify-content:center; z-index:100; }
+  #login-card { background:#111422; padding:24px; border-radius:12px; max-width:320px; width:100%; text-align:center; border:1px solid rgba(255,255,255,.08); }
+  #login-card h2{ margin:0 0 16px; font-size:18px }
+  #login-card input{ width:100%; margin-bottom:10px; padding:10px; border-radius:8px; border:1px solid #444; background:#0e1220; color:#e8eef9 }
+  #login-card button{ padding:10px 16px; border:none; border-radius:8px; background:linear-gradient(135deg,#7c5cff,#1d9bf0); color:white; font-weight:700; cursor:pointer; width:100% }
+  #login-msg{ margin-top:10px; font-size:13px; color:#f59e0b; min-height:1em }
 </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="topbar-inner">
-      <div class="logo"><span>CK</span></div>
-      <div class="brand">Crypto Kings</div>
-      <span class="chip">v8.7.4</span>
-      <div class="spacer"></div>
-      <button id="btnConnect" class="btn">Connect Wallet</button>
+
+  <!-- Login Gate -->
+  <div id="login-screen">
+    <div id="login-card">
+      <div class="logo" style="margin:0 auto 10px;"><span>CK</span></div>
+      <h2>Crypto Kings Login</h2>
+      <input id="login-user" type="text" placeholder="Username">
+      <input id="login-pass" type="password" placeholder="Password">
+      <button id="login-btn">Login</button>
+      <div id="login-msg"></div>
+      <div class="help" style="margin-top:10px">Session unlock lasts until tab is closed.</div>
     </div>
   </div>
 
-  <!-- Error banner (only shown on script error) -->
-  <div id="errbar" class="errbar" style="display:none;">
-    <div class="box">
-      <strong>App error</strong>
-      <pre id="errtxt"></pre>
-    </div>
-  </div>
-
-  <!-- Static (non-JS) scaffold so the page never looks blank -->
-  <div class="tabs">
-    <div class="tabbar" id="tabbar">
-      <button class="active" data-tab="ethereum">Ethereum</button>
-      <button data-tab="arbitrum">Arbitrum</button>
-      <button data-tab="polygon">Polygon</button>
-      <button data-tab="bsc">BSC</button>
-      <button data-tab="avalanche">Avalanche</button>
-      <button data-tab="solana">Solana</button>
+  <!-- App (hidden until login) -->
+  <div id="app" style="display:none;">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="logo"><span>CK</span></div>
+        <div class="brand">Crypto Kings</div>
+        <span class="chip">v8.8.0</span>
+        <div class="spacer"></div>
+        <button id="btnConnect" class="btn">Connect Wallet</button>
+      </div>
     </div>
 
-    <div class="tabpanes" id="tabpanes">
-      <!-- Ethereum -->
-      <div id="pane-ethereum" class="wrap">
-        <div class="card">
+    <!-- Error banner (only shown on script error) -->
+    <div id="errbar" class="errbar" style="display:none;">
+      <div class="box">
+        <strong>App error</strong>
+        <pre id="errtxt"></pre>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tabbar" id="tabbar">
+        <button class="active" data-tab="ethereum">Ethereum</button>
+        <button data-tab="arbitrum">Arbitrum</button>
+        <button data-tab="polygon">Polygon</button>
+        <button data-tab="bsc">BSC</button>
+        <button data-tab="avalanche">Avalanche</button>
+        <button data-tab="solana">Solana</button>
+      </div>
+
+      <div class="tabpanes" id="tabpanes">
+        <!-- Ethereum -->
+        <div id="pane-ethereum" class="wrap">
+          <div class="card">
+            <div class="row row-4">
+              <div><label>Network</label><input value="Ethereum" readonly /></div>
+              <div><label>Platform</label><input value="Aave v3" readonly /></div>
+              <div><label>Gas Currency</label><input value="ETH" readonly /></div>
+              <div><label>Scan</label><button class="btn small" data-scan="ethereum">Scan All Tokens (sampled)</button></div>
+            </div>
+            <div class="row row-3" style="margin-top:8px">
+              <div><span id="status-ethereum" class="help">Ready.</span></div>
+              <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
+              <div class="help">Sample size: 200, concurrency: 8</div>
+            </div>
+            <div class="kpi">
+              <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-ethereum">—</div></div>
+              <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-ethereum">—</div></div>
+              <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-ethereum">—</div></div>
+            </div>
+            <div class="row row-4" style="margin-top:8px">
+              <div><label>Loan Asset</label><input id="loan-asset-ethereum" value="USDC" /><div class="help" id="loan-amt-usd-ethereum-note">Loan capped at $10,000.</div></div>
+              <div><label>Loan Amount (units)</label><input id="loan-amt-ethereum" type="number" min="0" step="any" placeholder="e.g., 1000" /><div class="help" id="loan-amt-usd-ethereum">≈ —</div></div>
+              <div><label>Gas (auto)</label><input id="gas-gwei-ethereum" placeholder="Auto" readonly /><div class="help" id="gas-note-ethereum">—</div></div>
+              <div><label>Gas Limit</label><input id="gas-limit-ethereum" type="number" min="0" step="1000" placeholder="190000" /><div class="help">Uni/Sushi ~150–200k • Curve ~340k • Balancer ~300k+</div></div>
+            </div>
+            <div class="row row-4" style="margin-top:8px">
+              <div><label>Est. Gas Cost</label><input id="gas-cost-ethereum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-ethereum">—</div></div>
+              <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-ethereum" type="button">Break-Even +5%</button></div>
+              <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-ethereum"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-ethereum" type="number" min="0" step="1" value="5"></label></div></div>
+              <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-ethereum" type="number" min="1" max="50" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-ethereum" type="number" min="1" max="3600" value="10"></label></div></div>
+            </div>
+            <div class="help" id="route-ethereum" style="margin-top:6px;"></div>
+            <div class="cta" style="margin-top:8px">
+              <button class="btn" id="btn-proceed-ethereum" type="button">Proceed</button>
+              <button class="btn ghost" id="btn-stop-ethereum" type="button">Stop Auto</button>
+            </div>
+            <div id="timeline-ethereum" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
+            <div id="tx-result-ethereum" class="hidden"></div>
+            <table class="table" style="margin-top:10px">
+              <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead>
+              <tbody id="rows-ethereum"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Arbitrum -->
+        <div id="pane-arbitrum" class="wrap" style="display:none;">
+          <div class="card">
+            <div class="row row-4">
+              <div><label>Network</label><input value="Arbitrum" readonly /></div>
+              <div><label>Platform</label><input value="Aave v3" readonly /></div>
+              <div><label>Gas Currency</label><input value="ETH" readonly /></div>
+              <div><label>Scan</label><button class="btn small" data-scan="arbitrum">Scan All Tokens (sampled)</button></div>
+            </div>
+            <div class="row row-3" style="margin-top:8px">
+              <div><span id="status-arbitrum" class="help">Ready.</span></div>
+              <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
+              <div class="help">Sample size: 200, concurrency: 8</div>
+            </div>
+            <div class="kpi">
+              <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-arbitrum">—</div></div>
+              <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-arbitrum">—</div></div>
+              <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-arbitrum">—</div></div>
+            </div>
+            <div class="row row-4" style="margin-top:8px">
+              <div><label>Loan Asset</label><input id="loan-asset-arbitrum" value="USDC" /></div>
+              <div><label>Loan Amount (units)</label><input id="loan-amt-arbitrum" type="number" /><div class="help" id="loan-amt-usd-arbitrum">≈ —</div></div>
+              <div><label>Gas (auto)</label><input id="gas-gwei-arbitrum" placeholder="Auto" readonly /><div class="help" id="gas-note-arbitrum">—</div></div>
+              <div><label>Gas Limit</label><input id="gas-limit-arbitrum" type="number" placeholder="170000" /></div>
+            </div>
+            <div class="row row-4" style="margin-top:8px">
+              <div><label>Est. Gas Cost</label><input id="gas-cost-arbitrum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-arbitrum">—</div></div>
+              <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-arbitrum" type="button">Break-Even +5%</button></div>
+              <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-arbitrum"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-arbitrum" type="number" value="5"></label></div></div>
+              <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-arbitrum" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-arbitrum" type="number" value="10"></label></div></div>
+            </div>
+            <div class="help" id="route-arbitrum" style="margin-top:6px;"></div>
+            <div class="cta" style="margin-top:8px">
+              <button class="btn" id="btn-proceed-arbitrum" type="button">Proceed</button>
+              <button class="btn ghost" id="btn-stop-arbitrum" type="button">Stop Auto</button>
+            </div>
+            <div id="timeline-arbitrum" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
+            <div id="tx-result-arbitrum" class="hidden"></div>
+            <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-arbitrum"></tbody></table>
+          </div>
+        </div>
+
+        <!-- Polygon -->
+        <div id="pane-polygon" class="wrap" style="display:none;"><div class="card">
           <div class="row row-4">
-            <div><label>Network</label><input value="Ethereum" readonly /></div>
+            <div><label>Network</label><input value="Polygon" readonly /></div>
             <div><label>Platform</label><input value="Aave v3" readonly /></div>
-            <div><label>Gas Currency</label><input value="ETH" readonly /></div>
-            <div><label>Scan</label><button class="btn small" data-scan="ethereum">Scan All Tokens (sampled)</button></div>
+            <div><label>Gas Currency</label><input value="MATIC" readonly /></div>
+            <div><label>Scan</label><button class="btn small" data-scan="polygon">Scan All Tokens (sampled)</button></div>
           </div>
           <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-ethereum" class="help">Ready.</span></div>
+            <div><span id="status-polygon" class="help">Ready.</span></div>
             <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
             <div class="help">Sample size: 200, concurrency: 8</div>
           </div>
           <div class="kpi">
-            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-ethereum">—</div></div>
-            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-ethereum">—</div></div>
-            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-ethereum">—</div></div>
+            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-polygon">—</div></div>
+            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-polygon">—</div></div>
+            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-polygon">—</div></div>
           </div>
           <div class="row row-4" style="margin-top:8px">
-            <div><label>Loan Asset</label><input id="loan-asset-ethereum" value="USDC" /><div class="help" id="loan-amt-usd-ethereum-note">Loan capped at $10,000.</div></div>
-            <div><label>Loan Amount (units)</label><input id="loan-amt-ethereum" type="number" min="0" step="any" placeholder="e.g., 1000" /><div class="help" id="loan-amt-usd-ethereum">≈ —</div></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-ethereum" placeholder="Auto" readonly /><div class="help" id="gas-note-ethereum">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-ethereum" type="number" min="0" step="1000" placeholder="190000" /><div class="help">Uni/Sushi ~150–200k • Curve ~340k • Balancer ~300k+</div></div>
+            <div><label>Loan Asset</label><input id="loan-asset-polygon" value="USDC" /></div>
+            <div><label>Loan Amount (units)</label><input id="loan-amt-polygon" type="number" /><div class="help" id="loan-amt-usd-polygon">≈ —</div></div>
+            <div><label>Gas (auto)</label><input id="gas-gwei-polygon" placeholder="Auto" readonly /><div class="help" id="gas-note-polygon">—</div></div>
+            <div><label>Gas Limit</label><input id="gas-limit-polygon" type="number" placeholder="190000" /></div>
           </div>
           <div class="row row-4" style="margin-top:8px">
-            <div><label>Est. Gas Cost</label><input id="gas-cost-ethereum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-ethereum">—</div></div>
-            <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-ethereum" type="button">Break-Even +5%</button></div>
-            <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-ethereum"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-ethereum" type="number" min="0" step="1" value="5"></label></div></div>
-            <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-ethereum" type="number" min="1" max="50" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-ethereum" type="number" min="1" max="3600" value="10"></label></div></div>
+            <div><label>Est. Gas Cost</label><input id="gas-cost-polygon" placeholder="—" readonly /><div class="help" id="gas-cost-usd-polygon">—</div></div>
+            <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-polygon" type="button">Break-Even +5%</button></div>
+            <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-polygon"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-polygon" type="number" value="5"></label></div></div>
+            <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-polygon" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-polygon" type="number" value="10"></label></div></div>
           </div>
-          <div class="help" id="route-ethereum" style="margin-top:6px;"></div>
+          <div class="help" id="route-polygon" style="margin-top:6px;"></div>
           <div class="cta" style="margin-top:8px">
-            <button class="btn" id="btn-proceed-ethereum" type="button">Proceed</button>
-            <button class="btn ghost" id="btn-stop-ethereum" type="button">Stop Auto</button>
+            <button class="btn" id="btn-proceed-polygon" type="button">Proceed</button>
+            <button class="btn ghost" id="btn-stop-polygon" type="button">Stop Auto</button>
           </div>
-          <div id="timeline-ethereum" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-          <div id="tx-result-ethereum" class="hidden"></div>
-          <table class="table" style="margin-top:10px">
-            <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead>
-            <tbody id="rows-ethereum"></tbody>
-          </table>
-        </div>
-      </div>
+          <div id="timeline-polygon" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
+          <div id="tx-result-polygon" class="hidden"></div>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-polygon"></tbody></table>
+        </div></div>
 
-      <!-- Arbitrum -->
-      <div id="pane-arbitrum" class="wrap" style="display:none;">
-        <div class="card">
+        <!-- BSC -->
+        <div id="pane-bsc" class="wrap" style="display:none;"><div class="card">
           <div class="row row-4">
-            <div><label>Network</label><input value="Arbitrum" readonly /></div>
+            <div><label>Network</label><input value="BSC" readonly /></div>
             <div><label>Platform</label><input value="Aave v3" readonly /></div>
-            <div><label>Gas Currency</label><input value="ETH" readonly /></div>
-            <div><label>Scan</label><button class="btn small" data-scan="arbitrum">Scan All Tokens (sampled)</button></div>
+            <div><label>Gas Currency</label><input value="BNB" readonly /></div>
+            <div><label>Scan</label><button class="btn small" data-scan="bsc">Scan All Tokens (sampled)</button></div>
           </div>
           <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-arbitrum" class="help">Ready.</span></div>
+            <div><span id="status-bsc" class="help">Ready.</span></div>
             <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
             <div class="help">Sample size: 200, concurrency: 8</div>
           </div>
           <div class="kpi">
-            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-arbitrum">—</div></div>
-            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-arbitrum">—</div></div>
-            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-arbitrum">—</div></div>
+            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-bsc">—</div></div>
+            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-bsc">—</div></div>
+            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-bsc">—</div></div>
           </div>
           <div class="row row-4" style="margin-top:8px">
-            <div><label>Loan Asset</label><input id="loan-asset-arbitrum" value="USDC" /></div>
-            <div><label>Loan Amount (units)</label><input id="loan-amt-arbitrum" type="number" /><div class="help" id="loan-amt-usd-arbitrum">≈ —</div></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-arbitrum" placeholder="Auto" readonly /><div class="help" id="gas-note-arbitrum">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-arbitrum" type="number" placeholder="170000" /></div>
+            <div><label>Loan Asset</label><input id="loan-asset-bsc" value="USDC" /></div>
+            <div><label>Loan Amount (units)</label><input id="loan-amt-bsc" type="number" /><div class="help" id="loan-amt-usd-bsc">≈ —</div></div>
+            <div><label>Gas (auto)</label><input id="gas-gwei-bsc" placeholder="Auto" readonly /><div class="help" id="gas-note-bsc">—</div></div>
+            <div><label>Gas Limit</label><input id="gas-limit-bsc" type="number" placeholder="170000" /></div>
           </div>
           <div class="row row-4" style="margin-top:8px">
-            <div><label>Est. Gas Cost</label><input id="gas-cost-arbitrum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-arbitrum">—</div></div>
-            <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-arbitrum" type="button">Break-Even +5%</button></div>
-            <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-arbitrum"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-arbitrum" type="number" value="5"></label></div></div>
-            <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-arbitrum" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-arbitrum" type="number" value="10"></label></div></div>
+            <div><label>Est. Gas Cost</label><input id="gas-cost-bsc" placeholder="—" readonly /><div class="help" id="gas-cost-usd-bsc">—</div></div>
+            <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-bsc" type="button">Break-Even +5%</button></div>
+            <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-bsc"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-bsc" type="number" value="5"></label></div></div>
+            <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-bsc" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-bsc" type="number" value="10"></label></div></div>
           </div>
-          <div class="help" id="route-arbitrum" style="margin-top:6px;"></div>
+          <div class="help" id="route-bsc" style="margin-top:6px;"></div>
           <div class="cta" style="margin-top:8px">
-            <button class="btn" id="btn-proceed-arbitrum" type="button">Proceed</button>
-            <button class="btn ghost" id="btn-stop-arbitrum" type="button">Stop Auto</button>
+            <button class="btn" id="btn-proceed-bsc" type="button">Proceed</button>
+            <button class="btn ghost" id="btn-stop-bsc" type="button">Stop Auto</button>
           </div>
-          <div id="timeline-arbitrum" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-          <div id="tx-result-arbitrum" class="hidden"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-arbitrum"></tbody></table>
-        </div>
+          <div id="timeline-bsc" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
+          <div id="tx-result-bsc" class="hidden"></div>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-bsc"></tbody></table>
+        </div></div>
+
+        <!-- Avalanche -->
+        <div id="pane-avalanche" class="wrap" style="display:none;"><div class="card">
+          <div class="row row-4">
+            <div><label>Network</label><input value="Avalanche" readonly /></div>
+            <div><label>Platform</label><input value="Aave v3" readonly /></div>
+            <div><label>Gas Currency</label><input value="AVAX" readonly /></div>
+            <div><label>Scan</label><button class="btn small" data-scan="avalanche">Scan All Tokens (sampled)</button></div>
+          </div>
+          <div class="row row-3" style="margin-top:8px">
+            <div><span id="status-avalanche" class="help">Ready.</span></div>
+            <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
+            <div class="help">Sample size: 200, concurrency: 8</div>
+          </div>
+          <div class="kpi">
+            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-avalanche">—</div></div>
+            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-avalanche">—</div></div>
+            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-avalanche">—</div></div>
+          </div>
+          <div class="row row-4" style="margin-top:8px">
+            <div><label>Loan Asset</label><input id="loan-asset-avalanche" value="USDC" /></div>
+            <div><label>Loan Amount (units)</label><input id="loan-amt-avalanche" type="number" /><div class="help" id="loan-amt-usd-avalanche">≈ —</div></div>
+            <div><label>Gas (auto)</label><input id="gas-gwei-avalanche" placeholder="Auto" readonly /><div class="help" id="gas-note-avalanche">—</div></div>
+            <div><label>Gas Limit</label><input id="gas-limit-avalanche" type="number" placeholder="185000" /></div>
+          </div>
+          <div class="row row-4" style="margin-top:8px">
+            <div><label>Est. Gas Cost</label><input id="gas-cost-avalanche" placeholder="—" readonly /><div class="help" id="gas-cost-usd-avalanche">—</div></div>
+            <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-avalanche" type="button">Break-Even +5%</button></div>
+            <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-avalanche"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-avalanche" type="number" value="5"></label></div></div>
+            <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-avalanche" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-avalanche" type="number" value="10"></label></div></div>
+          </div>
+          <div class="help" id="route-avalanche" style="margin-top:6px;"></div>
+          <div class="cta" style="margin-top:8px">
+            <button class="btn" id="btn-proceed-avalanche" type="button">Proceed</button>
+            <button class="btn ghost" id="btn-stop-avalanche" type="button">Stop Auto</button>
+          </div>
+          <div id="timeline-avalanche" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
+          <div id="tx-result-avalanche" class="hidden"></div>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-avalanche"></tbody></table>
+        </div></div>
+
+        <!-- Solana (demo scan only) -->
+        <div id="pane-solana" class="wrap" style="display:none;"><div class="card">
+          <div class="row row-4">
+            <div><label>Network</label><input value="Solana" readonly /></div>
+            <div><label>Platform</label><input value="MarginFi/Solend (demo)" readonly /></div>
+            <div><label>Gas Currency</label><input value="SOL" readonly /></div>
+            <div><label>Scan</label><button class="btn small" data-scan="solana">Scan (demo)</button></div>
+          </div>
+          <div class="row row-3" style="margin-top:8px">
+            <div><span id="status-solana" class="help">Ready.</span></div>
+            <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
+            <div class="help">Sample size: 200, concurrency: 8</div>
+          </div>
+          <div class="kpi">
+            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-solana">—</div></div>
+            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-solana">—</div></div>
+            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-solana">—</div></div>
+          </div>
+          <div class="help" id="route-solana" style="margin-top:6px;"></div>
+          <div class="cta" style="margin-top:8px">
+            <button class="btn" id="btn-proceed-solana" type="button">Proceed</button>
+          </div>
+          <div id="timeline-solana" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
+          <div id="tx-result-solana" class="hidden"></div>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-solana"></tbody></table>
+        </div></div>
       </div>
-
-      <!-- Polygon -->
-      <div id="pane-polygon" class="wrap" style="display:none;"><div class="card">
-        <div class="row row-4">
-          <div><label>Network</label><input value="Polygon" readonly /></div>
-          <div><label>Platform</label><input value="Aave v3" readonly /></div>
-          <div><label>Gas Currency</label><input value="MATIC" readonly /></div>
-          <div><label>Scan</label><button class="btn small" data-scan="polygon">Scan All Tokens (sampled)</button></div>
-        </div>
-        <div class="row row-3" style="margin-top:8px">
-          <div><span id="status-polygon" class="help">Ready.</span></div>
-          <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-          <div class="help">Sample size: 200, concurrency: 8</div>
-        </div>
-        <div class="kpi">
-          <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-polygon">—</div></div>
-          <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-polygon">—</div></div>
-          <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-polygon">—</div></div>
-        </div>
-        <div class="row row-4" style="margin-top:8px">
-          <div><label>Loan Asset</label><input id="loan-asset-polygon" value="USDC" /></div>
-          <div><label>Loan Amount (units)</label><input id="loan-amt-polygon" type="number" /><div class="help" id="loan-amt-usd-polygon">≈ —</div></div>
-          <div><label>Gas (auto)</label><input id="gas-gwei-polygon" placeholder="Auto" readonly /><div class="help" id="gas-note-polygon">—</div></div>
-          <div><label>Gas Limit</label><input id="gas-limit-polygon" type="number" placeholder="190000" /></div>
-        </div>
-        <div class="row row-4" style="margin-top:8px">
-          <div><label>Est. Gas Cost</label><input id="gas-cost-polygon" placeholder="—" readonly /><div class="help" id="gas-cost-usd-polygon">—</div></div>
-          <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-polygon" type="button">Break-Even +5%</button></div>
-          <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-polygon"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-polygon" type="number" value="5"></label></div></div>
-          <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-polygon" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-polygon" type="number" value="10"></label></div></div>
-        </div>
-        <div class="help" id="route-polygon" style="margin-top:6px;"></div>
-        <div class="cta" style="margin-top:8px">
-          <button class="btn" id="btn-proceed-polygon" type="button">Proceed</button>
-          <button class="btn ghost" id="btn-stop-polygon" type="button">Stop Auto</button>
-        </div>
-        <div id="timeline-polygon" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-        <div id="tx-result-polygon" class="hidden"></div>
-        <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-polygon"></tbody></table>
-      </div></div>
-
-      <!-- BSC -->
-      <div id="pane-bsc" class="wrap" style="display:none;"><div class="card">
-        <div class="row row-4">
-          <div><label>Network</label><input value="BSC" readonly /></div>
-          <div><label>Platform</label><input value="Aave v3" readonly /></div>
-          <div><label>Gas Currency</label><input value="BNB" readonly /></div>
-        <div><label>Scan</label><button class="btn small" data-scan="bsc">Scan All Tokens (sampled)</button></div>
-        </div>
-        <div class="row row-3" style="margin-top:8px">
-          <div><span id="status-bsc" class="help">Ready.</span></div>
-          <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-          <div class="help">Sample size: 200, concurrency: 8</div>
-        </div>
-        <div class="kpi">
-          <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-bsc">—</div></div>
-          <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-bsc">—</div></div>
-          <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-bsc">—</div></div>
-        </div>
-        <div class="row row-4" style="margin-top:8px">
-          <div><label>Loan Asset</label><input id="loan-asset-bsc" value="USDC" /></div>
-          <div><label>Loan Amount (units)</label><input id="loan-amt-bsc" type="number" /><div class="help" id="loan-amt-usd-bsc">≈ —</div></div>
-          <div><label>Gas (auto)</label><input id="gas-gwei-bsc" placeholder="Auto" readonly /><div class="help" id="gas-note-bsc">—</div></div>
-          <div><label>Gas Limit</label><input id="gas-limit-bsc" type="number" placeholder="170000" /></div>
-        </div>
-        <div class="row row-4" style="margin-top:8px">
-          <div><label>Est. Gas Cost</label><input id="gas-cost-bsc" placeholder="—" readonly /><div class="help" id="gas-cost-usd-bsc">—</div></div>
-          <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-bsc" type="button">Break-Even +5%</button></div>
-          <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-bsc"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-bsc" type="number" value="5"></label></div></div>
-          <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-bsc" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-bsc" type="number" value="10"></label></div></div>
-        </div>
-        <div class="help" id="route-bsc" style="margin-top:6px;"></div>
-        <div class="cta" style="margin-top:8px">
-          <button class="btn" id="btn-proceed-bsc" type="button">Proceed</button>
-          <button class="btn ghost" id="btn-stop-bsc" type="button">Stop Auto</button>
-        </div>
-        <div id="timeline-bsc" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-        <div id="tx-result-bsc" class="hidden"></div>
-        <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-bsc"></tbody></table>
-      </div></div>
-
-      <!-- Avalanche -->
-      <div id="pane-avalanche" class="wrap" style="display:none;"><div class="card">
-        <div class="row row-4">
-          <div><label>Network</label><input value="Avalanche" readonly /></div>
-          <div><label>Platform</label><input value="Aave v3" readonly /></div>
-          <div><label>Gas Currency</label><input value="AVAX" readonly /></div>
-          <div><label>Scan</label><button class="btn small" data-scan="avalanche">Scan All Tokens (sampled)</button></div>
-        </div>
-        <div class="row row-3" style="margin-top:8px">
-          <div><span id="status-avalanche" class="help">Ready.</span></div>
-          <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-          <div class="help">Sample size: 200, concurrency: 8</div>
-        </div>
-        <div class="kpi">
-          <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-avalanche">—</div></div>
-          <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-avalanche">—</div></div>
-          <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-avalanche">—</div></div>
-        </div>
-        <div class="row row-4" style="margin-top:8px">
-          <div><label>Loan Asset</label><input id="loan-asset-avalanche" value="USDC" /></div>
-          <div><label>Loan Amount (units)</label><input id="loan-amt-avalanche" type="number" /><div class="help" id="loan-amt-usd-avalanche">≈ —</div></div>
-          <div><label>Gas (auto)</label><input id="gas-gwei-avalanche" placeholder="Auto" readonly /><div class="help" id="gas-note-avalanche">—</div></div>
-          <div><label>Gas Limit</label><input id="gas-limit-avalanche" type="number" placeholder="185000" /></div>
-        </div>
-        <div class="row row-4" style="margin-top:8px">
-          <div><label>Est. Gas Cost</label><input id="gas-cost-avalanche" placeholder="—" readonly /><div class="help" id="gas-cost-usd-avalanche">—</div></div>
-          <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-avalanche" type="button">Break-Even +5%</button></div>
-          <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-avalanche"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-avalanche" type="number" value="5"></label></div></div>
-          <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-avalanche" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-avalanche" type="number" value="10"></label></div></div>
-        </div>
-        <div class="help" id="route-avalanche" style="margin-top:6px;"></div>
-        <div class="cta" style="margin-top:8px">
-          <button class="btn" id="btn-proceed-avalanche" type="button">Proceed</button>
-          <button class="btn ghost" id="btn-stop-avalanche" type="button">Stop Auto</button>
-        </div>
-        <div id="timeline-avalanche" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-        <div id="tx-result-avalanche" class="hidden"></div>
-        <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-avalanche"></tbody></table>
-      </div></div>
-
-      <!-- Solana (demo scan only) -->
-      <div id="pane-solana" class="wrap" style="display:none;"><div class="card">
-        <div class="row row-4">
-          <div><label>Network</label><input value="Solana" readonly /></div>
-          <div><label>Platform</label><input value="MarginFi/Solend (demo)" readonly /></div>
-          <div><label>Gas Currency</label><input value="SOL" readonly /></div>
-          <div><label>Scan</label><button class="btn small" data-scan="solana">Scan (demo)</button></div>
-        </div>
-        <div class="row row-3" style="margin-top:8px">
-          <div><span id="status-solana" class="help">Ready.</span></div>
-          <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-          <div class="help">Sample size: 200, concurrency: 8</div>
-        </div>
-        <div class="kpi">
-          <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-solana">—</div></div>
-          <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-solana">—</div></div>
-          <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-solana">—</div></div>
-        </div>
-        <div class="help" id="route-solana" style="margin-top:6px;"></div>
-        <div class="cta" style="margin-top:8px">
-          <button class="btn" id="btn-proceed-solana" type="button">Proceed</button>
-        </div>
-        <div id="timeline-solana" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-        <div id="tx-result-solana" class="hidden"></div>
-        <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-solana"></tbody></table>
-      </div></div>
     </div>
   </div>
 
 <script>
+/* =========================
+   Simple Login (client-side)
+   ========================= */
+// Change these for your private gate. You can also override at runtime by setting
+//   localStorage.ck_user / localStorage.ck_pass
+const DEFAULT_USER = "admin";
+const DEFAULT_PASS = "test123";
+
 (function(){
-  // Tabs work even if enhancement fails
+  const overlay = document.getElementById("login-screen");
+  const app     = document.getElementById("app");
+  const btn     = document.getElementById("login-btn");
+  const msg     = document.getElementById("login-msg");
+
+  function creds(){
+    // allow override via localStorage without editing file
+    const u = localStorage.getItem("ck_user") || DEFAULT_USER;
+    const p = localStorage.getItem("ck_pass") || DEFAULT_PASS;
+    return {u,p};
+  }
+
+  function unlock(){
+    sessionStorage.setItem("ck_authed","yes");
+    overlay.style.display = "none";
+    app.style.display = "block";
+    // Kick app init (tabs require DOM to be visible)
+    initTabs();
+    initEnhancements();
+  }
+
+  // Auto-unlock if session remembered
+  if(sessionStorage.getItem("ck_authed") === "yes"){
+    unlock();
+  }
+
+  btn.addEventListener("click", ()=>{
+    const user = (document.getElementById("login-user").value || "").trim();
+    const pass = (document.getElementById("login-pass").value || "").trim();
+    const {u,p} = creds();
+    if(user === u && pass === p){
+      unlock();
+    } else {
+      msg.textContent = "Invalid username or password.";
+    }
+  });
+
+  // optional: Enter key submits
+  document.getElementById("login-pass").addEventListener("keydown", (e)=>{
+    if(e.key === "Enter") btn.click();
+  });
+
+  // If not authed yet, keep app hidden (no init)
+  if(sessionStorage.getItem("ck_authed") !== "yes"){
+    app.style.display = "none";
+  }
+})();
+</script>
+
+<script>
+// Tabs need to be init-able on demand (after login)
+function initTabs(){
   const tabbar = document.getElementById('tabbar');
+  if(!tabbar) return;
   const panes  = document.getElementById('tabpanes').children;
   tabbar.addEventListener('click', (e)=>{
     const b = e.target.closest('button[data-tab]');
@@ -329,11 +414,12 @@
     const id = 'pane-' + b.getAttribute('data-tab');
     for(const p of panes) p.style.display = (p.id === id) ? 'block' : 'none';
   });
-})();
+}
 </script>
 
 <script>
-(function(){
+// App enhancements moved into a function so we can run them after login
+function initEnhancements(){
   const errbar = document.getElementById('errbar');
   const errtxt = document.getElementById('errtxt');
   const showErr = (e)=>{ try{ errtxt.textContent = (e && e.stack) ? e.stack : String(e); errbar.style.display = 'block'; console.error('[CK SafeBoot]', e);}catch(_){} };
@@ -368,7 +454,7 @@
     const SEED_ADDRESSES = {
       ethereum:[
         "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xdac17f958d2ee523a2206206994597c13d831ec7",
-        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0x2260FAC5E5542a773Aa44FBCfEDF7C193bc2C599".toLowerCase().replace('fEDF','fedF'), /* fix casing */
         "0x6B175474E89094C44Da98b954EedeAC495271d0F","0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
         "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984","0x514910771AF9Ca656af840dff83E8264EcF986CA",
         "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
@@ -397,7 +483,6 @@
 
     async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
 
-    // Fallback-friendly loader
     async function loadTokenAddresses(network){
       const lists = TOKENLISTS[network] || [];
       const addrs = new Set();
@@ -426,16 +511,13 @@
         console.warn("[tokens] falling back to seed addresses for", network);
         arr = SEED_ADDRESSES[network] ? [...SEED_ADDRESSES[network]] : [];
       }
-
       if (!arr.length && network === "ethereum") {
-        arr = ["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"]; // USDC, WETH
+        arr = ["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"];
       }
-
       return arr.slice(0, Math.min(arr.length, MAX_ADDRESSES_PER_SCAN));
     }
 
-    /* ===== Dexscreener & helpers ===== */
-    async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
+    async function dsByToken(addr){ const r=await fetch(`${"https://api.dexscreener.com"}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
     function consolidatePerDex(pairs){
       const preferred=["USDC","USDT"]; const byDex=new Map();
       for(const p of (pairs||[])){
@@ -460,7 +542,6 @@
       const workers=Array.from({length:Math.min(limit,items.length)}, worker); await Promise.all(workers); return out;
     }
 
-    /* ===== Per-network state ===== */
     const state={}; for(const net of NETWORKS){ state[net]={best:null,gasUsd:0,gasNativeUsd:null,gasGwei:null}; }
 
     function row(net, r){
@@ -476,7 +557,6 @@
       return tr;
     }
 
-    /* ===== Gas & loan & P/L ===== */
     async function gasSuggestGwei(net){
       const eps=RPC[net]; if(!eps) throw new Error("no rpc");
       const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
@@ -544,7 +624,6 @@
       const usdNote=document.getElementById(`loan-amt-usd-${net}`); if(usdNote) usdNote.textContent = px>0 && amt>0 ? `≈ ${fmtUSD(px*amt)}` : "≈ —";
     }
 
-    /* ===== Scan flow ===== */
     async function scanAll(net){
       const status=document.getElementById(`status-${net}`), body=document.getElementById(`rows-${net}`), route=document.getElementById(`route-${net}`);
       body.innerHTML=""; route.textContent=""; state[net].best=null; status.innerHTML=`<span class="spinner"></span> Loading token addresses… (will fallback if blocked)`;
@@ -564,11 +643,10 @@
       });
       const usable=res.filter(Boolean).sort((a,b)=>b.spread-a.spread).slice(0,150);
       status.textContent=usable.length?`Found ${usable.length} opportunities`:"No viable routes (filters).";
-      usable.forEach(r=>body.appendChild(row(net,r)));
+      usable.forEach(r=>body.appendChild((()=>{ const tr=row(net,r); return tr; })()));
       if(usable[0]){ state[net].best=usable[0]; route.innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`; updateKPIs(net); }
     }
 
-    /* ===== Wire up ===== */
     document.querySelectorAll("[data-scan]").forEach(btn=>btn.addEventListener("click", ()=>scanAll(btn.dataset.scan)));
     for(const net of NETWORKS){
       if(EVM.has(net)) initGas(net);
@@ -580,7 +658,7 @@
     }
     document.getElementById("btnConnect").addEventListener("click", ()=>toast("Wallet connect coming soon"));
   } catch (e) { showErr(e); }
-})();
+}
 </script>
 </body>
 </html>

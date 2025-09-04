@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v8.9.2 — Live Scanner</title>
+<title>Crypto Kings Test Bed v8.9.3 — Live Scanner</title>
 <style>
   :root{
     --bg:#f3f4f6; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -36,13 +36,12 @@
   .row{display:grid;grid-template-columns:1fr;gap:12px}
   @media (min-width:960px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
   .help{font-size:12px;color:var(--muted)}
-  .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .hidden{display:none}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
   .tag{display:inline-block;padding:4px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#f9fafb}
   .table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
   .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
   .table th{color:#374151;font-weight:700;background:#f9fafb}
-  .table tr:nth-child(even){background:var(--stripe)}
+  .table tr:nth-child(even){background:#fafafa}
   .right{text-align:right}
   .pos{background:#ecfdf5} .neg{background:#fef2f2} .meh{background:#f9fafb}
   .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:24px;height:24px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
@@ -80,7 +79,7 @@
     <div class="topbar-inner">
       <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v8.9.2</span>
+      <span class="chip">v8.9.3</span>
       <div class="spacer"></div>
 
       <label class="help" style="display:flex;align-items:center;gap:6px">
@@ -129,7 +128,7 @@
 <script>
 /* ---- Global error trap: show any JS error on the page ---- */
 (function(){
-  const show = (msg, src, line, col, err) => {
+  function show (msg, src, line, col, err) {
     try {
       const bar = document.getElementById('errbar');
       const txt = document.getElementById('errtxt');
@@ -137,10 +136,10 @@
       txt.textContent = (err && err.stack) ? err.stack : [msg, src, line+':'+col].filter(Boolean).join(' | ');
       bar.style.display = 'block';
     } catch(_) {}
-    return false; // allow console error too
-  };
+    return false;
+  }
   window.onerror = show;
-  window.onunhandledrejection = (e)=> show('Unhandled promise rejection', '', '', '', e.reason||e);
+  window.onunhandledrejection = (e)=> show('Unhandled promise rejection', '', '', '', e && (e.reason||e));
 })();
 </script>
 
@@ -164,9 +163,9 @@ const DEFAULT_USER="admin", DEFAULT_PASS="test123";
 </script>
 
 <script>
-/* ===== UI + Scanner ===== */
+/* ===== UI frame ===== */
 function initUI(){
-  // Build panes FIRST so UI appears even if later async work fails
+  // Build panes immediately so UI is visible
   const NETWORKS=["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
   const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX", solana:"SOL" };
   const panes=document.getElementById('tabpanes');
@@ -181,7 +180,7 @@ function initUI(){
     [...panes.children].forEach(p=>p.style.display=(p.id===id)?'block':'none');
   });
 
-  // Now wire app logic
+  // Boot app logic
   initApp();
 }
 
@@ -213,6 +212,7 @@ function paneHTML(net, gasSym){
 </script>
 
 <script>
+/* ===== App logic ===== */
 function initApp(){
   const NETWORKS=["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
   const EVM=new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
@@ -229,7 +229,20 @@ function initApp(){
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
   const showErr=(msg)=>{ const bar=el('errbar'), t=el('errtxt'); if(bar&&t){ t.textContent=String(msg); bar.style.display='block'; } };
 
-  // Gas
+  /* ---- Auto-refresh SAFE version (guarded) ---- */
+  let refreshTimer=null, activeNet="ethereum";
+  function startRefresh(){
+    try{
+      if(refreshTimer){ clearInterval(refreshTimer); refreshTimer=null; }
+      const sel=el("refreshSel");
+      if(!sel){ return; }                        // guard: select missing
+      const sec=parseInt(sel.value||"0",10);
+      if(!sec || isNaN(sec)){ return; }         // guard: off/not a number
+      refreshTimer=setInterval(()=>{ try{ scanAll(activeNet); }catch(e){ showErr(e); } }, sec*1000);
+    }catch(e){ showErr(e); }
+  }
+
+  // Gas setup
   const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"],
               arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"],
               polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"],
@@ -261,7 +274,6 @@ function initApp(){
   }
 
   const state={}; for(const n of NETWORKS){ state[n]={best:null,gasGwei:null,gasUsd:0,gasNativeUsd:null}; }
-
   async function initGas(net){
     if(!EVM.has(net)) return;
     const g=await gasSuggestGwei(net).catch(()=>null);
@@ -288,21 +300,20 @@ function initApp(){
   async function dsSearch(net, q){ const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`).catch(()=>null); if(!r||!r.ok) return []; const j=await r.json(); return (j && j.pairs ? j.pairs : []).filter(p=>p.chainId===net); }
   function consolidatePerDex(pairs, filt){
     const preferred=["USDC","USDT"]; const byDex=new Map(); const now=Date.now();
-    let dropped={liq:0,vol:0,tr:0,age:0,price:0};
     for(let i=0;i<pairs.length;i++){
       const p=pairs[i]; const dex=(p && p.dexId ? p.dexId.toLowerCase(): "");
       if(!dex) continue;
-      const price=Number(p.priceUsd); if(!isFinite(price)||price<=0){ dropped.price++; continue; }
-      const liq=(p.liquidity && p.liquidity.usd)||0; if(liq<filt.liq){ dropped.liq++; continue; }
-      const vol=(p.volume && p.volume.h24)||0; if(vol<filt.vol){ dropped.vol++; continue; }
-      const m5=((p.txns && p.txns.m5 && p.txns.m5.buys)||0)+((p.txns && p.txns.m5 && p.txns.m5.sells)||0); if(m5<filt.m5){ dropped.tr++; continue; }
-      const created=Number(p.pairCreatedAt||0); if(created && filt.ageDays>0 && (now-created)<(filt.ageDays*86400000)){ dropped.age++; continue; }
+      const price=Number(p.priceUsd); if(!isFinite(price)||price<=0) continue;
+      const liq=(p.liquidity && p.liquidity.usd)||0; if(liq<filt.liq) continue;
+      const vol=(p.volume && p.volume.h24)||0; if(vol<filt.vol) continue;
+      const m5=((p.txns && p.txns.m5 && p.txns.m5.buys)||0)+((p.txns && p.txns.m5 && p.txns.m5.sells)||0); if(m5<filt.m5) continue;
+      const created=Number(p.pairCreatedAt||0); if(created && filt.ageDays>0 && (now-created)<(filt.ageDays*86400000)) continue;
       const quote=(p.quoteToken && p.quoteToken.symbol ? p.quoteToken.symbol.toUpperCase() : "");
       const rank = quote==="USDC" ? 0 : quote==="USDT" ? 1 : 99;
       const cur=byDex.get(dex);
       if(!cur || rank<cur.rank || (rank===cur.rank && liq>(cur.liq||0))) byDex.set(dex,{rec:p,liq,rank});
     }
-    return {rows:[...byDex.values()].map(v=>v.rec), dropped};
+    return [...byDex.values()].map(v=>v.rec);
   }
   function prettyDexId(p){
     const raw=(p && p.dexId ? p.dexId.toLowerCase() : "");
@@ -355,10 +366,10 @@ function initApp(){
     for(let k=0;k<anchors.length;k++){
       const q=anchors[k];
       try{
-        const pairs=await dsSearch(network,q);
-        for(let i=0;i<pairs.length;i++){
-          const base = pairs[i] && pairs[i].baseToken ? pairs[i].baseToken.address : null;
-          if(base) addrs.add(base);
+        const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`);
+        if(r && r.ok){
+          const j=await r.json(); const pairs=(j && j.pairs)||[];
+          for(let i=0;i<pairs.length;i++){ const p=pairs[i]; if(p.chainId===network && p.baseToken && p.baseToken.address){ addrs.add(p.baseToken.address); } }
         }
       }catch(_){}
     }
@@ -405,10 +416,14 @@ function initApp(){
     tbody.appendChild(tr);
   }
 
+  async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
+
   async function scanAll(net){
-    const mode=el("filterSel").value||"normal";
+    activeNet = net; // for auto-refresh
+    const mode=el("filterSel") ? (el("filterSel").value||"normal") : "normal";
     const filt=FILTERS[mode];
     const status=el(`status-${net}`), tbody=el(`rows-${net}`), route=el(`route-${net}`);
+    if(!status||!tbody||!route){ return; } // guard
     tbody.innerHTML=""; route.textContent=""; state[net].best=null;
     status.innerHTML=`<span class="spinner"></span> Loading token universe… (${mode})`;
     let addrs=[];
@@ -416,15 +431,11 @@ function initApp(){
     if(!addrs.length){ status.textContent="Could not load token addresses."; return; }
     status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
-    let done=0, filteredCounts={liq:0,vol:0,tr:0,age:0,price:0};
     const res=await mapLimit(addrs,10, async(addr)=>{
-      const j=await dsByToken(addr); done++;
-      if(done%8===0) status.innerHTML=`<span class="spinner"></span> Scanned ${done}/${addrs.length}…`;
+      const j=await dsByToken(addr);
       if(!j||!j.pairs||!j.pairs.length) return null;
       const onNet=j.pairs.filter(p=>p.chainId===net);
-      const x=consolidatePerDex(onNet, filt);
-      const rows=x.rows, dropped=x.dropped;
-      for(const k in filteredCounts) filteredCounts[k]+= (dropped[k]||0);
+      const rows=consolidatePerDex(onNet, filt);
       if(!rows.length) return null;
       let min=Infinity,max=-Infinity,buy=null,sell=null;
       for(let i=0;i<rows.length;i++){
@@ -440,44 +451,31 @@ function initApp(){
 
     const usable=(res.filter(Boolean).sort((a,b)=>b.spread-a.spread)).slice(0,200);
     status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes with current filters.";
-    if(!usable.length){
-      showErr(`No routes on ${net} under "${mode}" filters.
-Tip: switch Filter Mode to "Loose" and rescan; or try another network.`);
-      return;
-    } else {
-      const bar=el('errbar'); if(bar) bar.style.display='none';
-    }
-
+    const bar=el('errbar'); if(bar) bar.style.display = usable.length? 'none':'block';
     for(let i=0;i<usable.length;i++) appendRow(net,usable[i]);
-    state[net].best=usable[0];
-    el(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`;
+    if(usable[0]){
+      state[net].best=usable[0];
+      route.innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`;
+    }
   }
 
-  // Wire events
+  // Wire controls AFTER DOM exists
   document.addEventListener('click', (e)=>{
     const btn=e.target.closest('[data-scan]'); if(btn) scanAll(btn.dataset.scan);
   });
-  document.getElementById("filterSel").addEventListener("change", ()=>scanAll("ethereum"));
-  document.getElementById("refreshSel").addEventListener("change", startRefresh);
-  document.getElementById("btnConnect").addEventListener("click", ()=>alert("Wallet connect coming soon"));
+  const filterSel=el("filterSel"); if(filterSel){ filterSel.addEventListener("change", ()=>scanAll(activeNet)); }
+  const refreshSel=el("refreshSel"); if(refreshSel){ refreshSel.addEventListener("change", startRefresh); }
 
-  // Init gas + first scan + auto refresh
+  // Gas listeners
   for(let i=0;i<NETWORKS.length;i++){
     const n=NETWORKS[i];
     if(EVM.has(n)) initGas(n);
     const gl=el(`gas-limit-${n}`); if(gl) gl.addEventListener('input', ()=>calcGasUsd(n));
   }
+
+  // First scan + start auto refresh (guarded)
   scanAll("ethereum");
   startRefresh();
-
-  // Auto refresh countdown
-  let timer=null; function startRefresh(){
-    if(timer) clearInterval(timer);
-    const sel=document.getElementById("refreshSel"); if(!sel) return;
-    const sec=parseInt(sel.value||"0",10); if(!sec) return;
-    let left=sec;
-    timer=setInterval(()=>{ left--; if(left<=0){ left=sec; scanAll("ethereum"); } },1000);
-  }
 }
 </script>
 </body>

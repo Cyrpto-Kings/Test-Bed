@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v8.9.0 — Live Scanner</title>
+<title>Crypto Kings Test Bed v8.9.1 — Live Scanner</title>
 <style>
   :root{
     --bg:#f3f4f6; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -39,9 +39,6 @@
   .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
   .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .hidden{display:none}
   .tag{display:inline-block;padding:4px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#f9fafb}
-  .kpi{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
-  .kpi .box{border:1px solid var(--border-strong);border-radius:12px;padding:10px 12px;background:#fff}
-  .kpi .label{font-size:11px;color:var(--muted)} .kpi .value{font-weight:700}
   .table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
   .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
   .table th{color:#374151;font-weight:700;background:#f9fafb}
@@ -53,9 +50,6 @@
   .errbar{max-width:1200px;margin:12px auto 0;padding:0 16px}
   .errbar .box{background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px}
   .errbar .box pre{white-space:pre-wrap;word-break:break-word;margin:6px 0 0;font-size:12px;color:#7f1d1d}
-  /* Sticky KPI */
-  .kpi-sticky{position:sticky;top:56px;z-index:30;background:#ffffffd9;backdrop-filter:saturate(1.2) blur(2px);border:1px solid var(--border);border-left:0;border-right:0}
-  .kpi-sticky .kpi{margin:8px 0}
   /* Login overlay */
   #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
   #login-card{background:#fff;padding:24px;border-radius:12px;max-width:340px;width:100%;text-align:center;border:1px solid var(--border);box-shadow:0 10px 28px rgba(0,0,0,.06)}
@@ -80,15 +74,25 @@
   </div>
 </div>
 
-<!-- App (hidden until login) -->
+<!-- App -->
 <div id="app" style="display:none;">
   <div class="topbar">
     <div class="topbar-inner">
       <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v8.9.0</span>
+      <span class="chip">v8.9.1</span>
       <div class="spacer"></div>
+
       <label class="help" style="display:flex;align-items:center;gap:6px">
+        Filter Mode
+        <select id="filterSel" style="padding:6px 8px;border-radius:8px;border:1px solid var(--border-strong);background:#fff">
+          <option value="strict">Strict</option>
+          <option value="normal" selected>Normal</option>
+          <option value="loose">Loose</option>
+        </select>
+      </label>
+
+      <label class="help" style="display:flex;align-items:center;gap:6px;margin-left:8px">
         Auto Refresh
         <select id="refreshSel" style="padding:6px 8px;border-radius:8px;border:1px solid var(--border-strong);background:#fff">
           <option value="0">Off</option>
@@ -97,28 +101,15 @@
           <option value="30">30s</option>
         </select>
       </label>
+
       <button id="btnConnect" class="btn">Connect Wallet</button>
     </div>
   </div>
 
-  <!-- Sticky KPI -->
-  <div class="kpi-sticky">
-    <div class="wrap">
-      <div class="kpi">
-        <div class="box"><div class="label">Best Route</div><div class="value" id="kpiBest">—</div></div>
-        <div class="box"><div class="label">Spread</div><div class="value" id="kpiSpread">—</div></div>
-        <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpiNet">—</div></div>
-        <div class="box"><div class="label">Refresh In</div><div class="value" id="kpiCountdown">—</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Error banner -->
   <div id="errbar" class="errbar" style="display:none;">
-    <div class="box"><strong>App error</strong><pre id="errtxt"></pre></div>
+    <div class="box"><strong>Scanner notice</strong><pre id="errtxt"></pre></div>
   </div>
 
-  <!-- Tabs -->
   <div class="tabs">
     <div class="tabbar" id="tabbar">
       <button class="active" data-tab="ethereum">Ethereum</button>
@@ -130,162 +121,18 @@
     </div>
 
     <div class="tabpanes" id="tabpanes">
-      <!-- ETH -->
-      <div id="pane-ethereum" class="wrap">
-        <div class="card">
-          <div class="row row-4">
-            <div><label>Network</label><input value="Ethereum" readonly /></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-ethereum" placeholder="Auto" readonly /><div class="help" id="gas-note-ethereum">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-ethereum" type="number" min="0" step="1000" placeholder="190000" value="190000" /><div class="help">Uni/Sushi ~150–200k • Curve ~340k • Balancer ~300k+</div></div>
-            <div><label>Est. Gas Cost</label><input id="gas-cost-ethereum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-ethereum">—</div></div>
-          </div>
-          <div class="row row-4" style="margin-top:8px">
-            <div><label>Loan Asset</label><input id="loan-asset-ethereum" value="USDC" /></div>
-            <div><label>Loan Amount</label><input id="loan-amt-ethereum" type="number" placeholder="e.g., 1000" /><div class="help" id="loan-amt-usd-ethereum">≈ —</div></div>
-            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-ethereum" type="button">Break-even +5%</button></div>
-            <div><label>Scan</label><button class="btn small" data-scan="ethereum">Scan Now</button></div>
-          </div>
-          <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-ethereum" class="help">Ready.</span></div>
-            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
-            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
-          </div>
-          <div class="help" id="route-ethereum" style="margin-top:6px;"></div>
-          <table class="table" style="margin-top:10px">
-            <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead>
-            <tbody id="rows-ethereum"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Arbitrum -->
-      <div id="pane-arbitrum" class="wrap" style="display:none;">
-        <div class="card">
-          <div class="row row-4">
-            <div><label>Network</label><input value="Arbitrum" readonly /></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-arbitrum" placeholder="Auto" readonly /><div class="help" id="gas-note-arbitrum">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-arbitrum" type="number" placeholder="170000" value="170000" /></div>
-            <div><label>Est. Gas Cost</label><input id="gas-cost-arbitrum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-arbitrum">—</div></div>
-          </div>
-          <div class="row row-4" style="margin-top:8px">
-            <div><label>Loan Asset</label><input id="loan-asset-arbitrum" value="USDC" /></div>
-            <div><label>Loan Amount</label><input id="loan-amt-arbitrum" type="number" /><div class="help" id="loan-amt-usd-arbitrum">≈ —</div></div>
-            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-arbitrum" type="button">Break-even +5%</button></div>
-            <div><label>Scan</label><button class="btn small" data-scan="arbitrum">Scan Now</button></div>
-          </div>
-          <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-arbitrum" class="help">Ready.</span></div>
-            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
-            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
-          </div>
-          <div class="help" id="route-arbitrum" style="margin-top:6px;"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-arbitrum"></tbody></table>
-        </div>
-      </div>
-
-      <!-- Polygon -->
-      <div id="pane-polygon" class="wrap" style="display:none;">
-        <div class="card">
-          <div class="row row-4">
-            <div><label>Network</label><input value="Polygon" readonly /></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-polygon" placeholder="Auto" readonly /><div class="help" id="gas-note-polygon">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-polygon" type="number" placeholder="190000" value="190000" /></div>
-            <div><label>Est. Gas Cost</label><input id="gas-cost-polygon" placeholder="—" readonly /><div class="help" id="gas-cost-usd-polygon">—</div></div>
-          </div>
-          <div class="row row-4" style="margin-top:8px">
-            <div><label>Loan Asset</label><input id="loan-asset-polygon" value="USDC" /></div>
-            <div><label>Loan Amount</label><input id="loan-amt-polygon" type="number" /><div class="help" id="loan-amt-usd-polygon">≈ —</div></div>
-            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-polygon" type="button">Break-even +5%</button></div>
-            <div><label>Scan</label><button class="btn small" data-scan="polygon">Scan Now</button></div>
-          </div>
-          <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-polygon" class="help">Ready.</span></div>
-            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
-            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
-          </div>
-          <div class="help" id="route-polygon" style="margin-top:6px;"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-polygon"></tbody></table>
-        </div>
-      </div>
-
-      <!-- BSC -->
-      <div id="pane-bsc" class="wrap" style="display:none;">
-        <div class="card">
-          <div class="row row-4">
-            <div><label>Network</label><input value="BSC" readonly /></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-bsc" placeholder="Auto" readonly /><div class="help" id="gas-note-bsc">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-bsc" type="number" placeholder="170000" value="170000" /></div>
-            <div><label>Est. Gas Cost</label><input id="gas-cost-bsc" placeholder="—" readonly /><div class="help" id="gas-cost-usd-bsc">—</div></div>
-          </div>
-          <div class="row row-4" style="margin-top:8px">
-            <div><label>Loan Asset</label><input id="loan-asset-bsc" value="USDC" /></div>
-            <div><label>Loan Amount</label><input id="loan-amt-bsc" type="number" /><div class="help" id="loan-amt-usd-bsc">≈ —</div></div>
-            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-bsc" type="button">Break-even +5%</button></div>
-            <div><label>Scan</label><button class="btn small" data-scan="bsc">Scan Now</button></div>
-          </div>
-          <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-bsc" class="help">Ready.</span></div>
-            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
-            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
-          </div>
-          <div class="help" id="route-bsc" style="margin-top:6px;"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-bsc"></tbody></table>
-        </div>
-      </div>
-
-      <!-- Avalanche -->
-      <div id="pane-avalanche" class="wrap" style="display:none;">
-        <div class="card">
-          <div class="row row-4">
-            <div><label>Network</label><input value="Avalanche" readonly /></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-avalanche" placeholder="Auto" readonly /><div class="help" id="gas-note-avalanche">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-avalanche" type="number" placeholder="185000" value="185000" /></div>
-            <div><label>Est. Gas Cost</label><input id="gas-cost-avalanche" placeholder="—" readonly /><div class="help" id="gas-cost-usd-avalanche">—</div></div>
-          </div>
-          <div class="row row-4" style="margin-top:8px">
-            <div><label>Loan Asset</label><input id="loan-asset-avalanche" value="USDC" /></div>
-            <div><label>Loan Amount</label><input id="loan-amt-avalanche" type="number" /><div class="help" id="loan-amt-usd-avalanche">≈ —</div></div>
-            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-avalanche" type="button">Break-even +5%</button></div>
-            <div><label>Scan</label><button class="btn small" data-scan="avalanche">Scan Now</button></div>
-          </div>
-          <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-avalanche" class="help">Ready.</span></div>
-            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
-            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
-          </div>
-          <div class="help" id="route-avalanche" style="margin-top:6px;"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-avalanche"></tbody></table>
-        </div>
-      </div>
-
-      <!-- Solana (display only) -->
-      <div id="pane-solana" class="wrap" style="display:none;">
-        <div class="card">
-          <div class="row row-3">
-            <div><label>Network</label><input value="Solana" readonly /></div>
-            <div><label>Status</label><input value="Scan (display only)" readonly /></div>
-            <div><label>Scan</label><button class="btn small" data-scan="solana">Scan Now</button></div>
-          </div>
-          <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-solana" class="help">Ready.</span></div>
-            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
-            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
-          </div>
-          <div class="help" id="route-solana" style="margin-top:6px;"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-solana"></tbody></table>
-        </div>
-      </div>
+      <!-- Template pane generator will populate -->
     </div>
   </div>
 </div>
 
 <script>
-/* ===== Simple Login ===== */
+/* ===== Login ===== */
 const DEFAULT_USER="admin", DEFAULT_PASS="test123";
 (function(){
   const overlay=document.getElementById("login-screen"), app=document.getElementById("app");
   const btn=document.getElementById("login-btn"), msg=document.getElementById("login-msg");
-  function unlock(){ sessionStorage.setItem("ck_authed","yes"); overlay.style.display="none"; app.style.display="block"; initTabs(); initApp(); }
+  function unlock(){ sessionStorage.setItem("ck_authed","yes"); overlay.style.display="none"; app.style.display="block"; initUI(); }
   if(sessionStorage.getItem("ck_authed")==="yes"){ unlock(); }
   btn.addEventListener("click", ()=>{
     const u=(document.getElementById("login-user").value||"").trim();
@@ -299,63 +146,65 @@ const DEFAULT_USER="admin", DEFAULT_PASS="test123";
 </script>
 
 <script>
-/* ===== Tabs ===== */
-function initTabs(){
-  const tabbar=document.getElementById('tabbar'); if(!tabbar) return;
-  const panes=document.getElementById('tabpanes').children;
-  tabbar.addEventListener('click', (e)=>{
-    const b=e.target.closest('button[data-tab]'); if(!b) return;
-    [...tabbar.children].forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    const id='pane-'+b.getAttribute('data-tab');
-    for(const p of panes) p.style.display=(p.id===id)?'block':'none';
-  });
-}
-</script>
-
-<script>
-/* ===== App Logic (scanner + KPIs + auto-refresh) ===== */
-function initApp(){
+/* ===== App ===== */
+function initUI(){
   const NETWORKS=["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
   const EVM=new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
+  const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
   const DS_BASE="https://api.dexscreener.com";
   const LOAN_CAP_USD=10000, PLATFORM_FEE=0.0009, TARGET_NET_MIN=5;
-  const MIN_LIQ_USD=100000, MIN_VOL24H_USD=25000, MIN_TRADES_M5=3, MIN_POOL_AGE_MS=7*24*3600*1000;
-  const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"], arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"], polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"], bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"], avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
-  const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
-  const CG_IDS={ETH:"ethereum",MATIC:"matic-network",BNB:"binancecoin",AVAX:"avalanche-2"};
-  const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
-  const toast=msg=>{ const t=document.createElement('div'); t.textContent=msg; t.style.cssText='position:fixed;right:12px;bottom:12px;background:#111827;color:#f9fafb;border:1px solid rgba(255,255,255,.12);padding:8px 10px;border-radius:8px;z-index:50;box-shadow:0 8px 20px rgba(0,0,0,.15)'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); };
+  const FILTERS={
+    strict:{liq:100000, vol:25000, m5:3, ageDays:7},
+    normal:{liq:50000,  vol:10000, m5:1, ageDays:1},
+    loose:{ liq:10000,  vol:2000,  m5:0, ageDays:0}
+  };
 
-  const state={}; for(const n of NETWORKS){ state[n]={best:null,gasGwei:null,gasUsd:0,gasNativeUsd:null}; }
-  let autoTimer=null, autoCountdown=0, activeNet="ethereum";
+  const panes = document.getElementById('tabpanes');
+  panes.innerHTML = NETWORKS.map(n => paneHTML(n, GAS_NATIVE[n]||"SOL")).join("");
 
-  const errbar=document.getElementById('errbar'), errtxt=document.getElementById('errtxt');
-  const showErr=e=>{ try{ errtxt.textContent=(e&&e.stack)?e.stack:String(e); errbar.style.display='block'; console.error(e);}catch(_){} };
+  // Tab logic
+  const tabbar=document.getElementById('tabbar');
+  tabbar.addEventListener('click', (e)=>{
+    const b=e.target.closest('button[data-tab]'); if(!b) return;
+    [...tabbar.children].forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    const id='pane-'+b.getAttribute('data-tab');
+    [...panes.children].forEach(p=>p.style.display=(p.id===id)?'block':'none');
+  });
 
-  function el(id){ return document.getElementById(id); }
+  // State
+  const state={}; for(const n of NETWORKS){ state[n]={best:null,gasGwei:null,gasUsd:0,gasNativeUsd:null, lastStats:""}; }
+  let activeNet="ethereum", countdownInt=null;
 
-  async function cgUSD(sym){ const id=CG_IDS[sym]; if(!id) return null; try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(!r.ok) return null; const j=await r.json(); return j?.[id]?.usd ?? null; }catch(_){return null;} }
+  // Helpers
+  const el = id => document.getElementById(id);
+  const fmtUSD = v => isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
+  const toast = msg => { const t=document.createElement('div'); t.textContent=msg; t.style.cssText='position:fixed;right:12px;bottom:12px;background:#111827;color:#f9fafb;border:1px solid rgba(255,255,255,.12);padding:8px 10px;border-radius:8px;z-index:50;box-shadow:0 8px 20px rgba(0,0,0,.15)'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); };
 
+  // Gas suggest
+  const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"],
+              arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"],
+              polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"],
+              bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"],
+              avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
   async function gasSuggestGwei(net){
-    const eps=RPC[net]; if(!eps) throw new Error("no rpc");
+    const eps=RPC[net]; if(!eps) return null;
     const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
     for(const url of eps){
       try{
         const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(feeHist)}); if(!r.ok) continue;
         const j=await r.json(); const bh=j?.result; if(!bh?.baseFeePerGas||!bh?.reward) continue;
-        const base=parseInt(bh.baseFeePerGas[bh.baseFeePerGas.length-1]||"0x0",16)/1e9;
-        const rw=bh.reward[bh.reward.length-1]||[]; const tip=parseInt(rw[1]||"0x0",16)/1e9;
+        const base=parseInt(bh.baseFeePerGas.at(-1)||"0x0",16)/1e9;
+        const tip =parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
         return {g:base+tip, base, tip};
       }catch(_){}
     }
-    const gp={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
-    for(const url of eps){
-      try{ const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(gp)}); if(!r.ok) continue; const j=await r.json(); const wei=parseInt(j?.result||"0x0",16); return {g:wei/1e9, base:wei/1e9, tip:0}; }catch(_){}
-    }
-    throw new Error("rpc failed");
+    return null;
   }
-
+  async function cgUSD(sym){
+    const map={ETH:"ethereum",MATIC:"matic-network",BNB:"binancecoin",AVAX:"avalanche-2"};
+    const id=map[sym]; if(!id) return null;
+    try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(!r.ok) return null; const j=await r.json(); return j?.[id]?.usd??null; }catch(_){return null;}
+  }
   async function initGas(net){
     if(!EVM.has(net)) return;
     const g=await gasSuggestGwei(net).catch(()=>null);
@@ -363,45 +212,47 @@ function initApp(){
     state[net].gasGwei=g?.g??null; state[net].gasNativeUsd=natUsd??null;
     const gEl=el(`gas-gwei-${net}`), note=el(`gas-note-${net}`);
     if(g){ gEl.value=`${g.g.toFixed(1)} Gwei`; note.textContent=`base ${g.base.toFixed(1)} + tip ${g.tip.toFixed(1)} • ${nat} ≈ ${fmtUSD(natUsd)}`; }
-    else{ gEl.value=""; note.textContent="auto gas failed (RPC/CORS). Enter gas limit to estimate cost."; }
+    else{ gEl.value=""; note.textContent="auto gas failed (RPC/CORS)."; }
     calcGasUsd(net);
   }
-
   function calcGasUsd(net){
     if(!EVM.has(net)) return 0;
     const g=state[net].gasGwei, gl=parseFloat(el(`gas-limit-${net}`).value||"0"), usd=state[net].gasNativeUsd;
-    if(!(g>0)&&!(gl>0)&&!(usd>0)) return 0;
-    const native=(g*gl)/1e9; const cost=native*(usd||0); state[net].gasUsd=cost;
-    const sym=GAS_NATIVE[net]; el(`gas-cost-${net}`).value = isFinite(native)? `${native.toFixed(6)} ${sym}`: "";
-    el(`gas-cost-usd-${net}`).textContent = isFinite(cost)? `≈ ${fmtUSD(cost)}` : "—";
+    const native=(g>0 && gl>0) ? (g*gl)/1e9 : 0; const cost=native*(usd||0);
+    state[net].gasUsd=cost;
+    const sym=GAS_NATIVE[net];
+    el(`gas-cost-${net}`).value = native? `${native.toFixed(6)} ${sym}`: "";
+    el(`gas-cost-usd-${net}`).textContent = native? `≈ ${fmtUSD(cost)}` : "—";
     return cost;
   }
 
+  // Dexscreener helpers
   async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
-
-  function consolidatePerDex(pairs){
+  async function dsSearch(net, q){ const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`).catch(()=>null); if(!r||!r.ok) return null; const j=await r.json(); return (j?.pairs||[]).filter(p=>p.chainId===net); }
+  function consolidatePerDex(pairs, filt){
     const preferred=["USDC","USDT"]; const byDex=new Map(); const now=Date.now();
+    let dropped={liq:0,vol:0,tr:0,age:0,price:0};
     for(const p of (pairs||[])){
       const dex=(p?.dexId||"").toLowerCase(); if(!dex) continue;
-      const liq=p?.liquidity?.usd||0; if(liq<MIN_LIQ_USD) continue;
-      const vol=p?.volume?.h24||0; if(vol<MIN_VOL24H_USD) continue;
-      const m5=(p?.txns?.m5?.buys||0)+(p?.txns?.m5?.sells||0); if(m5<MIN_TRADES_M5) continue;
-      const created=Number(p?.pairCreatedAt||0); if(created && (now-created) < MIN_POOL_AGE_MS) continue;
-      const quote=(p?.quoteToken?.symbol||"").toUpperCase(); const rank=preferred.includes(quote)?preferred.indexOf(quote):99;
+      const price=Number(p?.priceUsd); if(!isFinite(price) || price<=0){ dropped.price++; continue; }
+      const liq=p?.liquidity?.usd||0; if(liq<filt.liq){ dropped.liq++; continue; }
+      const vol=p?.volume?.h24||0; if(vol<filt.vol){ dropped.vol++; continue; }
+      const m5=(p?.txns?.m5?.buys||0)+(p?.txns?.m5?.sells||0); if(m5<filt.m5){ dropped.tr++; continue; }
+      const created=Number(p?.pairCreatedAt||0); if(created && filt.ageDays>0 && (now-created) < filt.ageDays*86400000){ dropped.age++; continue; }
+      const quote=(p?.quoteToken?.symbol||"").toUpperCase();
+      const rank=preferred.includes(quote)?preferred.indexOf(quote):99;
       const cur=byDex.get(dex);
-      if(!cur||rank<cur.rank||(rank===cur.rank && liq>cur.liq)) byDex.set(dex,{rec:p,liq,rank});
+      if(!cur || rank<cur.rank || (rank===cur.rank && liq>(cur.liq||0))) byDex.set(dex,{rec:p,liq,rank});
     }
-    return [...byDex.values()].map(v=>v.rec);
+    return {rows:[...byDex.values()].map(v=>v.rec), dropped};
   }
-
   function prettyDexId(p){
     const raw=(p?.dexId||"").toLowerCase();
     const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",curve:"Curve",balancer:"Balancer",camelot:"Camelot",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",jupiter:"Jupiter",raydium:"Raydium",orca:"Orca"};
     for(const k in map){ if(raw.includes(k)) return map[k]; } return raw?raw[0].toUpperCase()+raw.slice(1):"DEX";
   }
 
-  async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
-
+  // Token address sources
   const TOKENLISTS={
     ethereum:["https://tokens.uniswap.org","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
     arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
@@ -411,35 +262,38 @@ function initApp(){
     solana:[]
   };
   const SEED_ADDRESSES={
-    ethereum:["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xdac17f958d2ee523a2206206994597c13d831ec7","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0x2260FAC5E5542a773Aa44FBCfEDF7C193bc2C599".toLowerCase(),"0x6B175474E89094C44Da98b954EedeAC495271d0F","0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32","0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984","0x514910771AF9Ca656af840dff83E8264EcF986CA","0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"],
-    arbitrum:["0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9","0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548","0xda10009cbd5d07dd0cecc66161fc93d7c9000da1","0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"],
+    ethereum:["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xdac17f958d2ee523a2206206994597c13d831ec7","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0x2260FAC5E5542a773Aa44FBCfEDF7C193bc2C599".toLowerCase(),"0x6B175474E89094C44Da98b954EedeAC495271d0F","0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"],
+    arbitrum:["0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9","0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548","0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"],
     polygon:["0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174","0xc2132d05d31c914a87c6611c10748aeb04b58e8f","0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619","0x0000000000000000000000000000000000001010","0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"],
-    bsc:["0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d","0x55d398326f99059ff775485246999027b3197955","0xbb4CdB9CBd36B01dCbAEBF2De08d9173bc095c","0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82"],
-    avalanche:["0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7","0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","0x50b7545627a5162F82A992c33b87aDc75187B218","0xd586E7F844cEa2F87f50152665BCbc2C279D8d70","0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd"],
+    bsc:["0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d","0x55d398326f99059ff775485246999027b3197955","0xbb4CdB9CBd36B01dCbAEBF2De08d9173bc095c"],
+    avalanche:["0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7","0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","0x50b7545627a5162F82A992c33b87aDc75187B218","0xd586E7F844cEa2F87f50152665BCbc2C279D8d70"],
     solana:[]
   };
-
+  async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
   async function loadTokenAddresses(network){
-    const lists=TOKENLISTS[network]||[]; const addrs=new Set();
-    for(const url of lists){
-      try{
-        const tl=await getJSON(url); const tokens=tl?.tokens||[];
-        for(const t of tokens){
-          if(!t.address) continue;
-          const ok=(network==="ethereum"&&t.chainId==1)||(network==="arbitrum"&&t.chainId==42161)||(network==="polygon"&&t.chainId==137)||(network==="bsc"&&t.chainId==56)||(network==="avalanche"&&t.chainId==43114);
-          if(ok) addrs.add(t.address);
-        }
-      }catch(e){ console.warn("tokenlist failed", url, e); }
+    const addrs=new Set(SEED_ADDRESSES[network]||[]);
+    // tokenlists
+    for(const url of (TOKENLISTS[network]||[])){
+      try{ const tl=await getJSON(url); (tl?.tokens||[]).forEach(t=>{ if(t?.address){ const ok=(network==="ethereum"&&t.chainId==1)||(network==="arbitrum"&&t.chainId==42161)||(network==="polygon"&&t.chainId==137)||(network==="bsc"&&t.chainId==56)||(network==="avalanche"&&t.chainId==43114); if(ok) addrs.add(t.address);} }); }catch(_){}
     }
-    let arr=[...addrs];
-    if(!arr.length) arr=SEED_ADDRESSES[network]?[...SEED_ADDRESSES[network]]:[];
-    if(!arr.length && network==="ethereum") arr=["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"];
-    return arr.slice(0,200);
+    // dexscreener search anchors to expand set
+    const anchors = network==="bsc" ? ["USDC","USDT","WBNB"] :
+                    network==="polygon" ? ["USDC","USDT","WETH","MATIC"] :
+                    network==="avalanche" ? ["USDC","USDT","WETH","AVAX"] :
+                    ["USDC","USDT","WETH"];
+    for(const q of anchors){
+      try{
+        const pairs=await dsSearch(network,q); // take base token addresses from active markets
+        for(const p of pairs){ const base=p?.baseToken?.address; if(base) addrs.add(base); }
+      }catch(_){}
+    }
+    const arr=[...addrs];
+    return arr.slice(0,300); // bigger universe
   }
 
   async function mapLimit(items,limit,fn){
     const out=new Array(items.length); let i=0;
-    const worker=async()=>{ while(i<items.length){ const idx=i++; try{ out[idx]=await fn(items[idx],idx); await new Promise(r=>setTimeout(r,120)); }catch(_){ out[idx]=null; } } };
+    const worker=async()=>{ while(i<items.length){ const idx=i++; try{ out[idx]=await fn(items[idx],idx); await new Promise(r=>setTimeout(r,100)); }catch(_){ out[idx]=null; } } };
     const workers=Array.from({length:Math.min(limit,items.length)},worker);
     await Promise.all(workers); return out;
   }
@@ -449,113 +303,130 @@ function initApp(){
     const gross=principalUSD*spread;
     const fee=principalUSD*PLATFORM_FEE;
     const gas=state[net].gasUsd||0;
-    return {spread, net: gross - fee - gas, fee, gas};
+    return {spread, net:gross-fee-gas, fee, gas};
   }
 
-  function row(net, r){
+  function appendRow(net, r){
+    const tbody=el(`rows-${net}`);
     const tr=document.createElement('tr');
     const pl=plForPrincipal(net,r,1000);
     const spreadPct=(pl.spread*100).toFixed(2);
     const net1000=pl.net;
-    const cls = net1000>0 ? "pos" : (net1000>=0 && net1000< TARGET_NET_MIN ? "meh" : "neg");
-    tr.className=cls;
+    tr.className = net1000>0 ? "pos" : (net1000>=0 && net1000<TARGET_NET_MIN ? "meh" : "neg");
     tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${spreadPct}%</td><td class="right">${fmtUSD(net1000)}</td>`;
     tr.style.cursor="pointer";
     tr.addEventListener('click',()=>{
       state[net].best=r;
       el(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${r.base}: Buy ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → Sell ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (${spreadPct}%)`;
-      updateStickyKPI(net);
     });
-    return tr;
+    tbody.appendChild(tr);
   }
 
-  function updateStickyKPI(net){
-    const best=state[net].best;
-    const kBest=el("kpiBest"), kSp=el("kpiSpread"), kNet=el("kpiNet");
-    if(!best){ kBest.textContent="—"; kSp.textContent="—"; kNet.textContent="—"; return; }
-    const loanAmt=parseFloat(el(`loan-amt-${net}`).value||"0");
-    const loanSym=(el(`loan-asset-${net}`).value||"USDC").toUpperCase();
-    const px= loanSym==="USDC"||loanSym==="USDT"||loanSym==="DAI" ? 1 : 1; // stable assumption; simple UI
-    const principalUSD = loanAmt>0 ? loanAmt*px : 1000;
-    const pl=plForPrincipal(net,best,principalUSD);
-    kBest.textContent=`${best.base} | ${best.buyDex} → ${best.sellDex}`;
-    kSp.textContent=`${(pl.spread*100).toFixed(2)}%`;
-    kNet.textContent=fmtUSD(pl.net);
+  function showNotice(text){
+    const bar=document.getElementById('errbar'), t=document.getElementById('errtxt');
+    t.textContent=text; bar.style.display='block';
   }
 
   async function scanAll(net){
-    activeNet = net;
+    activeNet=net;
+    const mode=el("filterSel").value||"normal";
+    const filt=FILTERS[mode];
     const status=el(`status-${net}`), tbody=el(`rows-${net}`), route=el(`route-${net}`);
     tbody.innerHTML=""; route.textContent=""; state[net].best=null;
-    status.innerHTML=`<span class="spinner"></span> Loading token addresses…`;
+    status.innerHTML=`<span class="spinner"></span> Loading token universe… (${mode})`;
     const addrs=await loadTokenAddresses(net).catch(()=>[]);
     if(!addrs.length){ status.textContent="Could not load token addresses."; return; }
     status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
-    let done=0;
-    const res=await mapLimit(addrs,8, async(addr)=>{
-      const j=await dsByToken(addr); done++; if(done%5===0) status.innerHTML=`<span class="spinner"></span> Scanned ${done}/${addrs.length}…`;
+    let done=0, filteredCounts={liq:0,vol:0,tr:0,age:0,price:0};
+    const res=await mapLimit(addrs,10, async(addr)=>{
+      const j=await dsByToken(addr); done++;
+      if(done%8===0) status.innerHTML=`<span class="spinner"></span> Scanned ${done}/${addrs.length}…`;
       if(!j||!j.pairs||!j.pairs.length) return null;
       const onNet=j.pairs.filter(p=>p.chainId===net);
-      const perDex=consolidatePerDex(onNet); if(!perDex.length) return null;
+      const {rows, dropped}=consolidatePerDex(onNet, filt);
+      // accumulate filter stats
+      for(const k in filteredCounts){ filteredCounts[k]+= (dropped[k]||0); }
+      if(!rows.length) return null;
       let min=Infinity,max=-Infinity,buy=null,sell=null;
-      for(const p of perDex){ const pr=Number(p?.priceUsd); if(!isFinite(pr)) continue; if(pr<min){min=pr;buy=p;} if(pr>max){max=pr;sell=p;} }
-      if(!buy||!sell||!isFinite(min)||!isFinite(max)) return null;
+      for(const p of rows){
+        const pr=Number(p?.priceUsd);
+        if(!isFinite(pr) || pr<=0) continue;
+        if(pr<min){min=pr;buy=p;}
+        if(pr>max){max=pr;sell=p;}
+      }
+      if(!buy||!sell||!isFinite(min)||!isFinite(max)||max<=min) return null;
       const base=buy?.baseToken?.symbol || sell?.baseToken?.symbol || "";
       return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
     });
 
-    const usable=res.filter(Boolean).sort((a,b)=>b.spread-a.spread).slice(0,150);
-    status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes (filters).";
-    usable.forEach(r=>tbody.appendChild(row(net,r)));
+    const usable=(res.filter(Boolean).sort((a,b)=>b.spread-a.spread)).slice(0,200);
+    status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes with current filters.";
+    if(!usable.length){
+      showNotice(`No routes on ${net} under "${mode}" filters.
+Dropped (approx): price:${filteredCounts.price} • liq:${filteredCounts.liq} • vol:${filteredCounts.vol} • trades:${filteredCounts.tr} • age:${filteredCounts.age}
+Tip: switch Filter Mode to "Loose" or rescan.`);
+      return;
+    } else {
+      document.getElementById('errbar').style.display='none';
+    }
 
-    if(usable[0]){ state[net].best=usable[0]; route.innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`; updateStickyKPI(net); }
+    usable.forEach(r=>appendRow(net,r));
+    state[net].best=usable[0];
+    route.innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`;
   }
 
-  // Auto-size: find amount (≤ $10k) that makes net ≥ TARGET_NET_MIN given current best + gas
-  function autosizeLoan(net){
-    const best=state[net].best; if(!best){ toast("Select a route first (click a row)."); return; }
-    const gas=state[net].gasUsd||0;
-    const spread=(best.sellPrice-best.buyPrice)/best.buyPrice;
-    const needed = (TARGET_NET_MIN + gas) / (spread - PLATFORM_FEE);
-    const capped = Math.min(Math.max(needed, 0), LOAN_CAP_USD);
-    // Assume loan asset is stable ($1) for UI simplicity
-    const amtInput=el(`loan-amt-${net}`), note=el(`loan-amt-usd-${net}`);
-    amtInput.value = capped ? capped.toFixed(2) : "";
-    note.textContent = capped ? `≈ ${fmtUSD(capped)} (cap $10,000)` : "≈ —";
-    updateStickyKPI(net);
-  }
+  // Events & timers
+  document.addEventListener('click', (e)=>{
+    const btn=e.target.closest('[data-scan]'); if(btn) scanAll(btn.dataset.scan);
+  });
+  document.getElementById("filterSel").addEventListener("change", ()=>scanAll(activeNet));
 
-  // Events
-  document.querySelectorAll("[data-scan]").forEach(btn=>btn.addEventListener("click", ()=>scanAll(btn.dataset.scan)));
-  for(const net of NETWORKS){
-    if(EVM.has(net)) initGas(net);
-    const gl=el(`gas-limit-${net}`); if(gl) gl.addEventListener('input', ()=>{ calcGasUsd(net); updateStickyKPI(net); });
-    const la=el(`loan-amt-${net}`); if(la) la.addEventListener('input', ()=>updateStickyKPI(net));
-    const auto=el(`btn-autosize-${net}`); if(auto) auto.addEventListener('click', ()=>autosizeLoan(net));
-  }
-
-  // Top KPI countdown + auto-refresh
-  const refreshSel=el("refreshSel"); let countdownInt=null;
-  function startCountdown(){
-    const sec=parseInt(refreshSel.value||"0",10); clearInterval(countdownInt);
-    if(!sec){ el("kpiCountdown").textContent="—"; return; }
-    autoCountdown=sec; el("kpiCountdown").textContent=autoCountdown+"s";
-    countdownInt=setInterval(()=>{
-      autoCountdown--; if(autoCountdown<=0){ autoCountdown=sec; scanAll(activeNet); }
-      el("kpiCountdown").textContent=autoCountdown+"s";
+  const refreshSel=el("refreshSel"); let timer=null, countdownSpan=null;
+  function startRefresh(){
+    clearInterval(timer);
+    const sec=parseInt(refreshSel.value||"0",10);
+    if(!sec) return;
+    let left=sec;
+    timer=setInterval(()=>{
+      left--; if(left<=0){ left=sec; scanAll(activeNet); }
     },1000);
   }
-  refreshSel.addEventListener("change", startCountdown);
+  refreshSel.addEventListener("change", startRefresh);
 
-  // Wallet connect placeholder
   document.getElementById("btnConnect").addEventListener("click", ()=>toast("Wallet connect coming soon"));
 
-  // Auto: on login, scan Ethereum then start refresh timer (20s default)
-  (async ()=>{
-    try{ await scanAll("ethereum"); }catch(e){ showErr(e); }
-    startCountdown();
-  })();
+  // Init panes & default gas + first scan
+  for(const n of NETWORKS){
+    if(EVM.has(n)) initGas(n);
+    const gl=el(`gas-limit-${n}`); if(gl) gl.addEventListener('input', ()=>calcGasUsd(n));
+  }
+  scanAll("ethereum");
+  startRefresh();
+}
+
+function paneHTML(net, gasSym){
+  return `
+  <div id="pane-${net}" class="wrap" ${net!=='ethereum'?'style="display:none;"':''}>
+    <div class="card">
+      <div class="row row-4">
+        <div><label>Network</label><input value="${net[0].toUpperCase()+net.slice(1)}" readonly /></div>
+        <div><label>Gas (auto)</label><input id="gas-gwei-${net}" placeholder="Auto" readonly /><div class="help" id="gas-note-${net}">—</div></div>
+        <div><label>Gas Limit</label><input id="gas-limit-${net}" type="number" min="0" step="1000" value="${net==='arbitrum'?'170000':net==='avalanche'?'185000':'190000'}" /><div class="help">Rough: Uni/Sushi 150–200k • Curve 340k • Balancer 300k+</div></div>
+        <div><label>Est. Gas Cost</label><input id="gas-cost-${net}" placeholder="—" readonly /><div class="help" id="gas-cost-usd-${net}">—</div></div>
+      </div>
+      <div class="row row-3" style="margin-top:8px">
+        <div><span id="status-${net}" class="help">Ready.</span></div>
+        <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
+        <div><label>Scan</label><button class="btn small" data-scan="${net}">Scan Now</button></div>
+      </div>
+      <div class="help" id="route-${net}" style="margin-top:6px;"></div>
+      <table class="table" style="margin-top:10px">
+        <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead>
+        <tbody id="rows-${net}"></tbody>
+      </table>
+    </div>
+  </div>`;
 }
 </script>
 </body>

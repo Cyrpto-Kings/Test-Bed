@@ -3,708 +3,559 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v8.8.1 — Light UI</title>
+<title>Crypto Kings Test Bed v8.9.0 — Live Scanner</title>
 <style>
-  /* ===== Light Theme Tokens ===== */
-  :root {
-    --bg:#f3f4f6;              /* app background */
-    --surface:#ffffff;          /* cards / panes */
-    --ink:#111827;              /* primary text */
-    --muted:#6b7280;            /* secondary text */
-    --brand:#7c5cff;            /* primary accent */
-    --brand-2:#1d9bf0;          /* secondary accent */
-    --ring:rgba(124,92,255,.35);
-    --border:#e5e7eb;           /* light borders */
-    --border-strong:#d1d5db;
-    --ok:#10b981;               /* green */
-    --warn:#f59e0b;             /* amber */
-    --bad:#ef4444;              /* red */
-    --chip:#eef2ff;             /* soft chip bg */
-    --topbar:#ffffff;           /* header bg */
-    --topbar-border:#e5e7eb;
-    --table-stripe:#fafafa;
+  :root{
+    --bg:#f3f4f6; --surface:#fff; --ink:#111827; --muted:#6b7280;
+    --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35);
+    --border:#e5e7eb; --border-strong:#d1d5db; --chip:#eef2ff;
+    --ok:#10b981; --warn:#f59e0b; --bad:#ef4444; --stripe:#fafafa;
+    --topbar:#fff; --topbar-border:#e5e7eb;
   }
-
-  *{box-sizing:border-box}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;
-  }
-
-  /* ===== Topbar ===== */
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .topbar{position:sticky;top:0;z-index:40;background:var(--topbar);border-bottom:1px solid var(--topbar-border)}
   .topbar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 16px}
-  .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand-2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(29,155,240,.18)}
+  .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(29,155,240,.18)}
   .logo span{font-size:14px;font-weight:900;color:white}
   .brand{font-weight:800;letter-spacing:.3px}
   .chip{display:inline-block;padding:4px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:var(--chip);color:#3b3b6d}
   .spacer{flex:1}
-
-  /* ===== Buttons ===== */
-  .btn{
-    appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;
-    color:white;background:linear-gradient(135deg,var(--brand),var(--brand-2));
-    box-shadow:0 6px 16px rgba(124,92,255,.15);
-  }
+  .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(124,92,255,.15)}
   .btn.small{padding:7px 10px;border-radius:10px}
-  .btn.ghost{
-    background:#ffffff;color:var(--ink);border:1px solid var(--border-strong);
-    box-shadow:0 1px 0 rgba(0,0,0,.02);
-  }
-
-  /* ===== Tabs ===== */
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border-strong);box-shadow:0 1px 0 rgba(0,0,0,.02)}
   .tabs{max-width:1200px;margin:12px auto 0;padding:0 16px}
   .tabbar{display:flex;gap:8px;flex-wrap:wrap}
-  .tabbar button{
-    appearance:none;background:#ffffff;border:1px solid var(--border-strong);color:var(--ink);
-    padding:10px 12px;border-radius:10px;cursor:pointer;
-    box-shadow:0 1px 0 rgba(0,0,0,.02);
-  }
-  .tabbar button.active{
-    background:linear-gradient(135deg,var(--brand),var(--brand-2));border-color:transparent;color:white;
-    box-shadow:0 6px 14px rgba(124,92,255,.18);
-  }
-  .tabpanes{margin-top:12px}
-
-  /* ===== Layout / Cards ===== */
+  .tabbar button{appearance:none;background:#fff;border:1px solid var(--border-strong);color:var(--ink);padding:10px 12px;border-radius:10px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.02)}
+  .tabbar button.active{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;color:white;box-shadow:0 6px 14px rgba(124,92,255,.18)}
   .wrap{max-width:1200px;margin:0 auto;padding:0 16px 120px}
-  .card{
-    background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;
-    box-shadow:0 6px 18px rgba(0,0,0,.04);
-  }
-
-  /* ===== Forms ===== */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input,select{
-    width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:10px;background:#ffffff;color:var(--ink);outline:none;
-    box-shadow:0 1px 0 rgba(0,0,0,.02);
-  }
+  input,select{width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:10px;background:#fff;color:var(--ink);outline:none;box-shadow:0 1px 0 rgba(0,0,0,.02)}
   input[readonly]{background:#f9fafb;color:#4b5563}
   input:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
   @media (min-width:960px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
   .help{font-size:12px;color:var(--muted)}
   .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-
-  /* ===== Status / Tags ===== */
   .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .hidden{display:none}
   .tag{display:inline-block;padding:4px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#f9fafb}
-
-  /* ===== KPI ===== */
   .kpi{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
-  .kpi .box{border:1px solid var(--border-strong);border-radius:12px;padding:10px 12px;background:#ffffff}
+  .kpi .box{border:1px solid var(--border-strong);border-radius:12px;padding:10px 12px;background:#fff}
   .kpi .label{font-size:11px;color:var(--muted)} .kpi .value{font-weight:700}
-
-  /* ===== Tables ===== */
-  .table{width:100%;border-collapse:collapse;margin-top:10px;background:#ffffff;border:1px solid var(--border)}
+  .table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
   .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
   .table th{color:#374151;font-weight:700;background:#f9fafb}
-  .table tr:nth-child(even){background:var(--table-stripe)}
+  .table tr:nth-child(even){background:var(--stripe)}
   .right{text-align:right}
-
-  /* ===== Spinner ===== */
-  .spinner {border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:24px;height:24px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
-  @keyframes spin {0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-
-  /* ===== Error banner (light) ===== */
+  .pos{background:#ecfdf5} .neg{background:#fef2f2} .meh{background:#f9fafb}
+  .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:24px;height:24px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
+  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
   .errbar{max-width:1200px;margin:12px auto 0;padding:0 16px}
   .errbar .box{background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px}
   .errbar .box pre{white-space:pre-wrap;word-break:break-word;margin:6px 0 0;font-size:12px;color:#7f1d1d}
-
-  /* ===== Login overlay (light) ===== */
-  #login-screen { position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:100; }
-  #login-card { background:#ffffff; padding:24px; border-radius:12px; max-width:340px; width:100%; text-align:center; border:1px solid var(--border); box-shadow:0 10px 28px rgba(0,0,0,.06); }
-  #login-card h2{ margin:0 0 16px; font-size:18px }
-  #login-card input{ width:100%; margin-bottom:10px; padding:10px; border-radius:8px; border:1px solid var(--border-strong); background:#ffffff; color:var(--ink) }
-  #login-card button{ padding:10px 16px; border:none; border-radius:8px; background:linear-gradient(135deg,var(--brand),var(--brand-2)); color:white; font-weight:700; cursor:pointer; width:100%; box-shadow:0 6px 16px rgba(124,92,255,.15) }
-  #login-msg{ margin-top:10px; font-size:13px; color:var(--warn); min-height:1em }
+  /* Sticky KPI */
+  .kpi-sticky{position:sticky;top:56px;z-index:30;background:#ffffffd9;backdrop-filter:saturate(1.2) blur(2px);border:1px solid var(--border);border-left:0;border-right:0}
+  .kpi-sticky .kpi{margin:8px 0}
+  /* Login overlay */
+  #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+  #login-card{background:#fff;padding:24px;border-radius:12px;max-width:340px;width:100%;text-align:center;border:1px solid var(--border);box-shadow:0 10px 28px rgba(0,0,0,.06)}
+  #login-card h2{margin:0 0 16px;font-size:18px}
+  #login-card input{width:100%;margin-bottom:10px;padding:10px;border-radius:8px;border:1px solid var(--border-strong);background:#fff;color:var(--ink)}
+  #login-card button{padding:10px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:white;font-weight:700;cursor:pointer;width:100%;box-shadow:0 6px 16px rgba(124,92,255,.15)}
+  #login-msg{margin-top:10px;font-size:13px;color:var(--warn);min-height:1em}
 </style>
 </head>
 <body>
 
-  <!-- Login Gate -->
-  <div id="login-screen">
-    <div id="login-card">
-      <div class="logo" style="margin:0 auto 10px;"><span>CK</span></div>
-      <h2>Crypto Kings Login</h2>
-      <input id="login-user" type="text" placeholder="Username">
-      <input id="login-pass" type="password" placeholder="Password">
-      <button id="login-btn">Login</button>
-      <div id="login-msg"></div>
-      <div class="help" style="margin-top:10px">Session unlock lasts until tab is closed.</div>
+<!-- Login Gate -->
+<div id="login-screen">
+  <div id="login-card">
+    <div class="logo" style="margin:0 auto 10px;"><span>CK</span></div>
+    <h2>Crypto Kings Login</h2>
+    <input id="login-user" type="text" placeholder="Username">
+    <input id="login-pass" type="password" placeholder="Password">
+    <button id="login-btn">Login</button>
+    <div id="login-msg"></div>
+    <div class="help" style="margin-top:10px">Session unlock lasts until tab is closed.</div>
+  </div>
+</div>
+
+<!-- App (hidden until login) -->
+<div id="app" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="logo"><span>CK</span></div>
+      <div class="brand">Crypto Kings</div>
+      <span class="chip">v8.9.0</span>
+      <div class="spacer"></div>
+      <label class="help" style="display:flex;align-items:center;gap:6px">
+        Auto Refresh
+        <select id="refreshSel" style="padding:6px 8px;border-radius:8px;border:1px solid var(--border-strong);background:#fff">
+          <option value="0">Off</option>
+          <option value="10">10s</option>
+          <option value="20" selected>20s</option>
+          <option value="30">30s</option>
+        </select>
+      </label>
+      <button id="btnConnect" class="btn">Connect Wallet</button>
     </div>
   </div>
 
-  <!-- App (hidden until login) -->
-  <div id="app" style="display:none;">
-    <div class="topbar">
-      <div class="topbar-inner">
-        <div class="logo"><span>CK</span></div>
-        <div class="brand">Crypto Kings</div>
-        <span class="chip">v8.8.1</span>
-        <div class="spacer"></div>
-        <button id="btnConnect" class="btn">Connect Wallet</button>
+  <!-- Sticky KPI -->
+  <div class="kpi-sticky">
+    <div class="wrap">
+      <div class="kpi">
+        <div class="box"><div class="label">Best Route</div><div class="value" id="kpiBest">—</div></div>
+        <div class="box"><div class="label">Spread</div><div class="value" id="kpiSpread">—</div></div>
+        <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpiNet">—</div></div>
+        <div class="box"><div class="label">Refresh In</div><div class="value" id="kpiCountdown">—</div></div>
       </div>
     </div>
+  </div>
 
-    <!-- Error banner -->
-    <div id="errbar" class="errbar" style="display:none;">
-      <div class="box">
-        <strong>App error</strong>
-        <pre id="errtxt"></pre>
-      </div>
+  <!-- Error banner -->
+  <div id="errbar" class="errbar" style="display:none;">
+    <div class="box"><strong>App error</strong><pre id="errtxt"></pre></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tabbar" id="tabbar">
+      <button class="active" data-tab="ethereum">Ethereum</button>
+      <button data-tab="arbitrum">Arbitrum</button>
+      <button data-tab="polygon">Polygon</button>
+      <button data-tab="bsc">BSC</button>
+      <button data-tab="avalanche">Avalanche</button>
+      <button data-tab="solana">Solana</button>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <div class="tabbar" id="tabbar">
-        <button class="active" data-tab="ethereum">Ethereum</button>
-        <button data-tab="arbitrum">Arbitrum</button>
-        <button data-tab="polygon">Polygon</button>
-        <button data-tab="bsc">BSC</button>
-        <button data-tab="avalanche">Avalanche</button>
-        <button data-tab="solana">Solana</button>
-      </div>
-
-      <div class="tabpanes" id="tabpanes">
-        <!-- Ethereum -->
-        <div id="pane-ethereum" class="wrap">
-          <div class="card">
-            <div class="row row-4">
-              <div><label>Network</label><input value="Ethereum" readonly /></div>
-              <div><label>Platform</label><input value="Aave v3" readonly /></div>
-              <div><label>Gas Currency</label><input value="ETH" readonly /></div>
-              <div><label>Scan</label><button class="btn small" data-scan="ethereum">Scan All Tokens (sampled)</button></div>
-            </div>
-            <div class="row row-3" style="margin-top:8px">
-              <div><span id="status-ethereum" class="help">Ready.</span></div>
-              <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-              <div class="help">Sample size: 200, concurrency: 8</div>
-            </div>
-            <div class="kpi">
-              <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-ethereum">—</div></div>
-              <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-ethereum">—</div></div>
-              <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-ethereum">—</div></div>
-            </div>
-            <div class="row row-4" style="margin-top:8px">
-              <div><label>Loan Asset</label><input id="loan-asset-ethereum" value="USDC" /><div class="help" id="loan-amt-usd-ethereum-note">Loan capped at $10,000.</div></div>
-              <div><label>Loan Amount (units)</label><input id="loan-amt-ethereum" type="number" min="0" step="any" placeholder="e.g., 1000" /><div class="help" id="loan-amt-usd-ethereum">≈ —</div></div>
-              <div><label>Gas (auto)</label><input id="gas-gwei-ethereum" placeholder="Auto" readonly /><div class="help" id="gas-note-ethereum">—</div></div>
-              <div><label>Gas Limit</label><input id="gas-limit-ethereum" type="number" min="0" step="1000" placeholder="190000" /><div class="help">Uni/Sushi ~150–200k • Curve ~340k • Balancer ~300k+</div></div>
-            </div>
-            <div class="row row-4" style="margin-top:8px">
-              <div><label>Est. Gas Cost</label><input id="gas-cost-ethereum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-ethereum">—</div></div>
-              <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-ethereum" type="button">Break-Even +5%</button></div>
-              <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-ethereum"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-ethereum" type="number" min="0" step="1" value="5"></label></div></div>
-              <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-ethereum" type="number" min="1" max="50" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-ethereum" type="number" min="1" max="3600" value="10"></label></div></div>
-            </div>
-            <div class="help" id="route-ethereum" style="margin-top:6px;"></div>
-            <div class="cta" style="margin-top:8px">
-              <button class="btn" id="btn-proceed-ethereum" type="button">Proceed</button>
-              <button class="btn ghost" id="btn-stop-ethereum" type="button">Stop Auto</button>
-            </div>
-            <div id="timeline-ethereum" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-            <div id="tx-result-ethereum" class="hidden"></div>
-            <table class="table" style="margin-top:10px">
-              <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead>
-              <tbody id="rows-ethereum"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Arbitrum -->
-        <div id="pane-arbitrum" class="wrap" style="display:none;">
-          <div class="card">
-            <div class="row row-4">
-              <div><label>Network</label><input value="Arbitrum" readonly /></div>
-              <div><label>Platform</label><input value="Aave v3" readonly /></div>
-              <div><label>Gas Currency</label><input value="ETH" readonly /></div>
-              <div><label>Scan</label><button class="btn small" data-scan="arbitrum">Scan All Tokens (sampled)</button></div>
-            </div>
-            <div class="row row-3" style="margin-top:8px">
-              <div><span id="status-arbitrum" class="help">Ready.</span></div>
-              <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-              <div class="help">Sample size: 200, concurrency: 8</div>
-            </div>
-            <div class="kpi">
-              <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-arbitrum">—</div></div>
-              <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-arbitrum">—</div></div>
-              <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-arbitrum">—</div></div>
-            </div>
-            <div class="row row-4" style="margin-top:8px">
-              <div><label>Loan Asset</label><input id="loan-asset-arbitrum" value="USDC" /></div>
-              <div><label>Loan Amount (units)</label><input id="loan-amt-arbitrum" type="number" /><div class="help" id="loan-amt-usd-arbitrum">≈ —</div></div>
-              <div><label>Gas (auto)</label><input id="gas-gwei-arbitrum" placeholder="Auto" readonly /><div class="help" id="gas-note-arbitrum">—</div></div>
-              <div><label>Gas Limit</label><input id="gas-limit-arbitrum" type="number" placeholder="170000" /></div>
-            </div>
-            <div class="row row-4" style="margin-top:8px">
-              <div><label>Est. Gas Cost</label><input id="gas-cost-arbitrum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-arbitrum">—</div></div>
-              <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-arbitrum" type="button">Break-Even +5%</button></div>
-              <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-arbitrum"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-arbitrum" type="number" value="5"></label></div></div>
-              <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-arbitrum" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-arbitrum" type="number" value="10"></label></div></div>
-            </div>
-            <div class="help" id="route-arbitrum" style="margin-top:6px;"></div>
-            <div class="cta" style="margin-top:8px">
-              <button class="btn" id="btn-proceed-arbitrum" type="button">Proceed</button>
-              <button class="btn ghost" id="btn-stop-arbitrum" type="button">Stop Auto</button>
-            </div>
-            <div id="timeline-arbitrum" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-            <div id="tx-result-arbitrum" class="hidden"></div>
-            <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-arbitrum"></tbody></table>
-          </div>
-        </div>
-
-        <!-- Polygon -->
-        <div id="pane-polygon" class="wrap" style="display:none;"><div class="card">
+    <div class="tabpanes" id="tabpanes">
+      <!-- ETH -->
+      <div id="pane-ethereum" class="wrap">
+        <div class="card">
           <div class="row row-4">
-            <div><label>Network</label><input value="Polygon" readonly /></div>
-            <div><label>Platform</label><input value="Aave v3" readonly /></div>
-            <div><label>Gas Currency</label><input value="MATIC" readonly /></div>
-            <div><label>Scan</label><button class="btn small" data-scan="polygon">Scan All Tokens (sampled)</button></div>
+            <div><label>Network</label><input value="Ethereum" readonly /></div>
+            <div><label>Gas (auto)</label><input id="gas-gwei-ethereum" placeholder="Auto" readonly /><div class="help" id="gas-note-ethereum">—</div></div>
+            <div><label>Gas Limit</label><input id="gas-limit-ethereum" type="number" min="0" step="1000" placeholder="190000" value="190000" /><div class="help">Uni/Sushi ~150–200k • Curve ~340k • Balancer ~300k+</div></div>
+            <div><label>Est. Gas Cost</label><input id="gas-cost-ethereum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-ethereum">—</div></div>
+          </div>
+          <div class="row row-4" style="margin-top:8px">
+            <div><label>Loan Asset</label><input id="loan-asset-ethereum" value="USDC" /></div>
+            <div><label>Loan Amount</label><input id="loan-amt-ethereum" type="number" placeholder="e.g., 1000" /><div class="help" id="loan-amt-usd-ethereum">≈ —</div></div>
+            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-ethereum" type="button">Break-even +5%</button></div>
+            <div><label>Scan</label><button class="btn small" data-scan="ethereum">Scan Now</button></div>
           </div>
           <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-polygon" class="help">Ready.</span></div>
-            <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-            <div class="help">Sample size: 200, concurrency: 8</div>
+            <div><span id="status-ethereum" class="help">Ready.</span></div>
+            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
+            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
           </div>
-          <div class="kpi">
-            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-polygon">—</div></div>
-            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-polygon">—</div></div>
-            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-polygon">—</div></div>
+          <div class="help" id="route-ethereum" style="margin-top:6px;"></div>
+          <table class="table" style="margin-top:10px">
+            <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead>
+            <tbody id="rows-ethereum"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Arbitrum -->
+      <div id="pane-arbitrum" class="wrap" style="display:none;">
+        <div class="card">
+          <div class="row row-4">
+            <div><label>Network</label><input value="Arbitrum" readonly /></div>
+            <div><label>Gas (auto)</label><input id="gas-gwei-arbitrum" placeholder="Auto" readonly /><div class="help" id="gas-note-arbitrum">—</div></div>
+            <div><label>Gas Limit</label><input id="gas-limit-arbitrum" type="number" placeholder="170000" value="170000" /></div>
+            <div><label>Est. Gas Cost</label><input id="gas-cost-arbitrum" placeholder="—" readonly /><div class="help" id="gas-cost-usd-arbitrum">—</div></div>
+          </div>
+          <div class="row row-4" style="margin-top:8px">
+            <div><label>Loan Asset</label><input id="loan-asset-arbitrum" value="USDC" /></div>
+            <div><label>Loan Amount</label><input id="loan-amt-arbitrum" type="number" /><div class="help" id="loan-amt-usd-arbitrum">≈ —</div></div>
+            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-arbitrum" type="button">Break-even +5%</button></div>
+            <div><label>Scan</label><button class="btn small" data-scan="arbitrum">Scan Now</button></div>
+          </div>
+          <div class="row row-3" style="margin-top:8px">
+            <div><span id="status-arbitrum" class="help">Ready.</span></div>
+            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
+            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
+          </div>
+          <div class="help" id="route-arbitrum" style="margin-top:6px;"></div>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-arbitrum"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Polygon -->
+      <div id="pane-polygon" class="wrap" style="display:none;">
+        <div class="card">
+          <div class="row row-4">
+            <div><label>Network</label><input value="Polygon" readonly /></div>
+            <div><label>Gas (auto)</label><input id="gas-gwei-polygon" placeholder="Auto" readonly /><div class="help" id="gas-note-polygon">—</div></div>
+            <div><label>Gas Limit</label><input id="gas-limit-polygon" type="number" placeholder="190000" value="190000" /></div>
+            <div><label>Est. Gas Cost</label><input id="gas-cost-polygon" placeholder="—" readonly /><div class="help" id="gas-cost-usd-polygon">—</div></div>
           </div>
           <div class="row row-4" style="margin-top:8px">
             <div><label>Loan Asset</label><input id="loan-asset-polygon" value="USDC" /></div>
-            <div><label>Loan Amount (units)</label><input id="loan-amt-polygon" type="number" /><div class="help" id="loan-amt-usd-polygon">≈ —</div></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-polygon" placeholder="Auto" readonly /><div class="help" id="gas-note-polygon">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-polygon" type="number" placeholder="190000" /></div>
-          </div>
-          <div class="row row-4" style="margin-top:8px">
-            <div><label>Est. Gas Cost</label><input id="gas-cost-polygon" placeholder="—" readonly /><div class="help" id="gas-cost-usd-polygon">—</div></div>
-            <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-polygon" type="button">Break-Even +5%</button></div>
-            <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-polygon"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-polygon" type="number" value="5"></label></div></div>
-            <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-polygon" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-polygon" type="number" value="10"></label></div></div>
-          </div>
-          <div class="help" id="route-polygon" style="margin-top:6px;"></div>
-          <div class="cta" style="margin-top:8px">
-            <button class="btn" id="btn-proceed-polygon" type="button">Proceed</button>
-            <button class="btn ghost" id="btn-stop-polygon" type="button">Stop Auto</button>
-          </div>
-          <div id="timeline-polygon" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-          <div id="tx-result-polygon" class="hidden"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-polygon"></tbody></table>
-        </div></div>
-
-        <!-- BSC -->
-        <div id="pane-bsc" class="wrap" style="display:none;"><div class="card">
-          <div class="row row-4">
-            <div><label>Network</label><input value="BSC" readonly /></div>
-            <div><label>Platform</label><input value="Aave v3" readonly /></div>
-            <div><label>Gas Currency</label><input value="BNB" readonly /></div>
-            <div><label>Scan</label><button class="btn small" data-scan="bsc">Scan All Tokens (sampled)</button></div>
+            <div><label>Loan Amount</label><input id="loan-amt-polygon" type="number" /><div class="help" id="loan-amt-usd-polygon">≈ —</div></div>
+            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-polygon" type="button">Break-even +5%</button></div>
+            <div><label>Scan</label><button class="btn small" data-scan="polygon">Scan Now</button></div>
           </div>
           <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-bsc" class="help">Ready.</span></div>
-            <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-            <div class="help">Sample size: 200, concurrency: 8</div>
+            <div><span id="status-polygon" class="help">Ready.</span></div>
+            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
+            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
           </div>
-          <div class="kpi">
-            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-bsc">—</div></div>
-            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-bsc">—</div></div>
-            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-bsc">—</div></div>
+          <div class="help" id="route-polygon" style="margin-top:6px;"></div>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-polygon"></tbody></table>
+        </div>
+      </div>
+
+      <!-- BSC -->
+      <div id="pane-bsc" class="wrap" style="display:none;">
+        <div class="card">
+          <div class="row row-4">
+            <div><label>Network</label><input value="BSC" readonly /></div>
+            <div><label>Gas (auto)</label><input id="gas-gwei-bsc" placeholder="Auto" readonly /><div class="help" id="gas-note-bsc">—</div></div>
+            <div><label>Gas Limit</label><input id="gas-limit-bsc" type="number" placeholder="170000" value="170000" /></div>
+            <div><label>Est. Gas Cost</label><input id="gas-cost-bsc" placeholder="—" readonly /><div class="help" id="gas-cost-usd-bsc">—</div></div>
           </div>
           <div class="row row-4" style="margin-top:8px">
             <div><label>Loan Asset</label><input id="loan-asset-bsc" value="USDC" /></div>
-            <div><label>Loan Amount (units)</label><input id="loan-amt-bsc" type="number" /><div class="help" id="loan-amt-usd-bsc">≈ —</div></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-bsc" placeholder="Auto" readonly /><div class="help" id="gas-note-bsc">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-bsc" type="number" placeholder="170000" /></div>
-          </div>
-          <div class="row row-4" style="margin-top:8px">
-            <div><label>Est. Gas Cost</label><input id="gas-cost-bsc" placeholder="—" readonly /><div class="help" id="gas-cost-usd-bsc">—</div></div>
-            <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-bsc" type="button">Break-Even +5%</button></div>
-            <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-bsc"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-bsc" type="number" value="5"></label></div></div>
-            <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-bsc" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-bsc" type="number" value="10"></label></div></div>
-          </div>
-          <div class="help" id="route-bsc" style="margin-top:6px;"></div>
-          <div class="cta" style="margin-top:8px">
-            <button class="btn" id="btn-proceed-bsc" type="button">Proceed</button>
-            <button class="btn ghost" id="btn-stop-bsc" type="button">Stop Auto</button>
-          </div>
-          <div id="timeline-bsc" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-          <div id="tx-result-bsc" class="hidden"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-bsc"></tbody></table>
-        </div></div>
-
-        <!-- Avalanche -->
-        <div id="pane-avalanche" class="wrap" style="display:none;"><div class="card">
-          <div class="row row-4">
-            <div><label>Network</label><input value="Avalanche" readonly /></div>
-            <div><label>Platform</label><input value="Aave v3" readonly /></div>
-            <div><label>Gas Currency</label><input value="AVAX" readonly /></div>
-            <div><label>Scan</label><button class="btn small" data-scan="avalanche">Scan All Tokens (sampled)</button></div>
+            <div><label>Loan Amount</label><input id="loan-amt-bsc" type="number" /><div class="help" id="loan-amt-usd-bsc">≈ —</div></div>
+            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-bsc" type="button">Break-even +5%</button></div>
+            <div><label>Scan</label><button class="btn small" data-scan="bsc">Scan Now</button></div>
           </div>
           <div class="row row-3" style="margin-top:8px">
-            <div><span id="status-avalanche" class="help">Ready.</span></div>
-            <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-            <div class="help">Sample size: 200, concurrency: 8</div>
+            <div><span id="status-bsc" class="help">Ready.</span></div>
+            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
+            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
           </div>
-          <div class="kpi">
-            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-avalanche">—</div></div>
-            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-avalanche">—</div></div>
-            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-avalanche">—</div></div>
+          <div class="help" id="route-bsc" style="margin-top:6px;"></div>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-bsc"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Avalanche -->
+      <div id="pane-avalanche" class="wrap" style="display:none;">
+        <div class="card">
+          <div class="row row-4">
+            <div><label>Network</label><input value="Avalanche" readonly /></div>
+            <div><label>Gas (auto)</label><input id="gas-gwei-avalanche" placeholder="Auto" readonly /><div class="help" id="gas-note-avalanche">—</div></div>
+            <div><label>Gas Limit</label><input id="gas-limit-avalanche" type="number" placeholder="185000" value="185000" /></div>
+            <div><label>Est. Gas Cost</label><input id="gas-cost-avalanche" placeholder="—" readonly /><div class="help" id="gas-cost-usd-avalanche">—</div></div>
           </div>
           <div class="row row-4" style="margin-top:8px">
             <div><label>Loan Asset</label><input id="loan-asset-avalanche" value="USDC" /></div>
-            <div><label>Loan Amount (units)</label><input id="loan-amt-avalanche" type="number" /><div class="help" id="loan-amt-usd-avalanche">≈ —</div></div>
-            <div><label>Gas (auto)</label><input id="gas-gwei-avalanche" placeholder="Auto" readonly /><div class="help" id="gas-note-avalanche">—</div></div>
-            <div><label>Gas Limit</label><input id="gas-limit-avalanche" type="number" placeholder="185000" /></div>
+            <div><label>Loan Amount</label><input id="loan-amt-avalanche" type="number" /><div class="help" id="loan-amt-usd-avalanche">≈ —</div></div>
+            <div><label>Auto-Size</label><button class="btn small" id="btn-autosize-avalanche" type="button">Break-even +5%</button></div>
+            <div><label>Scan</label><button class="btn small" data-scan="avalanche">Scan Now</button></div>
           </div>
-          <div class="row row-4" style="margin-top:8px">
-            <div><label>Est. Gas Cost</label><input id="gas-cost-avalanche" placeholder="—" readonly /><div class="help" id="gas-cost-usd-avalanche">—</div></div>
-            <div><label>Auto-Size Loan</label><button class="btn small" id="btn-autosize-avalanche" type="button">Break-Even +5%</button></div>
-            <div><label>Auto-Execute</label><div class="row"><label class="help"><input type="checkbox" id="autoexec-avalanche"> Enable (sim)</label><label class="help">Min Net P/L (USD) <input id="minnet-avalanche" type="number" value="5"></label></div></div>
-            <div><label>&nbsp;</label><div class="row"><label class="help">Max Trades <input id="maxtrades-avalanche" type="number" value="3"></label><label class="help">Cooldown (s) <input id="cooldown-avalanche" type="number" value="10"></label></div></div>
+          <div class="row row-3" style="margin-top:8px">
+            <div><span id="status-avalanche" class="help">Ready.</span></div>
+            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
+            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
           </div>
           <div class="help" id="route-avalanche" style="margin-top:6px;"></div>
-          <div class="cta" style="margin-top:8px">
-            <button class="btn" id="btn-proceed-avalanche" type="button">Proceed</button>
-            <button class="btn ghost" id="btn-stop-avalanche" type="button">Stop Auto</button>
-          </div>
-          <div id="timeline-avalanche" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-          <div id="tx-result-avalanche" class="hidden"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-avalanche"></tbody></table>
-        </div></div>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-avalanche"></tbody></table>
+        </div>
+      </div>
 
-        <!-- Solana (demo scan only) -->
-        <div id="pane-solana" class="wrap" style="display:none;"><div class="card">
-          <div class="row row-4">
+      <!-- Solana (display only) -->
+      <div id="pane-solana" class="wrap" style="display:none;">
+        <div class="card">
+          <div class="row row-3">
             <div><label>Network</label><input value="Solana" readonly /></div>
-            <div><label>Platform</label><input value="MarginFi/Solend (demo)" readonly /></div>
-            <div><label>Gas Currency</label><input value="SOL" readonly /></div>
-            <div><label>Scan</label><button class="btn small" data-scan="solana">Scan (demo)</button></div>
+            <div><label>Status</label><input value="Scan (display only)" readonly /></div>
+            <div><label>Scan</label><button class="btn small" data-scan="solana">Scan Now</button></div>
           </div>
           <div class="row row-3" style="margin-top:8px">
             <div><span id="status-solana" class="help">Ready.</span></div>
-            <div class="help">Filters: Liquidity ≥ 20,000 • Vol(24h) ≥ 5,000</div>
-            <div class="help">Sample size: 200, concurrency: 8</div>
-          </div>
-          <div class="kpi">
-            <div class="box"><div class="label">Best Opportunity</div><div class="value" id="kpi-best-solana">—</div></div>
-            <div class="box"><div class="label">Est. Spread</div><div class="value" id="kpi-spread-solana">—</div></div>
-            <div class="box"><div class="label">Net (incl. gas)</div><div class="value" id="kpi-net-solana">—</div></div>
+            <div class="help">Filters: Liq ≥ 100k • Vol24 ≥ 25k • m5 ≥ 3 • Age ≥ 7d</div>
+            <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
           </div>
           <div class="help" id="route-solana" style="margin-top:6px;"></div>
-          <div class="cta" style="margin-top:8px">
-            <button class="btn" id="btn-proceed-solana" type="button">Proceed</button>
-          </div>
-          <div id="timeline-solana" class="hidden" style="margin-top:8px"><span class="help">Timeline…</span></div>
-          <div id="tx-result-solana" class="hidden"></div>
-          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th></tr></thead><tbody id="rows-solana"></tbody></table>
-        </div></div>
+          <table class="table" style="margin-top:10px"><thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead><tbody id="rows-solana"></tbody></table>
+        </div>
       </div>
     </div>
   </div>
+</div>
 
 <script>
-/* =========================
-   Simple Login (client-side)
-   ========================= */
-const DEFAULT_USER = "admin";
-const DEFAULT_PASS = "test123";
-
+/* ===== Simple Login ===== */
+const DEFAULT_USER="admin", DEFAULT_PASS="test123";
 (function(){
-  const overlay = document.getElementById("login-screen");
-  const app     = document.getElementById("app");
-  const btn     = document.getElementById("login-btn");
-  const msg     = document.getElementById("login-msg");
-
-  function creds(){
-    const u = localStorage.getItem("ck_user") || DEFAULT_USER;
-    const p = localStorage.getItem("ck_pass") || DEFAULT_PASS;
-    return {u,p};
-  }
-
-  function unlock(){
-    sessionStorage.setItem("ck_authed","yes");
-    overlay.style.display = "none";
-    app.style.display = "block";
-    initTabs();
-    initEnhancements();
-  }
-
-  if(sessionStorage.getItem("ck_authed") === "yes"){ unlock(); }
-
+  const overlay=document.getElementById("login-screen"), app=document.getElementById("app");
+  const btn=document.getElementById("login-btn"), msg=document.getElementById("login-msg");
+  function unlock(){ sessionStorage.setItem("ck_authed","yes"); overlay.style.display="none"; app.style.display="block"; initTabs(); initApp(); }
+  if(sessionStorage.getItem("ck_authed")==="yes"){ unlock(); }
   btn.addEventListener("click", ()=>{
-    const user = (document.getElementById("login-user").value || "").trim();
-    const pass = (document.getElementById("login-pass").value || "").trim();
-    const {u,p} = creds();
-    if(user === u && pass === p){
-      unlock();
-    } else {
-      msg.textContent = "Invalid username or password.";
-    }
+    const u=(document.getElementById("login-user").value||"").trim();
+    const p=(document.getElementById("login-pass").value||"").trim();
+    const U=localStorage.getItem("ck_user")||DEFAULT_USER, P=localStorage.getItem("ck_pass")||DEFAULT_PASS;
+    if(u===U && p===P){ unlock(); } else { msg.textContent="Invalid username or password."; }
   });
-
-  document.getElementById("login-pass").addEventListener("keydown", (e)=>{
-    if(e.key === "Enter") btn.click();
-  });
-
-  if(sessionStorage.getItem("ck_authed") !== "yes"){ app.style.display = "none"; }
+  document.getElementById("login-pass").addEventListener("keydown", e=>{ if(e.key==="Enter") btn.click(); });
+  if(sessionStorage.getItem("ck_authed")!=="yes"){ app.style.display="none"; }
 })();
 </script>
 
 <script>
+/* ===== Tabs ===== */
 function initTabs(){
-  const tabbar = document.getElementById('tabbar');
-  if(!tabbar) return;
-  const panes  = document.getElementById('tabpanes').children;
+  const tabbar=document.getElementById('tabbar'); if(!tabbar) return;
+  const panes=document.getElementById('tabpanes').children;
   tabbar.addEventListener('click', (e)=>{
-    const b = e.target.closest('button[data-tab]');
-    if(!b) return;
+    const b=e.target.closest('button[data-tab]'); if(!b) return;
     [...tabbar.children].forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
-    const id = 'pane-' + b.getAttribute('data-tab');
-    for(const p of panes) p.style.display = (p.id === id) ? 'block' : 'none';
+    const id='pane-'+b.getAttribute('data-tab');
+    for(const p of panes) p.style.display=(p.id===id)?'block':'none';
   });
 }
 </script>
 
 <script>
-function initEnhancements(){
-  const errbar = document.getElementById('errbar');
-  const errtxt = document.getElementById('errtxt');
-  const showErr = (e)=>{ try{ errtxt.textContent = (e && e.stack) ? e.stack : String(e); errbar.style.display = 'block'; console.error('[CK SafeBoot]', e);}catch(_){} };
+/* ===== App Logic (scanner + KPIs + auto-refresh) ===== */
+function initApp(){
+  const NETWORKS=["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
+  const EVM=new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
+  const DS_BASE="https://api.dexscreener.com";
+  const LOAN_CAP_USD=10000, PLATFORM_FEE=0.0009, TARGET_NET_MIN=5;
+  const MIN_LIQ_USD=100000, MIN_VOL24H_USD=25000, MIN_TRADES_M5=3, MIN_POOL_AGE_MS=7*24*3600*1000;
+  const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"], arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"], polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"], bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"], avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
+  const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
+  const CG_IDS={ETH:"ethereum",MATIC:"matic-network",BNB:"binancecoin",AVAX:"avalanche-2"};
+  const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
+  const toast=msg=>{ const t=document.createElement('div'); t.textContent=msg; t.style.cssText='position:fixed;right:12px;bottom:12px;background:#111827;color:#f9fafb;border:1px solid rgba(255,255,255,.12);padding:8px 10px;border-radius:8px;z-index:50;box-shadow:0 8px 20px rgba(0,0,0,.15)'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); };
 
-  try {
-    const NETWORKS = ["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
-    const EVM = new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
-    const DS_BASE = "https://api.dexscreener.com";
-    const LOAN_CAP_USD = 10000, PLATFORM_FEE = 0.0009;
-    const MIN_LIQ_USD = 20000, MIN_VOL24H_USD = 5000;
-    const MAX_ADDRESSES_PER_SCAN = 200, CONCURRENCY = 8, REQ_DELAY_MS = 120;
-    const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"], arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"], polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"], bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"], avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
-    const GAS_NATIVE = { ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
-    const CG_IDS={"ETH":"ethereum","WETH":"ethereum","MATIC":"matic-network","BNB":"binancecoin","AVAX":"avalanche-2"};
-    const fmtUSD = v => isFinite(v) ? `$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
-    const toast = (msg)=>{ const t=document.createElement('div'); t.textContent=msg; t.style.cssText='position:fixed;right:12px;bottom:12px;background:#111827;color:#f9fafb;border:1px solid rgba(255,255,255,.12);padding:8px 10px;border-radius:8px;z-index:50;box-shadow:0 8px 20px rgba(0,0,0,.15)'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); };
+  const state={}; for(const n of NETWORKS){ state[n]={best:null,gasGwei:null,gasUsd:0,gasNativeUsd:null}; }
+  let autoTimer=null, autoCountdown=0, activeNet="ethereum";
 
-    async function cgUSD(sym){ const id=CG_IDS[sym]; if(!id) return null; try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(!r.ok) return null; const j=await r.json(); return j?.[id]?.usd ?? null; }catch(_){return null;} }
+  const errbar=document.getElementById('errbar'), errtxt=document.getElementById('errtxt');
+  const showErr=e=>{ try{ errtxt.textContent=(e&&e.stack)?e.stack:String(e); errbar.style.display='block'; console.error(e);}catch(_){} };
 
-    const TOKENLISTS = {
-      ethereum:["https://tokens.uniswap.org","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
-      arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
-      polygon:["https://unpkg.com/quickswap-default.token-list@latest/build/quickswap-default.tokenlist.json","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
-      bsc:["https://tokens.pancakeswap.finance/pancakeswap-extended.json"],
-      avalanche:["https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/joe.tokenlist.json"],
-      solana:[]
-    };
+  function el(id){ return document.getElementById(id); }
 
-    const SEED_ADDRESSES = {
-      ethereum:[
-        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xdac17f958d2ee523a2206206994597c13d831ec7",
-        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0x2260FAC5E5542a773Aa44fbcfeDf7C193bc2C599".toLowerCase(),
-        "0x6B175474E89094C44Da98b954EedeAC495271d0F","0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
-        "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984","0x514910771AF9Ca656af840dff83E8264EcF986CA",
-        "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
-      ],
-      arbitrum:[
-        "0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-        "0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548",
-        "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1","0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"
-      ],
-      polygon:[
-        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174","0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
-        "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619","0x0000000000000000000000000000000000001010",
-        "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"
-      ],
-      bsc:[
-        "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d","0x55d398326f99059ff775485246999027b3197955",
-        "0xbb4CdB9CBd36B01dCbAEBF2De08d9173bc095c","0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82"
-      ],
-      avalanche:[
-        "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
-        "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","0x50b7545627a5162F82A992c33b87aDc75187B218",
-        "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70","0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd"
-      ],
-      solana:[]
-    };
+  async function cgUSD(sym){ const id=CG_IDS[sym]; if(!id) return null; try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(!r.ok) return null; const j=await r.json(); return j?.[id]?.usd ?? null; }catch(_){return null;} }
 
-    async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
+  async function gasSuggestGwei(net){
+    const eps=RPC[net]; if(!eps) throw new Error("no rpc");
+    const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
+    for(const url of eps){
+      try{
+        const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(feeHist)}); if(!r.ok) continue;
+        const j=await r.json(); const bh=j?.result; if(!bh?.baseFeePerGas||!bh?.reward) continue;
+        const base=parseInt(bh.baseFeePerGas[bh.baseFeePerGas.length-1]||"0x0",16)/1e9;
+        const rw=bh.reward[bh.reward.length-1]||[]; const tip=parseInt(rw[1]||"0x0",16)/1e9;
+        return {g:base+tip, base, tip};
+      }catch(_){}
+    }
+    const gp={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
+    for(const url of eps){
+      try{ const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(gp)}); if(!r.ok) continue; const j=await r.json(); const wei=parseInt(j?.result||"0x0",16); return {g:wei/1e9, base:wei/1e9, tip:0}; }catch(_){}
+    }
+    throw new Error("rpc failed");
+  }
 
-    async function loadTokenAddresses(network){
-      const lists = TOKENLISTS[network] || [];
-      const addrs = new Set();
+  async function initGas(net){
+    if(!EVM.has(net)) return;
+    const g=await gasSuggestGwei(net).catch(()=>null);
+    const nat=GAS_NATIVE[net]; const natUsd=await cgUSD(nat).catch(()=>null);
+    state[net].gasGwei=g?.g??null; state[net].gasNativeUsd=natUsd??null;
+    const gEl=el(`gas-gwei-${net}`), note=el(`gas-note-${net}`);
+    if(g){ gEl.value=`${g.g.toFixed(1)} Gwei`; note.textContent=`base ${g.base.toFixed(1)} + tip ${g.tip.toFixed(1)} • ${nat} ≈ ${fmtUSD(natUsd)}`; }
+    else{ gEl.value=""; note.textContent="auto gas failed (RPC/CORS). Enter gas limit to estimate cost."; }
+    calcGasUsd(net);
+  }
 
-      for (const url of lists) {
-        try {
-          const tl = await getJSON(url);
-          const tokens = tl && tl.tokens ? tl.tokens : [];
-          for (const t of tokens) {
-            if (!t.address) continue;
-            const ok =
-              (network === "ethereum" && t.chainId == 1) ||
-              (network === "arbitrum" && t.chainId == 42161) ||
-              (network === "polygon" && t.chainId == 137) ||
-              (network === "bsc" && t.chainId == 56) ||
-              (network === "avalanche" && t.chainId == 43114);
-            if (ok) addrs.add(t.address);
-          }
-        } catch (e) {
-          console.warn("[tokens] tokenlist fetch failed:", url, e);
+  function calcGasUsd(net){
+    if(!EVM.has(net)) return 0;
+    const g=state[net].gasGwei, gl=parseFloat(el(`gas-limit-${net}`).value||"0"), usd=state[net].gasNativeUsd;
+    if(!(g>0)&&!(gl>0)&&!(usd>0)) return 0;
+    const native=(g*gl)/1e9; const cost=native*(usd||0); state[net].gasUsd=cost;
+    const sym=GAS_NATIVE[net]; el(`gas-cost-${net}`).value = isFinite(native)? `${native.toFixed(6)} ${sym}`: "";
+    el(`gas-cost-usd-${net}`).textContent = isFinite(cost)? `≈ ${fmtUSD(cost)}` : "—";
+    return cost;
+  }
+
+  async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
+
+  function consolidatePerDex(pairs){
+    const preferred=["USDC","USDT"]; const byDex=new Map(); const now=Date.now();
+    for(const p of (pairs||[])){
+      const dex=(p?.dexId||"").toLowerCase(); if(!dex) continue;
+      const liq=p?.liquidity?.usd||0; if(liq<MIN_LIQ_USD) continue;
+      const vol=p?.volume?.h24||0; if(vol<MIN_VOL24H_USD) continue;
+      const m5=(p?.txns?.m5?.buys||0)+(p?.txns?.m5?.sells||0); if(m5<MIN_TRADES_M5) continue;
+      const created=Number(p?.pairCreatedAt||0); if(created && (now-created) < MIN_POOL_AGE_MS) continue;
+      const quote=(p?.quoteToken?.symbol||"").toUpperCase(); const rank=preferred.includes(quote)?preferred.indexOf(quote):99;
+      const cur=byDex.get(dex);
+      if(!cur||rank<cur.rank||(rank===cur.rank && liq>cur.liq)) byDex.set(dex,{rec:p,liq,rank});
+    }
+    return [...byDex.values()].map(v=>v.rec);
+  }
+
+  function prettyDexId(p){
+    const raw=(p?.dexId||"").toLowerCase();
+    const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",curve:"Curve",balancer:"Balancer",camelot:"Camelot",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",jupiter:"Jupiter",raydium:"Raydium",orca:"Orca"};
+    for(const k in map){ if(raw.includes(k)) return map[k]; } return raw?raw[0].toUpperCase()+raw.slice(1):"DEX";
+  }
+
+  async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
+
+  const TOKENLISTS={
+    ethereum:["https://tokens.uniswap.org","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
+    arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
+    polygon:["https://unpkg.com/quickswap-default.token-list@latest/build/quickswap-default.tokenlist.json","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
+    bsc:["https://tokens.pancakeswap.finance/pancakeswap-extended.json"],
+    avalanche:["https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/joe.tokenlist.json"],
+    solana:[]
+  };
+  const SEED_ADDRESSES={
+    ethereum:["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xdac17f958d2ee523a2206206994597c13d831ec7","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0x2260FAC5E5542a773Aa44FBCfEDF7C193bc2C599".toLowerCase(),"0x6B175474E89094C44Da98b954EedeAC495271d0F","0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32","0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984","0x514910771AF9Ca656af840dff83E8264EcF986CA","0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"],
+    arbitrum:["0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9","0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548","0xda10009cbd5d07dd0cecc66161fc93d7c9000da1","0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"],
+    polygon:["0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174","0xc2132d05d31c914a87c6611c10748aeb04b58e8f","0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619","0x0000000000000000000000000000000000001010","0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"],
+    bsc:["0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d","0x55d398326f99059ff775485246999027b3197955","0xbb4CdB9CBd36B01dCbAEBF2De08d9173bc095c","0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82"],
+    avalanche:["0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7","0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","0x50b7545627a5162F82A992c33b87aDc75187B218","0xd586E7F844cEa2F87f50152665BCbc2C279D8d70","0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd"],
+    solana:[]
+  };
+
+  async function loadTokenAddresses(network){
+    const lists=TOKENLISTS[network]||[]; const addrs=new Set();
+    for(const url of lists){
+      try{
+        const tl=await getJSON(url); const tokens=tl?.tokens||[];
+        for(const t of tokens){
+          if(!t.address) continue;
+          const ok=(network==="ethereum"&&t.chainId==1)||(network==="arbitrum"&&t.chainId==42161)||(network==="polygon"&&t.chainId==137)||(network==="bsc"&&t.chainId==56)||(network==="avalanche"&&t.chainId==43114);
+          if(ok) addrs.add(t.address);
         }
-      }
+      }catch(e){ console.warn("tokenlist failed", url, e); }
+    }
+    let arr=[...addrs];
+    if(!arr.length) arr=SEED_ADDRESSES[network]?[...SEED_ADDRESSES[network]]:[];
+    if(!arr.length && network==="ethereum") arr=["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"];
+    return arr.slice(0,200);
+  }
 
-      let arr = Array.from(addrs);
-      if (!arr.length) {
-        console.warn("[tokens] falling back to seed addresses for", network);
-        arr = SEED_ADDRESSES[network] ? [...SEED_ADDRESSES[network]] : [];
-      }
-      if (!arr.length && network === "ethereum") {
-        arr = ["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"];
-      }
-      return arr.slice(0, Math.min(arr.length, MAX_ADDRESSES_PER_SCAN));
-    }
+  async function mapLimit(items,limit,fn){
+    const out=new Array(items.length); let i=0;
+    const worker=async()=>{ while(i<items.length){ const idx=i++; try{ out[idx]=await fn(items[idx],idx); await new Promise(r=>setTimeout(r,120)); }catch(_){ out[idx]=null; } } };
+    const workers=Array.from({length:Math.min(limit,items.length)},worker);
+    await Promise.all(workers); return out;
+  }
 
-    async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
-    function consolidatePerDex(pairs){
-      const preferred=["USDC","USDT"]; const byDex=new Map();
-      for(const p of (pairs||[])){
-        const dex=(p?.dexId||"").toLowerCase(); if(!dex) continue;
-        const liq=p?.liquidity?.usd||0; if(liq<MIN_LIQ_USD) continue;
-        const vol=p?.volume?.h24||0; if(vol<MIN_VOL24H_USD) continue;
-        const quote=(p?.quoteToken?.symbol||"").toUpperCase();
-        const rank=preferred.includes(quote)?preferred.indexOf(quote):99;
-        const cur=byDex.get(dex);
-        if(!cur||rank<cur.rank||(rank===cur.rank&&liq>cur.liq)) byDex.set(dex,{rec:p,liq,rank});
-      }
-      return [...byDex.values()].map(v=>v.rec);
-    }
-    function prettyDexId(p){
-      const raw=(p?.dexId||"").toLowerCase();
-      const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",curve:"Curve",balancer:"Balancer",camelot:"Camelot",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",jupiter:"Jupiter",raydium:"Raydium",orca:"Orca"};
-      for(const k in map){ if(raw.includes(k)) return map[k]; } return raw?raw[0].toUpperCase()+raw.slice(1):"DEX";
-    }
-    async function mapLimit(items, limit, fn){
-      const out=new Array(items.length); let i=0;
-      const worker=async()=>{ while(i<items.length){ const idx=i++; try{ out[idx]=await fn(items[idx],idx); if(REQ_DELAY_MS) await new Promise(r=>setTimeout(r,REQ_DELAY_MS)); }catch(_){ out[idx]=null; } } };
-      const workers=Array.from({length:Math.min(limit,items.length)}, worker); await Promise.all(workers); return out;
-    }
+  function plForPrincipal(net, r, principalUSD){
+    const spread=(r.sellPrice-r.buyPrice)/r.buyPrice;
+    const gross=principalUSD*spread;
+    const fee=principalUSD*PLATFORM_FEE;
+    const gas=state[net].gasUsd||0;
+    return {spread, net: gross - fee - gas, fee, gas};
+  }
 
-    const state={}; for(const net of NETWORKS){ state[net]={best:null,gasUsd:0,gasNativeUsd:null,gasGwei:null}; }
+  function row(net, r){
+    const tr=document.createElement('tr');
+    const pl=plForPrincipal(net,r,1000);
+    const spreadPct=(pl.spread*100).toFixed(2);
+    const net1000=pl.net;
+    const cls = net1000>0 ? "pos" : (net1000>=0 && net1000< TARGET_NET_MIN ? "meh" : "neg");
+    tr.className=cls;
+    tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${spreadPct}%</td><td class="right">${fmtUSD(net1000)}</td>`;
+    tr.style.cursor="pointer";
+    tr.addEventListener('click',()=>{
+      state[net].best=r;
+      el(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${r.base}: Buy ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → Sell ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (${spreadPct}%)`;
+      updateStickyKPI(net);
+    });
+    return tr;
+  }
 
-    function row(net, r){
-      const tr=document.createElement('tr');
-      const spread=((r.sellPrice-r.buyPrice)/r.buyPrice*100);
-      tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${spread.toFixed(2)}%</td>`;
-      tr.style.cursor="pointer";
-      tr.addEventListener('click',()=>{
-        state[net].best=r;
-        document.getElementById(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${r.base}: Buy ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → Sell ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (${spread.toFixed(2)}%)`;
-        updateKPIs(net);
-      });
-      return tr;
-    }
+  function updateStickyKPI(net){
+    const best=state[net].best;
+    const kBest=el("kpiBest"), kSp=el("kpiSpread"), kNet=el("kpiNet");
+    if(!best){ kBest.textContent="—"; kSp.textContent="—"; kNet.textContent="—"; return; }
+    const loanAmt=parseFloat(el(`loan-amt-${net}`).value||"0");
+    const loanSym=(el(`loan-asset-${net}`).value||"USDC").toUpperCase();
+    const px= loanSym==="USDC"||loanSym==="USDT"||loanSym==="DAI" ? 1 : 1; // stable assumption; simple UI
+    const principalUSD = loanAmt>0 ? loanAmt*px : 1000;
+    const pl=plForPrincipal(net,best,principalUSD);
+    kBest.textContent=`${best.base} | ${best.buyDex} → ${best.sellDex}`;
+    kSp.textContent=`${(pl.spread*100).toFixed(2)}%`;
+    kNet.textContent=fmtUSD(pl.net);
+  }
 
-    async function gasSuggestGwei(net){
-      const eps=RPC[net]; if(!eps) throw new Error("no rpc");
-      const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
-      for(const url of eps){
-        try{
-          const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(feeHist)}); if(!r.ok) continue;
-          const j=await r.json(); const bh=j?.result; if(!bh?.baseFeePerGas||!bh?.reward) continue;
-          const base=parseInt(bh.baseFeePerGas[bh.baseFeePerGas.length-1]||"0x0",16)/1e9;
-          const rw=bh.reward[bh.reward.length-1]||[]; const tip=parseInt(rw[1]||"0x0",16)/1e9;
-          return {gasPriceGwei:base+tip,baseGwei:base,tipGwei:tip};
-        }catch(_){}
-      }
-      const gp={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
-      for(const url of eps){
-        try{ const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(gp)}); if(!r.ok) continue; const j=await r.json(); const wei=parseInt(j?.result||"0x0",16); return {gasPriceGwei:wei/1e9,baseGwei:wei/1e9,tipGwei:0}; }catch(_){}
-      }
-      throw new Error("rpc failed");
-    }
+  async function scanAll(net){
+    activeNet = net;
+    const status=el(`status-${net}`), tbody=el(`rows-${net}`), route=el(`route-${net}`);
+    tbody.innerHTML=""; route.textContent=""; state[net].best=null;
+    status.innerHTML=`<span class="spinner"></span> Loading token addresses…`;
+    const addrs=await loadTokenAddresses(net).catch(()=>[]);
+    if(!addrs.length){ status.textContent="Could not load token addresses."; return; }
+    status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
-    async function initGas(net){
-      if(!EVM.has(net)) return;
-      const g=await gasSuggestGwei(net).catch(()=>null);
-      const nat=GAS_NATIVE[net]; const natUsd=await cgUSD(nat).catch(()=>null);
-      state[net].gasGwei=g?.gasPriceGwei??null; state[net].gasNativeUsd=natUsd??null;
-      const gEl=document.getElementById(`gas-gwei-${net}`), note=document.getElementById(`gas-note-${net}`);
-      if(g){ gEl.value=`${g.gasPriceGwei.toFixed(1)} Gwei`; note.textContent=`base ${g.baseGwei.toFixed(1)} + tip ${g.tipGwei.toFixed(1)} • ${nat} ≈ ${fmtUSD(natUsd)}`; }
-      else { gEl.value=""; note.textContent="auto gas failed (RPC/CORS). Enter gas limit to estimate cost."; }
-    }
-    function calcGasUsd(net){
-      if(!EVM.has(net)) return 0;
-      const g=state[net].gasGwei, gl=parseFloat(document.getElementById(`gas-limit-${net}`).value||"0"), usd=state[net].gasNativeUsd;
-      if(!(g>0) || !(gl>0) || !(usd>0)) return 0;
-      const native=(g*gl)/1e9; const cost=native*usd; state[net].gasUsd=cost;
-      const sym=GAS_NATIVE[net]; document.getElementById(`gas-cost-${net}`).value=native.toFixed(6)+" "+sym;
-      document.getElementById(`gas-cost-usd-${net}`).textContent=`≈ ${fmtUSD(cost)}`; return cost;
-    }
+    let done=0;
+    const res=await mapLimit(addrs,8, async(addr)=>{
+      const j=await dsByToken(addr); done++; if(done%5===0) status.innerHTML=`<span class="spinner"></span> Scanned ${done}/${addrs.length}…`;
+      if(!j||!j.pairs||!j.pairs.length) return null;
+      const onNet=j.pairs.filter(p=>p.chainId===net);
+      const perDex=consolidatePerDex(onNet); if(!perDex.length) return null;
+      let min=Infinity,max=-Infinity,buy=null,sell=null;
+      for(const p of perDex){ const pr=Number(p?.priceUsd); if(!isFinite(pr)) continue; if(pr<min){min=pr;buy=p;} if(pr>max){max=pr;sell=p;} }
+      if(!buy||!sell||!isFinite(min)||!isFinite(max)) return null;
+      const base=buy?.baseToken?.symbol || sell?.baseToken?.symbol || "";
+      return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
+    });
 
-    async function loanAssetUsdSym(net){
-      const sym=(document.getElementById(`loan-asset-${net}`).value||"USDC").trim().toUpperCase();
-      const map={USDC:"usd-coin",USDT:"tether",DAI:"dai",WETH:"ethereum",ETH:"ethereum",WBTC:"wrapped-bitcoin",MATIC:"matic-network",WBNB:"binancecoin",AVAX:"avalanche-2",ARB:"arbitrum",SOL:"solana"};
-      const id=map[sym]; if(!id) return {sym,usd:null};
-      try{const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); const j=await r.json(); return {sym,usd:j?.[id]?.usd??null};}catch(_){return {sym,usd:null};}
-    }
+    const usable=res.filter(Boolean).sort((a,b)=>b.spread-a.spread).slice(0,150);
+    status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes (filters).";
+    usable.forEach(r=>tbody.appendChild(row(net,r)));
 
-    function pickPL(net, principal){
-      const b=state[net].best; if(!b) return null;
-      const spread=(b.sellPrice-b.buyPrice)/b.buyPrice;
-      const gross=principal*spread;
-      const fee=principal*PLATFORM_FEE;
-      const gas=state[net].gasUsd||0;
-      return {spread,gross,flashFee:fee,gas,netNoGas:gross-fee,net:gross-fee-gas};
-    }
+    if(usable[0]){ state[net].best=usable[0]; route.innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`; updateStickyKPI(net); }
+  }
 
-    async function updateKPIs(net){
-      const best=state[net].best;
-      const kBest=document.getElementById(`kpi-best-${net}`), kSp=document.getElementById(`kpi-spread-${net}`), kNet=document.getElementById(`kpi-net-${net}`);
-      if(!best){ kBest.textContent="—"; kSp.textContent="—"; kNet.textContent="—"; return; }
-      const amt=parseFloat(document.getElementById(`loan-amt-${net}`).value||"0");
-      const pa=await loanAssetUsdSym(net); const px=pa.usd||0; const principal = (amt>0 && px>0) ? amt*px : 1000;
-      calcGasUsd(net);
-      const r=pickPL(net, principal);
-      kBest.textContent=`${best.base} | Buy ${best.buyDex} @ ${fmtUSD(best.buyPrice)} → Sell ${best.sellDex} @ ${fmtUSD(best.sellPrice)}`;
-      kSp.textContent=`${(r.spread*100).toFixed(2)}%`;
-      kNet.textContent=(amt>0 && px>0) ? `${fmtUSD(r.net)} (fee ${fmtUSD(r.flashFee)}, gas ~ ${fmtUSD(r.gas)})` : `set amount to see net (fee ${fmtUSD(r.flashFee)}, gas ~ ${fmtUSD(r.gas)})`;
-      const usdNote=document.getElementById(`loan-amt-usd-${net}`); if(usdNote) usdNote.textContent = px>0 && amt>0 ? `≈ ${fmtUSD(px*amt)}` : "≈ —";
-    }
+  // Auto-size: find amount (≤ $10k) that makes net ≥ TARGET_NET_MIN given current best + gas
+  function autosizeLoan(net){
+    const best=state[net].best; if(!best){ toast("Select a route first (click a row)."); return; }
+    const gas=state[net].gasUsd||0;
+    const spread=(best.sellPrice-best.buyPrice)/best.buyPrice;
+    const needed = (TARGET_NET_MIN + gas) / (spread - PLATFORM_FEE);
+    const capped = Math.min(Math.max(needed, 0), LOAN_CAP_USD);
+    // Assume loan asset is stable ($1) for UI simplicity
+    const amtInput=el(`loan-amt-${net}`), note=el(`loan-amt-usd-${net}`);
+    amtInput.value = capped ? capped.toFixed(2) : "";
+    note.textContent = capped ? `≈ ${fmtUSD(capped)} (cap $10,000)` : "≈ —";
+    updateStickyKPI(net);
+  }
 
-    async function scanAll(net){
-      const status=document.getElementById(`status-${net}`), body=document.getElementById(`rows-${net}`), route=document.getElementById(`route-${net}`);
-      body.innerHTML=""; route.textContent=""; state[net].best=null; status.innerHTML=`<span class="spinner"></span> Loading token addresses… (will fallback if blocked)`;
-      const addrs=await loadTokenAddresses(net).catch(()=>[]);
-      if(!addrs.length){ status.textContent="Could not load token addresses."; return; }
-      status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
-      let done=0;
-      const res=await mapLimit(addrs, CONCURRENCY, async (addr)=>{
-        const j=await dsByToken(addr); done++; if(done%5===0) status.innerHTML=`<span class="spinner"></span> Scanned ${done}/${addrs.length}…`;
-        if(!j||!j.pairs||!j.pairs.length) return null;
-        const onNet=j.pairs.filter(p=>p.chainId===net); const perDex=consolidatePerDex(onNet); if(!perDex.length) return null;
-        let min=Infinity,max=-Infinity,buy=null,sell=null;
-        for(const p of perDex){ const pr=Number(p?.priceUsd); if(!isFinite(pr)) continue; if(pr<min){min=pr;buy=p;} if(pr>max){max=pr;sell=p;} }
-        if(!buy||!sell||!isFinite(min)||!isFinite(max)) return null;
-        const base=buy?.baseToken?.symbol || sell?.baseToken?.symbol || "";
-        return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
-      });
-      const usable=res.filter(Boolean).sort((a,b)=>b.spread-a.spread).slice(0,150);
-      status.textContent=usable.length?`Found ${usable.length} opportunities`:"No viable routes (filters).";
-      usable.forEach(r=>body.appendChild(row(net,r)));
-      if(usable[0]){ state[net].best=usable[0]; route.innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`; updateKPIs(net); }
-    }
+  // Events
+  document.querySelectorAll("[data-scan]").forEach(btn=>btn.addEventListener("click", ()=>scanAll(btn.dataset.scan)));
+  for(const net of NETWORKS){
+    if(EVM.has(net)) initGas(net);
+    const gl=el(`gas-limit-${net}`); if(gl) gl.addEventListener('input', ()=>{ calcGasUsd(net); updateStickyKPI(net); });
+    const la=el(`loan-amt-${net}`); if(la) la.addEventListener('input', ()=>updateStickyKPI(net));
+    const auto=el(`btn-autosize-${net}`); if(auto) auto.addEventListener('click', ()=>autosizeLoan(net));
+  }
 
-    document.querySelectorAll("[data-scan]").forEach(btn=>btn.addEventListener("click", ()=>scanAll(btn.dataset.scan)));
-    for(const net of NETWORKS){
-      if(EVM.has(net)) initGas(net);
-      const gl=document.getElementById(`gas-limit-${net}`); if(gl) gl.addEventListener('input', ()=>{ calcGasUsd(net); updateKPIs(net); });
-      const la=document.getElementById(`loan-amt-${net}`); if(la) la.addEventListener('input', ()=>updateKPIs(net));
-      const auto=document.getElementById(`btn-autosize-${net}`); if(auto) auto.addEventListener('click', ()=>toast("Auto-size (full) is in the advanced build; kept minimal here."));
-      const go=document.getElementById(`btn-proceed-${net}`); if(go) go.addEventListener('click', ()=>toast("Proceed (sim) — advanced timeline is in the full build."));
-      const stop=document.getElementById(`btn-stop-${net}`); if(stop) stop.addEventListener('click', ()=>toast("Auto-exec stopped"));
-    }
-    document.getElementById("btnConnect").addEventListener("click", ()=>toast("Wallet connect coming soon"));
-  } catch (e) { showErr(e); }
+  // Top KPI countdown + auto-refresh
+  const refreshSel=el("refreshSel"); let countdownInt=null;
+  function startCountdown(){
+    const sec=parseInt(refreshSel.value||"0",10); clearInterval(countdownInt);
+    if(!sec){ el("kpiCountdown").textContent="—"; return; }
+    autoCountdown=sec; el("kpiCountdown").textContent=autoCountdown+"s";
+    countdownInt=setInterval(()=>{
+      autoCountdown--; if(autoCountdown<=0){ autoCountdown=sec; scanAll(activeNet); }
+      el("kpiCountdown").textContent=autoCountdown+"s";
+    },1000);
+  }
+  refreshSel.addEventListener("change", startCountdown);
+
+  // Wallet connect placeholder
+  document.getElementById("btnConnect").addEventListener("click", ()=>toast("Wallet connect coming soon"));
+
+  // Auto: on login, scan Ethereum then start refresh timer (20s default)
+  (async ()=>{
+    try{ await scanAll("ethereum"); }catch(e){ showErr(e); }
+    startCountdown();
+  })();
 }
 </script>
 </body>

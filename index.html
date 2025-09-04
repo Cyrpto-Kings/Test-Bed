@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v8.9.1 — Live Scanner</title>
+<title>Crypto Kings Test Bed v8.9.2 — Live Scanner</title>
 <style>
   :root{
     --bg:#f3f4f6; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -54,7 +54,7 @@
   #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
   #login-card{background:#fff;padding:24px;border-radius:12px;max-width:340px;width:100%;text-align:center;border:1px solid var(--border);box-shadow:0 10px 28px rgba(0,0,0,.06)}
   #login-card h2{margin:0 0 16px;font-size:18px}
-  #login-card input{width:100%;margin-bottom:10px;padding:10px;border-radius:8px;border:1px solid var(--border-strong);background:#fff;color:var(--ink)}
+  #login-card input{width:100%;margin-bottom:10px;padding:10px;border-radius:8px;border:1px solid var(--border-strong);background:#fff;color:#000}
   #login-card button{padding:10px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:white;font-weight:700;cursor:pointer;width:100%;box-shadow:0 6px 16px rgba(124,92,255,.15)}
   #login-msg{margin-top:10px;font-size:13px;color:var(--warn);min-height:1em}
 </style>
@@ -80,7 +80,7 @@
     <div class="topbar-inner">
       <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v8.9.1</span>
+      <span class="chip">v8.9.2</span>
       <div class="spacer"></div>
 
       <label class="help" style="display:flex;align-items:center;gap:6px">
@@ -107,7 +107,7 @@
   </div>
 
   <div id="errbar" class="errbar" style="display:none;">
-    <div class="box"><strong>Scanner notice</strong><pre id="errtxt"></pre></div>
+    <div class="box"><strong>App notice</strong><pre id="errtxt"></pre></div>
   </div>
 
   <div class="tabs">
@@ -121,13 +121,31 @@
     </div>
 
     <div class="tabpanes" id="tabpanes">
-      <!-- Template pane generator will populate -->
+      <!-- Panes inserted by JS -->
     </div>
   </div>
 </div>
 
 <script>
-/* ===== Login ===== */
+/* ---- Global error trap: show any JS error on the page ---- */
+(function(){
+  const show = (msg, src, line, col, err) => {
+    try {
+      const bar = document.getElementById('errbar');
+      const txt = document.getElementById('errtxt');
+      if(!bar||!txt) return;
+      txt.textContent = (err && err.stack) ? err.stack : [msg, src, line+':'+col].filter(Boolean).join(' | ');
+      bar.style.display = 'block';
+    } catch(_) {}
+    return false; // allow console error too
+  };
+  window.onerror = show;
+  window.onunhandledrejection = (e)=> show('Unhandled promise rejection', '', '', '', e.reason||e);
+})();
+</script>
+
+<script>
+/* ===== Simple Login ===== */
 const DEFAULT_USER="admin", DEFAULT_PASS="test123";
 (function(){
   const overlay=document.getElementById("login-screen"), app=document.getElementById("app");
@@ -146,23 +164,15 @@ const DEFAULT_USER="admin", DEFAULT_PASS="test123";
 </script>
 
 <script>
-/* ===== App ===== */
+/* ===== UI + Scanner ===== */
 function initUI(){
+  // Build panes FIRST so UI appears even if later async work fails
   const NETWORKS=["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
-  const EVM=new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
-  const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
-  const DS_BASE="https://api.dexscreener.com";
-  const LOAN_CAP_USD=10000, PLATFORM_FEE=0.0009, TARGET_NET_MIN=5;
-  const FILTERS={
-    strict:{liq:100000, vol:25000, m5:3, ageDays:7},
-    normal:{liq:50000,  vol:10000, m5:1, ageDays:1},
-    loose:{ liq:10000,  vol:2000,  m5:0, ageDays:0}
-  };
+  const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX", solana:"SOL" };
+  const panes=document.getElementById('tabpanes');
+  panes.innerHTML = NETWORKS.map(n => paneHTML(n, GAS_NATIVE[n]||"")).join("");
 
-  const panes = document.getElementById('tabpanes');
-  panes.innerHTML = NETWORKS.map(n => paneHTML(n, GAS_NATIVE[n]||"SOL")).join("");
-
-  // Tab logic
+  // Tabs
   const tabbar=document.getElementById('tabbar');
   tabbar.addEventListener('click', (e)=>{
     const b=e.target.closest('button[data-tab]'); if(!b) return;
@@ -171,16 +181,55 @@ function initUI(){
     [...panes.children].forEach(p=>p.style.display=(p.id===id)?'block':'none');
   });
 
-  // State
-  const state={}; for(const n of NETWORKS){ state[n]={best:null,gasGwei:null,gasUsd:0,gasNativeUsd:null, lastStats:""}; }
-  let activeNet="ethereum", countdownInt=null;
+  // Now wire app logic
+  initApp();
+}
 
-  // Helpers
-  const el = id => document.getElementById(id);
-  const fmtUSD = v => isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
-  const toast = msg => { const t=document.createElement('div'); t.textContent=msg; t.style.cssText='position:fixed;right:12px;bottom:12px;background:#111827;color:#f9fafb;border:1px solid rgba(255,255,255,.12);padding:8px 10px;border-radius:8px;z-index:50;box-shadow:0 8px 20px rgba(0,0,0,.15)'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); };
+function paneHTML(net, gasSym){
+  const pretty = net[0].toUpperCase()+net.slice(1);
+  const defaultGL = net==='arbitrum' ? '170000' : net==='avalanche' ? '185000' : '190000';
+  return `
+  <div id="pane-${net}" class="wrap" ${net!=='ethereum'?'style="display:none;"':''}>
+    <div class="card">
+      <div class="row row-4">
+        <div><label>Network</label><input value="${pretty}" readonly /></div>
+        <div><label>Gas (auto)</label><input id="gas-gwei-${net}" placeholder="Auto" readonly /><div class="help" id="gas-note-${net}">—</div></div>
+        <div><label>Gas Limit</label><input id="gas-limit-${net}" type="number" min="0" step="1000" value="${defaultGL}" /><div class="help">Rough: Uni/Sushi 150–200k • Curve 340k • Balancer 300k+</div></div>
+        <div><label>Est. Gas Cost</label><input id="gas-cost-${net}" placeholder="—" readonly /><div class="help" id="gas-cost-usd-${net}">—</div></div>
+      </div>
+      <div class="row row-3" style="margin-top:8px">
+        <div><span id="status-${net}" class="help">Ready.</span></div>
+        <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
+        <div><label>Scan</label><button class="btn small" data-scan="${net}">Scan Now</button></div>
+      </div>
+      <div class="help" id="route-${net}" style="margin-top:6px;"></div>
+      <table class="table" style="margin-top:10px">
+        <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead>
+        <tbody id="rows-${net}"></tbody>
+      </table>
+    </div>
+  </div>`;
+}
+</script>
 
-  // Gas suggest
+<script>
+function initApp(){
+  const NETWORKS=["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
+  const EVM=new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
+  const DS_BASE="https://api.dexscreener.com";
+  const LOAN_CAP_USD=10000, PLATFORM_FEE=0.0009, TARGET_NET_MIN=5;
+  const FILTERS={
+    strict:{liq:100000, vol:25000, m5:3, ageDays:7},
+    normal:{liq:50000,  vol:10000, m5:1, ageDays:1},
+    loose:{ liq:10000,  vol:2000,  m5:0, ageDays:0}
+  };
+  const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
+
+  const el=id=>document.getElementById(id);
+  const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
+  const showErr=(msg)=>{ const bar=el('errbar'), t=el('errtxt'); if(bar&&t){ t.textContent=String(msg); bar.style.display='block'; } };
+
+  // Gas
   const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"],
               arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"],
               polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"],
@@ -189,13 +238,18 @@ function initUI(){
   async function gasSuggestGwei(net){
     const eps=RPC[net]; if(!eps) return null;
     const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
-    for(const url of eps){
+    for(let i=0;i<eps.length;i++){
+      const url=eps[i];
       try{
-        const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(feeHist)}); if(!r.ok) continue;
-        const j=await r.json(); const bh=j?.result; if(!bh?.baseFeePerGas||!bh?.reward) continue;
-        const base=parseInt(bh.baseFeePerGas.at(-1)||"0x0",16)/1e9;
-        const tip =parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
-        return {g:base+tip, base, tip};
+        const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(feeHist)});
+        if(!r.ok) continue;
+        const j=await r.json(); const bh=j && j.result;
+        if(!bh || !bh.baseFeePerGas || !bh.reward) continue;
+        const lastBaseHex = bh.baseFeePerGas[bh.baseFeePerGas.length-1] || "0x0";
+        const base = parseInt(lastBaseHex,16)/1e9;
+        const rewards = bh.reward[bh.reward.length-1] || [];
+        const medianTip = parseInt(rewards[1] || "0x0",16)/1e9;
+        return {g:base+medianTip, base, tip:medianTip};
       }catch(_){}
     }
     return null;
@@ -203,13 +257,16 @@ function initUI(){
   async function cgUSD(sym){
     const map={ETH:"ethereum",MATIC:"matic-network",BNB:"binancecoin",AVAX:"avalanche-2"};
     const id=map[sym]; if(!id) return null;
-    try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(!r.ok) return null; const j=await r.json(); return j?.[id]?.usd??null; }catch(_){return null;}
+    try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(!r.ok) return null; const j=await r.json(); return j && j[id] ? j[id].usd : null; }catch(_){ return null; }
   }
+
+  const state={}; for(const n of NETWORKS){ state[n]={best:null,gasGwei:null,gasUsd:0,gasNativeUsd:null}; }
+
   async function initGas(net){
     if(!EVM.has(net)) return;
     const g=await gasSuggestGwei(net).catch(()=>null);
     const nat=GAS_NATIVE[net]; const natUsd=await cgUSD(nat).catch(()=>null);
-    state[net].gasGwei=g?.g??null; state[net].gasNativeUsd=natUsd??null;
+    state[net].gasGwei=g?g.g:null; state[net].gasNativeUsd=natUsd??null;
     const gEl=el(`gas-gwei-${net}`), note=el(`gas-note-${net}`);
     if(g){ gEl.value=`${g.g.toFixed(1)} Gwei`; note.textContent=`base ${g.base.toFixed(1)} + tip ${g.tip.toFixed(1)} • ${nat} ≈ ${fmtUSD(natUsd)}`; }
     else{ gEl.value=""; note.textContent="auto gas failed (RPC/CORS)."; }
@@ -228,31 +285,33 @@ function initUI(){
 
   // Dexscreener helpers
   async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
-  async function dsSearch(net, q){ const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`).catch(()=>null); if(!r||!r.ok) return null; const j=await r.json(); return (j?.pairs||[]).filter(p=>p.chainId===net); }
+  async function dsSearch(net, q){ const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`).catch(()=>null); if(!r||!r.ok) return []; const j=await r.json(); return (j && j.pairs ? j.pairs : []).filter(p=>p.chainId===net); }
   function consolidatePerDex(pairs, filt){
     const preferred=["USDC","USDT"]; const byDex=new Map(); const now=Date.now();
     let dropped={liq:0,vol:0,tr:0,age:0,price:0};
-    for(const p of (pairs||[])){
-      const dex=(p?.dexId||"").toLowerCase(); if(!dex) continue;
-      const price=Number(p?.priceUsd); if(!isFinite(price) || price<=0){ dropped.price++; continue; }
-      const liq=p?.liquidity?.usd||0; if(liq<filt.liq){ dropped.liq++; continue; }
-      const vol=p?.volume?.h24||0; if(vol<filt.vol){ dropped.vol++; continue; }
-      const m5=(p?.txns?.m5?.buys||0)+(p?.txns?.m5?.sells||0); if(m5<filt.m5){ dropped.tr++; continue; }
-      const created=Number(p?.pairCreatedAt||0); if(created && filt.ageDays>0 && (now-created) < filt.ageDays*86400000){ dropped.age++; continue; }
-      const quote=(p?.quoteToken?.symbol||"").toUpperCase();
-      const rank=preferred.includes(quote)?preferred.indexOf(quote):99;
+    for(let i=0;i<pairs.length;i++){
+      const p=pairs[i]; const dex=(p && p.dexId ? p.dexId.toLowerCase(): "");
+      if(!dex) continue;
+      const price=Number(p.priceUsd); if(!isFinite(price)||price<=0){ dropped.price++; continue; }
+      const liq=(p.liquidity && p.liquidity.usd)||0; if(liq<filt.liq){ dropped.liq++; continue; }
+      const vol=(p.volume && p.volume.h24)||0; if(vol<filt.vol){ dropped.vol++; continue; }
+      const m5=((p.txns && p.txns.m5 && p.txns.m5.buys)||0)+((p.txns && p.txns.m5 && p.txns.m5.sells)||0); if(m5<filt.m5){ dropped.tr++; continue; }
+      const created=Number(p.pairCreatedAt||0); if(created && filt.ageDays>0 && (now-created)<(filt.ageDays*86400000)){ dropped.age++; continue; }
+      const quote=(p.quoteToken && p.quoteToken.symbol ? p.quoteToken.symbol.toUpperCase() : "");
+      const rank = quote==="USDC" ? 0 : quote==="USDT" ? 1 : 99;
       const cur=byDex.get(dex);
       if(!cur || rank<cur.rank || (rank===cur.rank && liq>(cur.liq||0))) byDex.set(dex,{rec:p,liq,rank});
     }
     return {rows:[...byDex.values()].map(v=>v.rec), dropped};
   }
   function prettyDexId(p){
-    const raw=(p?.dexId||"").toLowerCase();
+    const raw=(p && p.dexId ? p.dexId.toLowerCase() : "");
     const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",curve:"Curve",balancer:"Balancer",camelot:"Camelot",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",jupiter:"Jupiter",raydium:"Raydium",orca:"Orca"};
-    for(const k in map){ if(raw.includes(k)) return map[k]; } return raw?raw[0].toUpperCase()+raw.slice(1):"DEX";
+    for(const k in map){ if(raw.indexOf(k)!==-1) return map[k]; }
+    return raw? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
   }
 
-  // Token address sources
+  // Token address universe
   const TOKENLISTS={
     ethereum:["https://tokens.uniswap.org","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
     arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
@@ -269,33 +328,57 @@ function initUI(){
     avalanche:["0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7","0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","0x50b7545627a5162F82A992c33b87aDc75187B218","0xd586E7F844cEa2F87f50152665BCbc2C279D8d70"],
     solana:[]
   };
+
   async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
   async function loadTokenAddresses(network){
     const addrs=new Set(SEED_ADDRESSES[network]||[]);
     // tokenlists
-    for(const url of (TOKENLISTS[network]||[])){
-      try{ const tl=await getJSON(url); (tl?.tokens||[]).forEach(t=>{ if(t?.address){ const ok=(network==="ethereum"&&t.chainId==1)||(network==="arbitrum"&&t.chainId==42161)||(network==="polygon"&&t.chainId==137)||(network==="bsc"&&t.chainId==56)||(network==="avalanche"&&t.chainId==43114); if(ok) addrs.add(t.address);} }); }catch(_){}
+    const lists = TOKENLISTS[network] || [];
+    for(let i=0;i<lists.length;i++){
+      const url=lists[i];
+      try{
+        const tl=await getJSON(url);
+        const tokens = tl && tl.tokens ? tl.tokens : [];
+        for(let j=0;j<tokens.length;j++){
+          const t=tokens[j];
+          if(!t || !t.address) continue;
+          const ok=(network==="ethereum"&&t.chainId==1)||(network==="arbitrum"&&t.chainId==42161)||(network==="polygon"&&t.chainId==137)||(network==="bsc"&&t.chainId==56)||(network==="avalanche"&&t.chainId==43114);
+          if(ok) addrs.add(t.address);
+        }
+      }catch(_){}
     }
-    // dexscreener search anchors to expand set
+    // expand via dexscreener search anchors
     const anchors = network==="bsc" ? ["USDC","USDT","WBNB"] :
                     network==="polygon" ? ["USDC","USDT","WETH","MATIC"] :
                     network==="avalanche" ? ["USDC","USDT","WETH","AVAX"] :
                     ["USDC","USDT","WETH"];
-    for(const q of anchors){
+    for(let k=0;k<anchors.length;k++){
+      const q=anchors[k];
       try{
-        const pairs=await dsSearch(network,q); // take base token addresses from active markets
-        for(const p of pairs){ const base=p?.baseToken?.address; if(base) addrs.add(base); }
+        const pairs=await dsSearch(network,q);
+        for(let i=0;i<pairs.length;i++){
+          const base = pairs[i] && pairs[i].baseToken ? pairs[i].baseToken.address : null;
+          if(base) addrs.add(base);
+        }
       }catch(_){}
     }
     const arr=[...addrs];
-    return arr.slice(0,300); // bigger universe
+    return arr.slice(0,300);
   }
 
   async function mapLimit(items,limit,fn){
     const out=new Array(items.length); let i=0;
-    const worker=async()=>{ while(i<items.length){ const idx=i++; try{ out[idx]=await fn(items[idx],idx); await new Promise(r=>setTimeout(r,100)); }catch(_){ out[idx]=null; } } };
-    const workers=Array.from({length:Math.min(limit,items.length)},worker);
-    await Promise.all(workers); return out;
+    async function worker(){
+      while(i<items.length){
+        const idx=i++;
+        try{ out[idx]=await fn(items[idx],idx); await new Promise(r=>setTimeout(r,100)); }
+        catch(_){ out[idx]=null; }
+      }
+    }
+    const workers=[]; const n=Math.min(limit,items.length||0);
+    for(let k=0;k<n;k++) workers.push(worker());
+    await Promise.all(workers);
+    return out;
   }
 
   function plForPrincipal(net, r, principalUSD){
@@ -322,19 +405,14 @@ function initUI(){
     tbody.appendChild(tr);
   }
 
-  function showNotice(text){
-    const bar=document.getElementById('errbar'), t=document.getElementById('errtxt');
-    t.textContent=text; bar.style.display='block';
-  }
-
   async function scanAll(net){
-    activeNet=net;
     const mode=el("filterSel").value||"normal";
     const filt=FILTERS[mode];
     const status=el(`status-${net}`), tbody=el(`rows-${net}`), route=el(`route-${net}`);
     tbody.innerHTML=""; route.textContent=""; state[net].best=null;
     status.innerHTML=`<span class="spinner"></span> Loading token universe… (${mode})`;
-    const addrs=await loadTokenAddresses(net).catch(()=>[]);
+    let addrs=[];
+    try{ addrs=await loadTokenAddresses(net); }catch(e){ showErr(e); }
     if(!addrs.length){ status.textContent="Could not load token addresses."; return; }
     status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
@@ -344,89 +422,62 @@ function initUI(){
       if(done%8===0) status.innerHTML=`<span class="spinner"></span> Scanned ${done}/${addrs.length}…`;
       if(!j||!j.pairs||!j.pairs.length) return null;
       const onNet=j.pairs.filter(p=>p.chainId===net);
-      const {rows, dropped}=consolidatePerDex(onNet, filt);
-      // accumulate filter stats
-      for(const k in filteredCounts){ filteredCounts[k]+= (dropped[k]||0); }
+      const x=consolidatePerDex(onNet, filt);
+      const rows=x.rows, dropped=x.dropped;
+      for(const k in filteredCounts) filteredCounts[k]+= (dropped[k]||0);
       if(!rows.length) return null;
       let min=Infinity,max=-Infinity,buy=null,sell=null;
-      for(const p of rows){
-        const pr=Number(p?.priceUsd);
+      for(let i=0;i<rows.length;i++){
+        const pr=Number(rows[i].priceUsd);
         if(!isFinite(pr) || pr<=0) continue;
-        if(pr<min){min=pr;buy=p;}
-        if(pr>max){max=pr;sell=p;}
+        if(pr<min){min=pr;buy=rows[i];}
+        if(pr>max){max=pr;sell=rows[i];}
       }
       if(!buy||!sell||!isFinite(min)||!isFinite(max)||max<=min) return null;
-      const base=buy?.baseToken?.symbol || sell?.baseToken?.symbol || "";
+      const base=(buy.baseToken&&buy.baseToken.symbol)|| (sell.baseToken&&sell.baseToken.symbol) || "";
       return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
     });
 
     const usable=(res.filter(Boolean).sort((a,b)=>b.spread-a.spread)).slice(0,200);
     status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes with current filters.";
     if(!usable.length){
-      showNotice(`No routes on ${net} under "${mode}" filters.
-Dropped (approx): price:${filteredCounts.price} • liq:${filteredCounts.liq} • vol:${filteredCounts.vol} • trades:${filteredCounts.tr} • age:${filteredCounts.age}
-Tip: switch Filter Mode to "Loose" or rescan.`);
+      showErr(`No routes on ${net} under "${mode}" filters.
+Tip: switch Filter Mode to "Loose" and rescan; or try another network.`);
       return;
     } else {
-      document.getElementById('errbar').style.display='none';
+      const bar=el('errbar'); if(bar) bar.style.display='none';
     }
 
-    usable.forEach(r=>appendRow(net,r));
+    for(let i=0;i<usable.length;i++) appendRow(net,usable[i]);
     state[net].best=usable[0];
-    route.innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`;
+    el(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`;
   }
 
-  // Events & timers
+  // Wire events
   document.addEventListener('click', (e)=>{
     const btn=e.target.closest('[data-scan]'); if(btn) scanAll(btn.dataset.scan);
   });
-  document.getElementById("filterSel").addEventListener("change", ()=>scanAll(activeNet));
+  document.getElementById("filterSel").addEventListener("change", ()=>scanAll("ethereum"));
+  document.getElementById("refreshSel").addEventListener("change", startRefresh);
+  document.getElementById("btnConnect").addEventListener("click", ()=>alert("Wallet connect coming soon"));
 
-  const refreshSel=el("refreshSel"); let timer=null, countdownSpan=null;
-  function startRefresh(){
-    clearInterval(timer);
-    const sec=parseInt(refreshSel.value||"0",10);
-    if(!sec) return;
-    let left=sec;
-    timer=setInterval(()=>{
-      left--; if(left<=0){ left=sec; scanAll(activeNet); }
-    },1000);
-  }
-  refreshSel.addEventListener("change", startRefresh);
-
-  document.getElementById("btnConnect").addEventListener("click", ()=>toast("Wallet connect coming soon"));
-
-  // Init panes & default gas + first scan
-  for(const n of NETWORKS){
+  // Init gas + first scan + auto refresh
+  for(let i=0;i<NETWORKS.length;i++){
+    const n=NETWORKS[i];
     if(EVM.has(n)) initGas(n);
     const gl=el(`gas-limit-${n}`); if(gl) gl.addEventListener('input', ()=>calcGasUsd(n));
   }
   scanAll("ethereum");
   startRefresh();
-}
 
-function paneHTML(net, gasSym){
-  return `
-  <div id="pane-${net}" class="wrap" ${net!=='ethereum'?'style="display:none;"':''}>
-    <div class="card">
-      <div class="row row-4">
-        <div><label>Network</label><input value="${net[0].toUpperCase()+net.slice(1)}" readonly /></div>
-        <div><label>Gas (auto)</label><input id="gas-gwei-${net}" placeholder="Auto" readonly /><div class="help" id="gas-note-${net}">—</div></div>
-        <div><label>Gas Limit</label><input id="gas-limit-${net}" type="number" min="0" step="1000" value="${net==='arbitrum'?'170000':net==='avalanche'?'185000':'190000'}" /><div class="help">Rough: Uni/Sushi 150–200k • Curve 340k • Balancer 300k+</div></div>
-        <div><label>Est. Gas Cost</label><input id="gas-cost-${net}" placeholder="—" readonly /><div class="help" id="gas-cost-usd-${net}">—</div></div>
-      </div>
-      <div class="row row-3" style="margin-top:8px">
-        <div><span id="status-${net}" class="help">Ready.</span></div>
-        <div class="help">Cap: $10,000 • Platform fee: 0.09%</div>
-        <div><label>Scan</label><button class="btn small" data-scan="${net}">Scan Now</button></div>
-      </div>
-      <div class="help" id="route-${net}" style="margin-top:6px;"></div>
-      <table class="table" style="margin-top:10px">
-        <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ $1k</th></tr></thead>
-        <tbody id="rows-${net}"></tbody>
-      </table>
-    </div>
-  </div>`;
+  // Auto refresh countdown
+  let timer=null; function startRefresh(){
+    if(timer) clearInterval(timer);
+    const sel=document.getElementById("refreshSel"); if(!sel) return;
+    const sec=parseInt(sel.value||"0",10); if(!sec) return;
+    let left=sec;
+    timer=setInterval(()=>{ left--; if(left<=0){ left=sec; scanAll("ethereum"); } },1000);
+  }
 }
 </script>
 </body>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v9.0.3 — Clean Scanner</title>
+<title>Crypto Kings Test Bed v9.0.4 — Safe Boot</title>
 <style>
   :root{
     --bg:#f3f4f6; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -23,7 +23,6 @@
   .chip{display:inline-block;padding:4px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:var(--chip);color:#3b3b6d}
   .spacer{flex:1}
   .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(124,92,255,.15)}
-  .btn.small{padding:8px 12px;border-radius:10px}
   .wrap{padding:16px 0 96px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -33,10 +32,8 @@
   .row{display:grid;grid-template-columns:1fr;gap:12px}
   @media (min-width:960px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
   .help{font-size:12px;color:var(--muted)}
-  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
   .tag{display:inline-block;padding:4px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#f9fafb}
-  .tabs{margin-top:10px}
-  .tabbar{display:flex;gap:8px;flex-wrap:wrap}
+  .tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .tabbar button{appearance:none;background:#fff;border:1px solid var(--border-strong);color:var(--ink);padding:10px 12px;border-radius:10px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.02)}
   .tabbar button.active{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;color:white;box-shadow:0 6px 14px rgba(124,92,255,.18)}
   .table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
@@ -50,155 +47,115 @@
   .errbar{margin-top:12px}
   .errbar .box{background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px}
   .errbar .box pre{white-space:pre-wrap;word-break:break-word;margin:6px 0 0;font-size:12px;color:#7f1d1d}
-  /* Login overlay */
-  #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
-  #login-card{background:#fff;padding:24px;border-radius:12px;max-width:340px;width:100%;text-align:center;border:1px solid var(--border);box-shadow:0 10px 28px rgba(0,0,0,.06)}
-  #login-card h2{margin:0 0 16px;font-size:18px}
-  #login-card input{width:100%;margin-bottom:10px;padding:10px;border-radius:8px;border:1px solid var(--border-strong);background:#fff;color:#000}
-  #login-card button{padding:10px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:white;font-weight:700;cursor:pointer;width:100%;box-shadow:0 6px 16px rgba(124,92,255,.15)}
-  #login-msg{margin-top:10px;font-size:13px;color:var(--warn);min-height:1em}
 </style>
 </head>
 <body>
-
-<!-- Login Gate -->
-<div id="login-screen">
-  <div id="login-card">
-    <div class="logo" style="margin:0 auto 10px;"><span>CK</span></div>
-    <h2>Crypto Kings Login</h2>
-    <input id="login-user" type="text" placeholder="Username">
-    <input id="login-pass" type="password" placeholder="Password">
-    <button id="login-btn">Login</button>
-    <div id="login-msg"></div>
-    <div class="help" style="margin-top:10px">Session unlock lasts until tab is closed.</div>
+<div class="topbar">
+  <div class="container topbar-inner">
+    <div class="logo"><span>CK</span></div>
+    <div class="brand">Crypto Kings</div>
+    <span class="chip">v9.0.4</span>
+    <div class="spacer"></div>
+    <div class="help" style="display:flex;align-items:center;gap:6px">
+      Loan Size (USD)
+      <input id="loanUsd" type="number" min="100" step="100" value="1000" style="width:120px">
+    </div>
+    <button id="scanBtn" class="btn">Scan</button>
   </div>
 </div>
 
-<!-- App -->
-<div id="app" style="display:none;">
-  <div class="topbar">
-    <div class="container topbar-inner">
-      <div class="logo"><span>CK</span></div>
-      <div class="brand">Crypto Kings</div>
-      <span class="chip">v9.0.3</span>
-      <div class="spacer"></div>
-      <div class="help" style="display:flex;align-items:center;gap:6px">
-        Loan Size (USD)
-        <input id="loanUsd" type="number" min="100" step="100" value="1000" style="width:120px">
-      </div>
-      <button id="scanBtn" class="btn">Scan</button>
-    </div>
+<div class="container wrap">
+  <div id="errbar" class="errbar" style="display:none;">
+    <div class="box"><strong>App notice</strong><pre id="errtxt"></pre></div>
   </div>
 
-  <div class="container wrap">
-    <div id="errbar" class="errbar" style="display:none;">
-      <div class="box"><strong>App notice</strong><pre id="errtxt"></pre></div>
-    </div>
-
-    <div class="tabs">
-      <div class="tabbar" id="tabbar">
-        <button class="active" data-tab="arbitrum">Arbitrum</button>
-        <button data-tab="ethereum">Ethereum</button>
-        <button data-tab="polygon">Polygon</button>
-        <button data-tab="bsc">BSC</button>
-        <button data-tab="avalanche">Avalanche</button>
-        <button data-tab="solana">Solana</button>
-      </div>
-
-      <div class="tabpanes" id="tabpanes"></div>
-    </div>
+  <div class="tabbar" id="tabbar">
+    <button class="active" data-tab="arbitrum">Arbitrum</button>
+    <button data-tab="ethereum">Ethereum</button>
+    <button data-tab="polygon">Polygon</button>
+    <button data-tab="bsc">BSC</button>
+    <button data-tab="avalanche">Avalanche</button>
   </div>
+
+  <div id="panes"></div>
 </div>
 
 <script>
-/* ---- Global error trap ---- */
+/* Global error banner */
 (function(){
-  function show (msg, src, line, col, err) {
-    try {
-      const bar = document.getElementById('errbar');
-      const txt = document.getElementById('errtxt');
-      if(!bar||!txt) return;
-      txt.textContent = (err && err.stack) ? err.stack : [msg, src, line+':'+col].filter(Boolean).join(' | ');
-      bar.style.display = 'block';
-    } catch(_) {}
+  const show=(msg,src,line,col,err)=>{
+    try{
+      const bar=document.getElementById('errbar'); const txt=document.getElementById('errtxt');
+      if(!bar||!txt) return false;
+      txt.textContent=(err&&err.stack)?err.stack:[msg,src,line+':'+col].filter(Boolean).join(' | ');
+      bar.style.display='block';
+    }catch(_){}
     return false;
-  }
-  window.onerror = show;
-  window.onunhandledrejection = (e)=> show('Unhandled promise rejection', '', '', '', e && (e.reason||e));
+  };
+  window.onerror=show;
+  window.onunhandledrejection=e=>show('Unhandled promise rejection','','','',e&&(e.reason||e));
 })();
 </script>
 
 <script>
-/* ===== App frame ===== */
-function initUI(){
-  const NETWORKS=["arbitrum","ethereum","polygon","bsc","avalanche","solana"];
-  const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX", solana:"SOL" };
-  const panes=document.getElementById('tabpanes');
-  panes.innerHTML = NETWORKS.map(nw => paneHTML(nw, GAS_NATIVE[nw]||"")).join("");
+/* ---------- UI scaffold ---------- */
+const NETWORKS=["arbitrum","ethereum","polygon","bsc","avalanche"];
+const EVM=new Set(NETWORKS);
+const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
 
-  // Tabs
-  const tabbar=document.getElementById('tabbar');
-  tabbar.addEventListener('click', (e)=>{
-    const b=e.target.closest('button[data-tab]'); if(!b) return;
-    [...tabbar.children].forEach(x=>x.classList.remove('active')); b.classList.add('active');
-    const id='pane-'+b.getAttribute('data-tab');
-    [...panes.children].forEach(p=>p.style.display=(p.id===id)?'block':'none');
-  });
-
-  initApp();
-}
-
-function paneHTML(nw, gasSym){
-  const pretty = nw[0].toUpperCase()+nw.slice(1);
+function paneHTML(nw){
+  const pretty=nw[0].toUpperCase()+nw.slice(1);
   const defaultGL = nw==='arbitrum' ? '170000' : nw==='avalanche' ? '185000' : '190000';
   return `
-  <div id="pane-${nw}" ${nw!=='arbitrum'?'style="display:none;"':''}>
-    <div class="card">
+    <div class="card" id="pane-${nw}" ${nw!=='arbitrum'?'style="display:none"':''}>
       <div class="row row-4">
-        <div><label>Network</label><input value="${pretty}" readonly /></div>
-        <div><label>Gas (auto)</label><input id="gas-gwei-${nw}" placeholder="Auto" readonly /><div class="help" id="gas-note-${nw}">—</div></div>
-        <div><label>Gas Limit</label><input id="gas-limit-${nw}" type="number" min="0" step="1000" value="${defaultGL}" /><div class="help">Uni/Sushi 150–200k • Curve 340k • Balancer 300k+</div></div>
-        <div><label>Est. Gas Cost</label><input id="gas-cost-${nw}" placeholder="—" readonly /><div class="help" id="gas-cost-usd-${nw}">—</div></div>
+        <div><label>Network</label><input value="${pretty}" readonly></div>
+        <div><label>Gas (auto)</label><input id="gas-gwei-${nw}" placeholder="Auto" readonly><div class="help" id="gas-note-${nw}">—</div></div>
+        <div><label>Gas Limit</label><input id="gas-limit-${nw}" type="number" step="1000" value="${defaultGL}"><div class="help">Uni/Sushi 150–200k • Curve 340k • Balancer 300k+</div></div>
+        <div><label>Est. Gas Cost</label><input id="gas-cost-${nw}" placeholder="—" readonly><div class="help" id="gas-cost-usd-${nw}">—</div></div>
       </div>
       <div class="row row-3" style="margin-top:8px">
         <div><span id="status-${nw}" class="help">Ready.</span></div>
         <div class="help">Stable quotes only • DEX allow-list • Outlier filter ±15%</div>
-        <div><label>Manual Scan</label><button class="btn small" data-scan="${nw}">Scan ${pretty}</button></div>
+        <div><label>Manual Scan</label><button class="btn" data-scan="${nw}">Scan ${pretty}</button></div>
       </div>
       <div class="help" id="route-${nw}" style="margin-top:6px;"></div>
       <table class="table" style="margin-top:10px">
-        <thead><tr>
-          <th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th>
-          <th class="right">Spread %</th><th class="right">Net @ loan</th>
-        </tr></thead>
+        <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ loan</th></tr></thead>
         <tbody id="rows-${nw}"></tbody>
       </table>
-    </div>
-  </div>`;
+    </div>`;
+}
+
+function buildUI(){
+  const panes=document.getElementById('panes');
+  panes.innerHTML = NETWORKS.map(nw=>paneHTML(nw)).join('');
+  const tabbar=document.getElementById('tabbar');
+  tabbar.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-tab]'); if(!b) return;
+    [...tabbar.children].forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    const id='pane-'+b.dataset.tab;
+    NETWORKS.forEach(nw=>{ const el=document.getElementById('pane-'+nw); if(el) el.style.display=(el.id===id)?'block':'none'; });
+  });
 }
 </script>
 
 <script>
-/* ===== App logic (guards + fixed variable names) ===== */
-function initApp(){
-  const NETWORKS=["arbitrum","ethereum","polygon","bsc","avalanche","solana"];
-  const EVM=new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
+/* ---------- App logic (safe-boot) ---------- */
+(function(){
   const DS_BASE="https://api.dexscreener.com";
-  const PLATFORM_FEE=0.0009; // 0.09%
+  const PLATFORM_FEE=0.0009;
+  const ALLOWED=["uniswap","uniswap-v3","sushiswap","camelot","balancer","traderjoe","pangolin","pancakeswap","pancakeswap-v3","quickswap"];
 
-  const ALLOWED = ["uniswap","uniswap-v3","sushiswap","camelot","balancer","traderjoe","pangolin","pancakeswap","pancakeswap-v3","quickswap","jupiter","raydium","orca"];
-
-  // UI helpers
   const el=id=>document.getElementById(id);
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
-  const showErr=(msg)=>{ const bar=el('errbar'), t=el('errtxt'); if(bar&&t){ t.textContent=String(msg); bar.style.display='block'; } };
 
-  // Gas
   const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"],
               arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"],
               polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"],
               bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"],
               avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
+
   async function gasSuggestGwei(nw){
     const eps=RPC[nw]; if(!eps) return null;
     const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
@@ -206,10 +163,10 @@ function initApp(){
       try{
         const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(feeHist)});
         if(!r.ok) continue;
-        const j=await r.json(); const bh=j && j.result;
-        if(!bh || !bh.baseFeePerGas || !bh.reward) continue;
-        const base = parseInt(bh.baseFeePerGas.at(-1),16)/1e9;
-        const tip  = parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
+        const j=await r.json(); const bh=j&&j.result;
+        if(!bh?.baseFeePerGas||!bh?.reward) continue;
+        const base=parseInt(bh.baseFeePerGas.at(-1),16)/1e9;
+        const tip =parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
         return {g:base+tip, base, tip};
       }catch(_){}
     }
@@ -220,13 +177,13 @@ function initApp(){
     const id=map[sym]; if(!id) return null;
     try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(!r.ok) return null; const j=await r.json(); return j?.[id]?.usd ?? null; }catch(_){ return null; }
   }
-  const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
-  const state={};
-  for(const nw of NETWORKS){ state[nw]={gasGwei:null,gasUsd:0,gasNativeUsd:null}; }
+
+  const state={}; NETWORKS.forEach(nw=>state[nw]={gasGwei:null,gasUsd:0,gasNativeUsd:null});
+
   async function initGas(nw){
     if(!EVM.has(nw)) return;
     const g=await gasSuggestGwei(nw).catch(()=>null);
-    const nat=GAS_NATIVE[nw], natUsd=await cgUSD(nat).catch(()=>null);
+    const nat=GAS_NATIVE[nw]; const natUsd=await cgUSD(nat).catch(()=>null);
     state[nw].gasGwei=g?g.g:null; state[nw].gasNativeUsd=natUsd??null;
     const gEl=el(`gas-gwei-${nw}`), note=el(`gas-note-${nw}`);
     if(g){ gEl.value=`${g.g.toFixed(1)} Gwei`; note.textContent=`base ${g.base.toFixed(1)} + tip ${g.tip.toFixed(1)} • ${nat} ≈ ${fmtUSD(natUsd)}`; }
@@ -234,114 +191,66 @@ function initApp(){
     calcGasUsd(nw);
   }
   function calcGasUsd(nw){
-    if(!EVM.has(nw)) return 0;
     const g=state[nw].gasGwei, gl=parseFloat(el(`gas-limit-${nw}`).value||"0"), usd=state[nw].gasNativeUsd;
-    const native=(g>0 && gl>0) ? (g*gl)/1e9 : 0; const cost=native*(usd||0);
+    const native=(g>0 && gl>0)?(g*gl)/1e9:0, cost=native*(usd||0);
     state[nw].gasUsd=cost;
     const sym=GAS_NATIVE[nw];
-    el(`gas-cost-${nw}`).value = native? `${native.toFixed(6)} ${sym}`: "";
-    el(`gas-cost-usd-${nw}`).textContent = native? `≈ ${fmtUSD(cost)}` : "—";
+    el(`gas-cost-${nw}`).value=native?`${native.toFixed(6)} ${sym}`:"";
+    el(`gas-cost-usd-${nw}`).textContent=native?`≈ ${fmtUSD(cost)}`:"—";
     return cost;
   }
 
-  // Dexscreener helpers
   async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
-  async function dsSearch(nw, q){ const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`).catch(()=>null); if(!r||!r.ok) return []; const j=await r.json(); return (j?.pairs||[]).filter(p=>p.chainId===nw); }
 
-  // Token universe
   const TOKENLISTS={
     ethereum:["https://tokens.uniswap.org","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
     arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
     polygon:["https://unpkg.com/quickswap-default.token-list@latest/build/quickswap-default.tokenlist.json","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
     bsc:["https://tokens.pancakeswap.finance/pancakeswap-extended.json"],
-    avalanche:["https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/joe.tokenlist.json"],
-    solana:[]
+    avalanche:["https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/joe.tokenlist.json"]
   };
-  const SEED_ADDRESSES={
-    ethereum:["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xdac17f958d2ee523a2206206994597c13d831ec7","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0x2260FAC5E5542a773Aa44FBCfEDF7C193bc2C599".toLowerCase(),"0x6B175474E89094C44Da98b954EedeAC495271d0F","0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"],
-    arbitrum:["0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9","0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548","0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"],
-    polygon:["0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174","0xc2132d05d31c914a87c6611c10748aeb04b58e8f","0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619","0x0000000000000000000000000000000000001010","0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"],
-    bsc:["0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d","0x55d398326f99059ff775485246999027b3197955","0xbb4CdB9CBd36B01dCbAEBF2De08d9173bc095c"],
-    avalanche:["0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7","0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","0x50b7545627a5162F82A992c33b87aDc75187B218","0xd586E7F844cEa2F87f50152665BCbc2C279D8d70"],
-    solana:[]
+  const SEED={
+    ethereum:["0xa0b8...6eb48","0xdac1...1ec7","0xC02a...6Cc2","0x2260...C599","0x6B17...1d0F","0x1f98...F984"],
+    arbitrum:["0xaf88...5831","0xfd08...9fb9","0x82af...bab1","0x912C...548","0xda10...0da1"],
+    polygon:["0x2791...4174","0xc213...8f","0x7ceB...f619","0x0000...1010","0x8f3C...A063"],
+    bsc:["0x8ac7...580d","0x55d3...7955","0xbb4C...95c"],
+    avalanche:["0xB97E...8a6E","0x9702...a8c7","0x49D5...0bAB","0x50b7...B218","0xd586...d70"]
   };
 
   async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
   async function loadTokenAddresses(nw){
-    const addrs=new Set(SEED_ADDRESSES[nw]||[]);
-    const lists = TOKENLISTS[nw] || [];
-    for(const url of lists){
+    const addrs=new Set();
+    (SEED[nw]||[]).forEach(mask=>addrs.add(mask)); // seed (masked in UI)
+    for(const url of (TOKENLISTS[nw]||[])){
       try{
         const tl=await getJSON(url);
-        const tokens = tl?.tokens || [];
-        for(const t of tokens){
+        for(const t of (tl?.tokens||[])){
           if(!t?.address) continue;
           const ok=(nw==="ethereum"&&t.chainId==1)||(nw==="arbitrum"&&t.chainId==42161)||(nw==="polygon"&&t.chainId==137)||(nw==="bsc"&&t.chainId==56)||(nw==="avalanche"&&t.chainId==43114);
           if(ok) addrs.add(t.address);
         }
       }catch(_){}
     }
-    // Expand via search
-    const anchors = nw==="bsc" ? ["USDC","USDT","WBNB"] :
-                    nw==="polygon" ? ["USDC","USDT","WETH","MATIC"] :
-                    nw==="avalanche" ? ["USDC","USDT","WETH","AVAX"] :
-                    ["USDC","USDT","WETH"];
-    for(const q of anchors){
-      try{
-        const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`);
-        if(r && r.ok){
-          const j=await r.json(); const pairs=j?.pairs||[];
-          for(const p of pairs){ if(p.chainId===nw && p.baseToken?.address){ addrs.add(p.baseToken.address); } }
-        }
-      }catch(_){}
-    }
-    return [...addrs].slice(0,300);
+    return [...addrs].slice(0,250);
   }
 
-  async function mapLimit(items,limit,fn){
-    const out=new Array(items.length); let idx=0;
-    async function worker(){
-      while(idx<items.length){
-        const i=idx++;
-        try{ out[i]=await fn(items[i],i); await new Promise(r=>setTimeout(r,100)); }
-        catch(_){ out[i]=null; }
-      }
-    }
-    const workers=[]; const n=Math.min(limit,items.length||0);
-    for(let k=0;k<n;k++) workers.push(worker());
-    await Promise.all(workers);
-    return out;
-  }
-
-  function prettyDexId(p){
-    const raw=(p?.dexId||"").toLowerCase();
-    const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",curve:"Curve",balancer:"Balancer",camelot:"Camelot",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",jupiter:"Jupiter",raydium:"Raydium",orca:"Orca"};
-    for(const k in map){ if(raw.includes(k)) return map[k]; }
-    return raw? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
-  }
-
-  // outlier trim: drop quotes ±15% from median
   function dropOutliersByMedian(pairs){
     const prices=pairs.map(p=>Number(p.priceUsd)).filter(x=>isFinite(x)&&x>0);
     if(prices.length<3) return pairs;
     prices.sort((a,b)=>a-b);
-    const med = prices[Math.floor(prices.length/2)];
-    const low = med*0.85, high = med*1.15;
-    return pairs.filter(p=> {
-      const pr=Number(p.priceUsd);
-      return isFinite(pr) && pr>=low && pr<=high;
-    });
+    const med=prices[Math.floor(prices.length/2)];
+    const low=med*0.85, high=med*1.15;
+    return pairs.filter(p=>{ const pr=Number(p.priceUsd); return isFinite(pr) && pr>=low && pr<=high; });
   }
-
   function consolidatePerDex(pairs){
-    const usable = pairs.filter(p=>{
+    const usable=pairs.filter(p=>{
       const q=(p?.quoteToken?.symbol||"").toUpperCase();
       const dex=(p?.dexId||"").toLowerCase();
       const liq=p?.liquidity?.usd||0, vol=p?.volume?.h24||0;
-      const allowed = ALLOWED.some(k=>dex.includes(k));
+      const allowed=ALLOWED.some(k=>dex.includes(k));
       return allowed && (q==="USDC"||q==="USDT") && liq>=75000 && vol>=15000;
     });
-    const trimmed = dropOutliersByMedian(usable);
+    const trimmed=dropOutliersByMedian(usable);
     const byDex=new Map();
     for(const p of trimmed){
       const key=(p?.dexId||"").toLowerCase();
@@ -352,66 +261,80 @@ function initApp(){
     return [...byDex.values()].map(v=>v.rec)
       .sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
   }
+  function prettyDexId(p){
+    const raw=(p?.dexId||"").toLowerCase();
+    const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",camelot:"Camelot",balancer:"Balancer",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin"};
+    for(const k in map){ if(raw.includes(k)) return map[k]; }
+    return raw? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
+  }
 
-  function plForPrincipal(nw, r, principalUSD, gasUsd){
+  function plForPrincipal(nw, r, principalUSD){
     const spread=(r.sellPrice-r.buyPrice)/r.buyPrice;
     const gross=principalUSD*spread;
     const fee=principalUSD*PLATFORM_FEE;
-    const net = gross - fee - (gasUsd||0);
-    return {spread, net, fee};
+    const gas=state[nw].gasUsd||0;
+    return {spread, net:gross-fee-gas};
   }
-
   function appendRow(nw, r){
     const tbody=el(`rows-${nw}`);
     const tr=document.createElement('tr');
-    const principal = Math.max(100, parseFloat(el('loanUsd').value||"1000"));
-    const gasUsd = state[nw].gasUsd||0;
-    const pl=plForPrincipal(nw,r,principal,gasUsd);
+    const principal=Math.max(100, parseFloat(el('loanUsd').value||"1000"));
+    const pl=plForPrincipal(nw,r,principal);
     const spreadPct=(pl.spread*100).toFixed(2);
-    const netSim=pl.net;
-    tr.className = netSim>0 ? "pos" : (netSim>=-3 && netSim<3 ? "meh" : "neg");
-    tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${spreadPct}%</td><td class="right">${fmtUSD(netSim)}</td>`;
+    tr.className = pl.net>0 ? "pos" : (pl.net>-3 ? "meh" : "neg");
+    tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${spreadPct}%</td><td class="right">${fmtUSD(pl.net)}</td>`;
     tbody.appendChild(tr);
+  }
+
+  async function mapLimit(items,limit,fn){
+    const out=new Array(items.length); let idx=0;
+    async function worker(){
+      while(idx<items.length){
+        const i=idx++;
+        try{ out[i]=await fn(items[i],i); await new Promise(r=>setTimeout(r,80)); }
+        catch(_){ out[i]=null; }
+      }
+    }
+    const workers=[]; const n=Math.min(limit,items.length||0);
+    for(let k=0;k<n;k++) workers.push(worker());
+    await Promise.all(workers);
+    return out;
   }
 
   async function scan(nw){
     const status=el(`status-${nw}`), tbody=el(`rows-${nw}`), route=el(`route-${nw}`);
     if(!status||!tbody||!route) return;
-    tbody.innerHTML=""; route.textContent=""; status.innerHTML=`<span class="spinner"></span> Building token set…`;
+    tbody.innerHTML=""; route.textContent="";
+    status.innerHTML=`<span class="spinner"></span> Preparing…`;
 
-    await initGas(nw); // update gas first
+    await initGas(nw);
 
     let addrs=[];
-    try{ addrs=await loadTokenAddresses(nw); }catch(e){ showErr(e); }
-    if(!addrs.length){ status.textContent="Could not load token addresses."; return; }
+    try{ addrs=await loadTokenAddresses(nw); }catch(e){ /* still continue */ }
+    if(!addrs.length){ status.textContent="Could not load token addresses (rate-limit?). Try again."; return; }
     status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
-    const out = await mapLimit(addrs,10, async(addr)=>{
+    const out=await mapLimit(addrs,10, async(addr)=>{
       const j=await dsByToken(addr);
       if(!j?.pairs?.length) return null;
       const onNet=j.pairs.filter(p=>p.chainId===nw);
       const rows=consolidatePerDex(onNet);
       if(rows.length<2) return null;
-
-      let min=Infinity,max=-Infinity,buy=null,sell=null, baseAddr=null;
+      let min=Infinity,max=-Infinity,buy=null,sell=null;
       for(const row of rows){
         const pr=Number(row.priceUsd); if(!isFinite(pr)||pr<=0) continue;
-        if(pr<min){min=pr;buy=row;}
-        if(pr>max){max=pr;sell=row;}
+        if(pr<min){min=pr;buy=row;} if(pr>max){max=pr;sell=row;}
       }
       if(!buy||!sell||max<=min) return null;
-
-      const baseSym=(buy.baseToken?.symbol)||(sell.baseToken?.symbol)||"";
-      baseAddr=(buy.baseToken?.address)||(sell.baseToken?.address)||null;
-      return { base:baseSym, baseTokenAddr:baseAddr, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
+      const base=(buy.baseToken?.symbol)||(sell.baseToken?.symbol)||"";
+      return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
     });
 
-    // Deduplicate: one row per token
     const byToken=new Map();
-    for(const r of out.filter(Boolean)){
+    out.filter(Boolean).forEach(r=>{
       const cur=byToken.get(r.base);
       if(!cur || r.spread>cur.spread) byToken.set(r.base,r);
-    }
+    });
     const usable=[...byToken.values()].sort((a,b)=>b.spread-a.spread).slice(0,150);
 
     status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes with current guards.";
@@ -422,64 +345,25 @@ function initApp(){
     }
   }
 
-  // Wire header button + per-pane manual buttons
-  document.getElementById("scanBtn").addEventListener("click", ()=>{
-    const active = document.querySelector("#tabbar button.active")?.dataset.tab || "arbitrum";
+  // build UI and wire events
+  buildUI();
+  document.getElementById('scanBtn').addEventListener('click',()=>{
+    const active=document.querySelector('#tabbar button.active')?.dataset.tab || 'arbitrum';
     scan(active);
   });
-  document.addEventListener('click', (e)=>{
-    const btn=e.target.closest('[data-scan]'); if(btn) scan(btn.dataset.scan);
+  document.getElementById('tabbar').addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-tab]'); if(btn) {/* no scan on switch */}
   });
-
-  // Gas listeners per network
-  for(const nw of NETWORKS){
-    if(EVM.has(nw)) initGas(nw);
-    const gl=document.getElementById(`gas-limit-${nw}`); if(gl) gl.addEventListener('input', ()=>calcGasUsd(nw));
-  }
-
-  // First scan on Arbitrum
-  scan("arbitrum");
-}
-</script>
-
-<script>
-/* ===== Simple Login with event ===== */
-const DEFAULT_USER="admin", DEFAULT_PASS="test123";
-(function(){
-  const overlay=document.getElementById("login-screen"), app=document.getElementById("app");
-  const btn=document.getElementById("login-btn"), msg=document.getElementById("login-msg");
-  function unlocked(){
-    sessionStorage.setItem("ck_authed","yes");
-    overlay.style.display="none";
-    app.style.display="block";
-    window.dispatchEvent(new Event("ck:init"));
-  }
-  if(sessionStorage.getItem("ck_authed")==="yes"){ unlocked(); }
-  btn.addEventListener("click", ()=>{
-    const u=(document.getElementById("login-user").value||"").trim();
-    const p=(document.getElementById("login-pass").value||"").trim();
-    const U=localStorage.getItem("ck_user")||DEFAULT_USER, P=localStorage.getItem("ck_pass")||DEFAULT_PASS;
-    if(u===U && p===P){ unlocked(); } else { msg.textContent="Invalid username or password."; }
-  });
-  document.getElementById("login-pass").addEventListener("keydown", e=>{ if(e.key==="Enter") btn.click(); });
-  if(sessionStorage.getItem("ck_authed")!=="yes"){ app.style.display="none"; }
-})();
-
-// ensure initUI runs when app code is ready
-(function(){
-  let ran=false;
-  window.addEventListener("ck:init", ()=>{
-    if(ran) return; ran=true;
-    if(typeof initUI === "function"){ initUI(); }
-    else {
-      let tries=0;
-      const t=setInterval(()=>{
-        tries++;
-        if(typeof initUI === "function"){ clearInterval(t); initUI(); }
-        if(tries>20){ clearInterval(t); console.error("initUI never loaded"); }
-      }, 100);
+  NETWORKS.forEach(nw=>{
+    if(EVM.has(nw)){
+      const gl=document.getElementById(`gas-limit-${nw}`);
+      if(gl) gl.addEventListener('input',()=>calcGasUsd(nw));
+      initGas(nw);
     }
   });
+
+  // first scan
+  scan('arbitrum');
 })();
 </script>
 </body>

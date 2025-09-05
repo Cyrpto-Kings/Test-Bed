@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v9.0.4 — Safe Boot</title>
+<title>Crypto Kings Test Bed v9.1.0 — Wallet + Auto Select + Mock Execute</title>
 <style>
   :root{
     --bg:#f3f4f6; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -15,6 +15,7 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .container{max-width:1200px;margin:0 auto;padding:0 16px}
+
   .topbar{position:sticky;top:0;z-index:40;background:var(--topbar);border-bottom:1px solid var(--topbar-border)}
   .topbar-inner{display:flex;align-items:center;gap:12px;padding:12px 0}
   .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(29,155,240,.18)}
@@ -23,6 +24,8 @@
   .chip{display:inline-block;padding:4px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:var(--chip);color:#3b3b6d}
   .spacer{flex:1}
   .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(124,92,255,.15)}
+  .btn.ghost{background:#fff;color:#111;border:1px solid var(--border-strong);box-shadow:none}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
   .wrap{padding:16px 0 96px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -32,7 +35,6 @@
   .row{display:grid;grid-template-columns:1fr;gap:12px}
   @media (min-width:960px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
   .help{font-size:12px;color:var(--muted)}
-  .tag{display:inline-block;padding:4px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#f9fafb}
   .tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .tabbar button{appearance:none;background:#fff;border:1px solid var(--border-strong);color:var(--ink);padding:10px 12px;border-radius:10px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.02)}
   .tabbar button.active{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;color:white;box-shadow:0 6px 14px rgba(124,92,255,.18)}
@@ -42,46 +44,82 @@
   .table tr:nth-child(even){background:#fafafa}
   .right{text-align:right}
   .pos{background:#ecfdf5} .neg{background:#fef2f2} .meh{background:#f9fafb}
-  .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:24px;height:24px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
+  .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:20px;height:20px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
   .errbar{margin-top:12px}
   .errbar .box{background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px}
   .errbar .box pre{white-space:pre-wrap;word-break:break-word;margin:6px 0 0;font-size:12px;color:#7f1d1d}
+
+  /* HUD / Modal */
+  #hud{position:fixed;inset:0;background:rgba(0,0,0,.25);display:none;align-items:center;justify-content:center;z-index:60}
+  #hud .panel{background:#fff;color:#111;border:1px solid var(--border);border-radius:14px;min-width:320px;max-width:520px;padding:18px;box-shadow:0 18px 48px rgba(0,0,0,.18)}
+  #hud h3{margin:0 0 10px}
+  .steps{list-style:none;margin:10px 0 0;padding:0}
+  .steps li{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .dot{width:10px;height:10px;border-radius:50%;background:#d1d5db}
+  .dot.on{background:var(--brand)}
+  .dot.ok{background:var(--ok)}
+  .dot.err{background:var(--bad)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="container topbar-inner">
-    <div class="logo"><span>CK</span></div>
-    <div class="brand">Crypto Kings</div>
-    <span class="chip">v9.0.4</span>
-    <div class="spacer"></div>
-    <div class="help" style="display:flex;align-items:center;gap:6px">
-      Loan Size (USD)
-      <input id="loanUsd" type="number" min="100" step="100" value="1000" style="width:120px">
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="logo"><span>CK</span></div>
+      <div class="brand">Crypto Kings</div>
+      <span class="chip">v9.1.0</span>
+      <div class="spacer"></div>
+
+      <div class="help" style="display:flex;align-items:center;gap:6px">
+        Loan Size (USD)
+        <input id="loanUsd" type="number" min="100" step="100" value="1000" style="width:120px">
+      </div>
+
+      <button id="scanBtn" class="btn">Scan</button>
+      <button id="autoBtn" class="btn" title="Pick best route from table">Auto Select</button>
+      <button id="execBtn" class="btn" disabled title="Execute (mock)">Execute</button>
+      <button id="connectBtn" class="btn ghost" title="Connect MetaMask">Connect Wallet</button>
     </div>
-    <button id="scanBtn" class="btn">Scan</button>
-  </div>
-</div>
-
-<div class="container wrap">
-  <div id="errbar" class="errbar" style="display:none;">
-    <div class="box"><strong>App notice</strong><pre id="errtxt"></pre></div>
   </div>
 
-  <div class="tabbar" id="tabbar">
-    <button class="active" data-tab="arbitrum">Arbitrum</button>
-    <button data-tab="ethereum">Ethereum</button>
-    <button data-tab="polygon">Polygon</button>
-    <button data-tab="bsc">BSC</button>
-    <button data-tab="avalanche">Avalanche</button>
+  <div class="container wrap">
+    <div id="errbar" class="errbar" style="display:none;">
+      <div class="box"><strong>App notice</strong><pre id="errtxt"></pre></div>
+    </div>
+
+    <div class="tabbar" id="tabbar">
+      <button class="active" data-tab="arbitrum">Arbitrum</button>
+      <button data-tab="ethereum">Ethereum</button>
+      <button data-tab="polygon">Polygon</button>
+      <button data-tab="bsc">BSC</button>
+      <button data-tab="avalanche">Avalanche</button>
+    </div>
+
+    <div id="panes"></div>
   </div>
 
-  <div id="panes"></div>
-</div>
+  <!-- HUD -->
+  <div id="hud">
+    <div class="panel">
+      <h3 id="hudTitle">Executing route…</h3>
+      <div class="help" id="hudSub">—</div>
+      <ul class="steps">
+        <li><span class="dot" id="st1"></span> Taking flash loan</li>
+        <li><span class="dot" id="st2"></span> Buying on buy DEX</li>
+        <li><span class="dot" id="st3"></span> Selling on sell DEX</li>
+        <li><span class="dot" id="st4"></span> Repaying loan + fee</li>
+        <li><span class="dot" id="st5"></span> Sending profit to wallet</li>
+      </ul>
+      <div id="hudFoot" class="help" style="margin-top:10px"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="hudClose" class="btn ghost">Close</button>
+      </div>
+    </div>
+  </div>
 
 <script>
-/* Global error banner */
+/* ---------- Global error banner ---------- */
 (function(){
   const show=(msg,src,line,col,err)=>{
     try{
@@ -141,7 +179,7 @@ function buildUI(){
 </script>
 
 <script>
-/* ---------- App logic (safe-boot) ---------- */
+/* ---------- App logic + Wallet + AutoSelect + Mock Execute ---------- */
 (function(){
   const DS_BASE="https://api.dexscreener.com";
   const PLATFORM_FEE=0.0009;
@@ -149,12 +187,39 @@ function buildUI(){
 
   const el=id=>document.getElementById(id);
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
+  const shortAddr=a=>a ? `${a.slice(0,6)}…${a.slice(-4)}` : "";
 
+  // ------- Wallet -------
+  const state={ selected:null, account:null, chainId:null };
+  async function connectWallet(){
+    const btn=el('connectBtn');
+    if(!window.ethereum){
+      btn.textContent='Get MetaMask';
+      btn.onclick=()=>window.open('https://metamask.io','_blank');
+      return;
+    }
+    try{
+      const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
+      state.account = accs && accs[0] || null;
+      const chain = await window.ethereum.request({ method:'eth_chainId' });
+      state.chainId = chain;
+      btn.textContent = shortAddr(state.account);
+      btn.classList.add('ghost');
+      btn.title = `Connected: ${state.account}`;
+    }catch(e){
+      el('errtxt').textContent = e.message || String(e);
+      el('errbar').style.display='block';
+    }
+  }
+
+  // ------- Gas -------
   const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"],
               arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"],
               polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"],
               bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"],
               avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
+  const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
+  const gasState={}; NETWORKS.forEach(nw=>gasState[nw]={gasGwei:null,gasUsd:0,gasNativeUsd:null});
 
   async function gasSuggestGwei(nw){
     const eps=RPC[nw]; if(!eps) return null;
@@ -177,29 +242,26 @@ function buildUI(){
     const id=map[sym]; if(!id) return null;
     try{ const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(!r.ok) return null; const j=await r.json(); return j?.[id]?.usd ?? null; }catch(_){ return null; }
   }
-
-  const state={}; NETWORKS.forEach(nw=>state[nw]={gasGwei:null,gasUsd:0,gasNativeUsd:null});
-
   async function initGas(nw){
-    if(!EVM.has(nw)) return;
     const g=await gasSuggestGwei(nw).catch(()=>null);
-    const nat=GAS_NATIVE[nw]; const natUsd=await cgUSD(nat).catch(()=>null);
-    state[nw].gasGwei=g?g.g:null; state[nw].gasNativeUsd=natUsd??null;
+    const nat=GAS_NATIVE[nw], natUsd=await cgUSD(nat).catch(()=>null);
+    gasState[nw].gasGwei=g?g.g:null; gasState[nw].gasNativeUsd=natUsd??null;
     const gEl=el(`gas-gwei-${nw}`), note=el(`gas-note-${nw}`);
     if(g){ gEl.value=`${g.g.toFixed(1)} Gwei`; note.textContent=`base ${g.base.toFixed(1)} + tip ${g.tip.toFixed(1)} • ${nat} ≈ ${fmtUSD(natUsd)}`; }
     else{ gEl.value=""; note.textContent="auto gas failed (RPC/CORS)."; }
     calcGasUsd(nw);
   }
   function calcGasUsd(nw){
-    const g=state[nw].gasGwei, gl=parseFloat(el(`gas-limit-${nw}`).value||"0"), usd=state[nw].gasNativeUsd;
+    const g=gasState[nw].gasGwei, gl=parseFloat(el(`gas-limit-${nw}`).value||"0"), usd=gasState[nw].gasNativeUsd;
     const native=(g>0 && gl>0)?(g*gl)/1e9:0, cost=native*(usd||0);
-    state[nw].gasUsd=cost;
+    gasState[nw].gasUsd=cost;
     const sym=GAS_NATIVE[nw];
     el(`gas-cost-${nw}`).value=native?`${native.toFixed(6)} ${sym}`:"";
     el(`gas-cost-usd-${nw}`).textContent=native?`≈ ${fmtUSD(cost)}`:"—";
     return cost;
   }
 
+  // ------- Dexscreener & scanning -------
   async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
 
   const TOKENLISTS={
@@ -210,17 +272,16 @@ function buildUI(){
     avalanche:["https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/joe.tokenlist.json"]
   };
   const SEED={
-    ethereum:["0xa0b8...6eb48","0xdac1...1ec7","0xC02a...6Cc2","0x2260...C599","0x6B17...1d0F","0x1f98...F984"],
-    arbitrum:["0xaf88...5831","0xfd08...9fb9","0x82af...bab1","0x912C...548","0xda10...0da1"],
-    polygon:["0x2791...4174","0xc213...8f","0x7ceB...f619","0x0000...1010","0x8f3C...A063"],
-    bsc:["0x8ac7...580d","0x55d3...7955","0xbb4C...95c"],
-    avalanche:["0xB97E...8a6E","0x9702...a8c7","0x49D5...0bAB","0x50b7...B218","0xd586...d70"]
+    ethereum:["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xdac17f958d2ee523a2206206994597c13d831ec7","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0x2260FAC5E5542a773Aa44FBCfEDF7C193bc2C599","0x6B175474E89094C44Da98b954EedeAC495271d0F","0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"],
+    arbitrum:["0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9","0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548","0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"],
+    polygon:["0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174","0xc2132d05d31c914a87c6611c10748aeb04b58e8f","0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619","0x0000000000000000000000000000000000001010","0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"],
+    bsc:["0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d","0x55d398326f99059ff775485246999027b3197955","0xbb4CdB9CBd36B01dCbAEBF2De08d9173bc095c"],
+    avalanche:["0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7","0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","0x50b7545627a5162F82A992c33b87aDc75187B218","0xd586E7F844cEa2F87f50152665BCbc2C279D8d70"]
   };
 
   async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
   async function loadTokenAddresses(nw){
-    const addrs=new Set();
-    (SEED[nw]||[]).forEach(mask=>addrs.add(mask)); // seed (masked in UI)
+    const addrs=new Set(SEED[nw]||[]);
     for(const url of (TOKENLISTS[nw]||[])){
       try{
         const tl=await getJSON(url);
@@ -259,7 +320,7 @@ function buildUI(){
       if(!cur || liq>(cur.liq||0)) byDex.set(key,{rec:p,liq});
     }
     return [...byDex.values()].map(v=>v.rec)
-      .sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
+             .sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
   }
   function prettyDexId(p){
     const raw=(p?.dexId||"").toLowerCase();
@@ -268,21 +329,17 @@ function buildUI(){
     return raw? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
   }
 
-  function plForPrincipal(nw, r, principalUSD){
-    const spread=(r.sellPrice-r.buyPrice)/r.buyPrice;
-    const gross=principalUSD*spread;
-    const fee=principalUSD*PLATFORM_FEE;
-    const gas=state[nw].gasUsd||0;
-    return {spread, net:gross-fee-gas};
-  }
   function appendRow(nw, r){
     const tbody=el(`rows-${nw}`);
     const tr=document.createElement('tr');
     const principal=Math.max(100, parseFloat(el('loanUsd').value||"1000"));
-    const pl=plForPrincipal(nw,r,principal);
-    const spreadPct=(pl.spread*100).toFixed(2);
-    tr.className = pl.net>0 ? "pos" : (pl.net>-3 ? "meh" : "neg");
-    tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${spreadPct}%</td><td class="right">${fmtUSD(pl.net)}</td>`;
+    const gas=gasState[nw].gasUsd||0;
+    const spread=(r.sellPrice-r.buyPrice)/r.buyPrice;
+    const gross=principal*spread;
+    const fee=principal*PLATFORM_FEE;
+    const net=gross-fee-gas;
+    tr.className = net>0 ? "pos" : (net>-3 ? "meh" : "neg");
+    tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${(spread*100).toFixed(2)}%</td><td class="right">${fmtUSD(net)}</td>`;
     tbody.appendChild(tr);
   }
 
@@ -310,7 +367,7 @@ function buildUI(){
     await initGas(nw);
 
     let addrs=[];
-    try{ addrs=await loadTokenAddresses(nw); }catch(e){ /* still continue */ }
+    try{ addrs=await loadTokenAddresses(nw); }catch(e){ /* continue */ }
     if(!addrs.length){ status.textContent="Could not load token addresses (rate-limit?). Try again."; return; }
     status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
@@ -320,6 +377,7 @@ function buildUI(){
       const onNet=j.pairs.filter(p=>p.chainId===nw);
       const rows=consolidatePerDex(onNet);
       if(rows.length<2) return null;
+
       let min=Infinity,max=-Infinity,buy=null,sell=null;
       for(const row of rows){
         const pr=Number(row.priceUsd); if(!isFinite(pr)||pr<=0) continue;
@@ -345,24 +403,92 @@ function buildUI(){
     }
   }
 
-  // build UI and wire events
+  // ------- Auto Select -------
+  function autoSelect(){
+    const active = document.querySelector('#tabbar button.active')?.dataset.tab || 'arbitrum';
+    const rows = document.querySelectorAll(`#rows-${active} tr`);
+    if(!rows.length){ alert('No routes yet. Click Scan.'); return; }
+    let best=null, bestVal=-Infinity;
+    rows.forEach(tr=>{
+      const tds=tr.querySelectorAll('td'); if(tds.length<5) return;
+      const token=tds[0].textContent.trim();
+      const buy  =tds[1].textContent.trim();
+      const sell =tds[2].textContent.trim();
+      const spreadPct=parseFloat((tds[3].textContent||"").replace('%',''))/100;
+      const netTxt=tds[4].textContent.replace(/[,$]/g,'');
+      const netVal=parseFloat(netTxt);
+      if(isFinite(netVal) && netVal>bestVal){ bestVal=netVal; best={token,buy,sell,spreadPct,netVal}; }
+    });
+    if(!best){ alert('No viable routes.'); return; }
+    state.selected = { network: active, ...best };
+    const routeEl = el(`route-${active}`);
+    if(routeEl){
+      routeEl.innerHTML = `<span class="tag">Selected</span> ${best.token}: ${best.buy} → ${best.sell} • Est. net ${fmtUSD(best.netVal)}`;
+    }
+    el('execBtn').disabled = !state.account; // need wallet to execute
+    alert(`Selected on ${active.toUpperCase()}:\n${best.token}\n${best.buy}\n${best.sell}\nNet @ loan: ${fmtUSD(best.netVal)}`);
+  }
+
+  // ------- Mock Execute with HUD -------
+  function randTxId(){ return '0x' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+  function setDot(i,klass){ const d=el('st'+i); if(d){ d.classList.remove('on','ok','err'); if(klass) d.classList.add(klass); } }
+  function showHUD(title, sub){ el('hudTitle').textContent=title; el('hudSub').textContent=sub||''; el('hudFoot').textContent=''; [1,2,3,4,5].forEach(i=>setDot(i,null)); el('hud').style.display='flex'; }
+  function closeHUD(){ el('hud').style.display='none'; }
+
+  async function executeMock(){
+    if(!state.account){ alert('Connect wallet first.'); return; }
+    if(!state.selected){ alert('Auto Select a route first.'); return; }
+    const s=state.selected;
+    const loan = Math.max(100, parseFloat(el('loanUsd').value||"1000"));
+    showHUD('Executing (mock)', `${s.token} • ${s.network.toUpperCase()} • Loan ${fmtUSD(loan)}`);
+
+    // Simple pre-check
+    if(!(s.netVal>0)){ el('hudFoot').textContent='Aborted: estimated net is not positive.'; setDot(1,'err'); return; }
+
+    // Simulate steps
+    const steps = [
+      async()=>{ setDot(1,'on'); await new Promise(r=>setTimeout(r,700)); setDot(1,'ok'); },
+      async()=>{ setDot(2,'on'); await new Promise(r=>setTimeout(r,800)); setDot(2,'ok'); },
+      async()=>{ setDot(3,'on'); await new Promise(r=>setTimeout(r,900)); setDot(3,'ok'); },
+      async()=>{ setDot(4,'on'); await new Promise(r=>setTimeout(r,800)); setDot(4,'ok'); },
+      async()=>{ setDot(5,'on'); await new Promise(r=>setTimeout(r,600)); setDot(5,'ok'); },
+    ];
+    for(const fn of steps){ await fn(); }
+    const txid = randTxId();
+    el('hudFoot').innerHTML = `Transaction successful (mock). TxID <span class="mono">${txid}</span><br><span class="help">To go live, deploy CKFlash and replace the placeholder call with contract.flash(route).</span>`;
+  }
+
+  // ------- Wire up UI -------
+  function buildUI(){
+    const panes=document.getElementById('panes');
+    panes.innerHTML = NETWORKS.map(nw=>paneHTML(nw)).join('');
+    const tabbar=document.getElementById('tabbar');
+    tabbar.addEventListener('click',e=>{
+      const b=e.target.closest('button[data-tab]'); if(!b) return;
+      [...tabbar.children].forEach(x=>x.classList.remove('active')); b.classList.add('active');
+      const id='pane-'+b.dataset.tab;
+      NETWORKS.forEach(nw=>{ const elx=document.getElementById('pane-'+nw); if(elx) elx.style.display=(elx.id===id)?'block':'none'; });
+    });
+  }
+
+  // Init UI & events
   buildUI();
   document.getElementById('scanBtn').addEventListener('click',()=>{
     const active=document.querySelector('#tabbar button.active')?.dataset.tab || 'arbitrum';
     scan(active);
   });
-  document.getElementById('tabbar').addEventListener('click',e=>{
-    const btn=e.target.closest('button[data-tab]'); if(btn) {/* no scan on switch */}
-  });
+  document.getElementById('autoBtn').addEventListener('click', autoSelect);
+  document.getElementById('execBtn').addEventListener('click', executeMock);
+  document.getElementById('connectBtn').addEventListener('click', connectWallet);
+  document.getElementById('hudClose').addEventListener('click', closeHUD);
+
+  // Gas listeners & init
   NETWORKS.forEach(nw=>{
-    if(EVM.has(nw)){
-      const gl=document.getElementById(`gas-limit-${nw}`);
-      if(gl) gl.addEventListener('input',()=>calcGasUsd(nw));
-      initGas(nw);
-    }
+    const gl=document.getElementById(`gas-limit-${nw}`); if(gl) gl.addEventListener('input',()=>calcGasUsd(nw));
+    initGas(nw);
   });
 
-  // first scan
+  // First scan
   scan('arbitrum');
 })();
 </script>

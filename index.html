@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v9.0.2 — Clean Scanner</title>
+<title>Crypto Kings Test Bed v9.0.3 — Clean Scanner</title>
 <style>
   :root{
     --bg:#f3f4f6; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -80,7 +80,7 @@
     <div class="container topbar-inner">
       <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v9.0.2</span>
+      <span class="chip">v9.0.3</span>
       <div class="spacer"></div>
       <div class="help" style="display:flex;align-items:center;gap:6px">
         Loan Size (USD)
@@ -134,7 +134,7 @@ function initUI(){
   const NETWORKS=["arbitrum","ethereum","polygon","bsc","avalanche","solana"];
   const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX", solana:"SOL" };
   const panes=document.getElementById('tabpanes');
-  panes.innerHTML = NETWORKS.map(n => paneHTML(n, GAS_NATIVE[n]||"")).join("");
+  panes.innerHTML = NETWORKS.map(nw => paneHTML(nw, GAS_NATIVE[nw]||"")).join("");
 
   // Tabs
   const tabbar=document.getElementById('tabbar');
@@ -148,30 +148,30 @@ function initUI(){
   initApp();
 }
 
-function paneHTML(net, gasSym){
-  const pretty = net[0].toUpperCase()+net.slice(1);
-  const defaultGL = net==='arbitrum' ? '170000' : net==='avalanche' ? '185000' : '190000';
+function paneHTML(nw, gasSym){
+  const pretty = nw[0].toUpperCase()+nw.slice(1);
+  const defaultGL = nw==='arbitrum' ? '170000' : nw==='avalanche' ? '185000' : '190000';
   return `
-  <div id="pane-${net}" ${net!=='arbitrum'?'style="display:none;"':''}>
+  <div id="pane-${nw}" ${nw!=='arbitrum'?'style="display:none;"':''}>
     <div class="card">
       <div class="row row-4">
         <div><label>Network</label><input value="${pretty}" readonly /></div>
-        <div><label>Gas (auto)</label><input id="gas-gwei-${net}" placeholder="Auto" readonly /><div class="help" id="gas-note-${net}">—</div></div>
-        <div><label>Gas Limit</label><input id="gas-limit-${net}" type="number" min="0" step="1000" value="${defaultGL}" /><div class="help">Uni/Sushi 150–200k • Curve 340k • Balancer 300k+</div></div>
-        <div><label>Est. Gas Cost</label><input id="gas-cost-${net}" placeholder="—" readonly /><div class="help" id="gas-cost-usd-${net}">—</div></div>
+        <div><label>Gas (auto)</label><input id="gas-gwei-${nw}" placeholder="Auto" readonly /><div class="help" id="gas-note-${nw}">—</div></div>
+        <div><label>Gas Limit</label><input id="gas-limit-${nw}" type="number" min="0" step="1000" value="${defaultGL}" /><div class="help">Uni/Sushi 150–200k • Curve 340k • Balancer 300k+</div></div>
+        <div><label>Est. Gas Cost</label><input id="gas-cost-${nw}" placeholder="—" readonly /><div class="help" id="gas-cost-usd-${nw}">—</div></div>
       </div>
       <div class="row row-3" style="margin-top:8px">
-        <div><span id="status-${net}" class="help">Ready.</span></div>
+        <div><span id="status-${nw}" class="help">Ready.</span></div>
         <div class="help">Stable quotes only • DEX allow-list • Outlier filter ±15%</div>
-        <div><label>Manual Scan</label><button class="btn small" data-scan="${net}">Scan ${pretty}</button></div>
+        <div><label>Manual Scan</label><button class="btn small" data-scan="${nw}">Scan ${pretty}</button></div>
       </div>
-      <div class="help" id="route-${net}" style="margin-top:6px;"></div>
+      <div class="help" id="route-${nw}" style="margin-top:6px;"></div>
       <table class="table" style="margin-top:10px">
         <thead><tr>
           <th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th>
           <th class="right">Spread %</th><th class="right">Net @ loan</th>
         </tr></thead>
-        <tbody id="rows-${net}"></tbody>
+        <tbody id="rows-${nw}"></tbody>
       </table>
     </div>
   </div>`;
@@ -179,14 +179,13 @@ function paneHTML(net, gasSym){
 </script>
 
 <script>
-/* ===== App logic (with outlier & allow-list filters) ===== */
+/* ===== App logic (guards + fixed variable names) ===== */
 function initApp(){
   const NETWORKS=["arbitrum","ethereum","polygon","bsc","avalanche","solana"];
   const EVM=new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
   const DS_BASE="https://api.dexscreener.com";
   const PLATFORM_FEE=0.0009; // 0.09%
 
-  // DEX allow-list to avoid junk pools causing 2000% spreads
   const ALLOWED = ["uniswap","uniswap-v3","sushiswap","camelot","balancer","traderjoe","pangolin","pancakeswap","pancakeswap-v3","quickswap","jupiter","raydium","orca"];
 
   // UI helpers
@@ -200,8 +199,8 @@ function initApp(){
               polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"],
               bsc:["https://rpc.ankr.com/bsc","https://bsc.publicnode.com","https://bsc-dataseed1.binance.org"],
               avalanche:["https://rpc.ankr.com/avalanche","https://ava-mainnet.public.blastapi.io","https://api.avax.network/ext/bc/C/rpc"] };
-  async function gasSuggestGwei(net){
-    const eps=RPC[net]; if(!eps) return null;
+  async function gasSuggestGwei(nw){
+    const eps=RPC[nw]; if(!eps) return null;
     const feeHist={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
     for(const url of eps){
       try{
@@ -223,33 +222,33 @@ function initApp(){
   }
   const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
   const state={};
-  for(const n of NETWORKS){ state[n]={gasGwei:null,gasUsd:0,gasNativeUsd:null}; }
-  async function initGas(net){
-    if(!EVM.has(net)) return;
-    const g=await gasSuggestGwei(net).catch(()=>null);
-    const nat=GAS_NATIVE[net], natUsd=await cgUSD(nat).catch(()=>null);
-    state[net].gasGwei=g?g.g:null; state[net].gasNativeUsd=natUsd??null;
-    const gEl=el(`gas-gwei-${net}`), note=el(`gas-note-${net}`);
+  for(const nw of NETWORKS){ state[nw]={gasGwei:null,gasUsd:0,gasNativeUsd:null}; }
+  async function initGas(nw){
+    if(!EVM.has(nw)) return;
+    const g=await gasSuggestGwei(nw).catch(()=>null);
+    const nat=GAS_NATIVE[nw], natUsd=await cgUSD(nat).catch(()=>null);
+    state[nw].gasGwei=g?g.g:null; state[nw].gasNativeUsd=natUsd??null;
+    const gEl=el(`gas-gwei-${nw}`), note=el(`gas-note-${nw}`);
     if(g){ gEl.value=`${g.g.toFixed(1)} Gwei`; note.textContent=`base ${g.base.toFixed(1)} + tip ${g.tip.toFixed(1)} • ${nat} ≈ ${fmtUSD(natUsd)}`; }
     else{ gEl.value=""; note.textContent="auto gas failed (RPC/CORS)."; }
-    calcGasUsd(net);
+    calcGasUsd(nw);
   }
-  function calcGasUsd(net){
-    if(!EVM.has(net)) return 0;
-    const g=state[net].gasGwei, gl=parseFloat(el(`gas-limit-${net}`).value||"0"), usd=state[net].gasNativeUsd;
+  function calcGasUsd(nw){
+    if(!EVM.has(nw)) return 0;
+    const g=state[nw].gasGwei, gl=parseFloat(el(`gas-limit-${nw}`).value||"0"), usd=state[nw].gasNativeUsd;
     const native=(g>0 && gl>0) ? (g*gl)/1e9 : 0; const cost=native*(usd||0);
-    state[net].gasUsd=cost;
-    const sym=GAS_NATIVE[net];
-    el(`gas-cost-${net}`).value = native? `${native.toFixed(6)} ${sym}`: "";
-    el(`gas-cost-usd-${net}`).textContent = native? `≈ ${fmtUSD(cost)}` : "—";
+    state[nw].gasUsd=cost;
+    const sym=GAS_NATIVE[nw];
+    el(`gas-cost-${nw}`).value = native? `${native.toFixed(6)} ${sym}`: "";
+    el(`gas-cost-usd-${nw}`).textContent = native? `≈ ${fmtUSD(cost)}` : "—";
     return cost;
   }
 
   // Dexscreener helpers
   async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
-  async function dsSearch(net, q){ const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`).catch(()=>null); if(!r||!r.ok) return []; const j=await r.json(); return (j?.pairs||[]).filter(p=>p.chainId===net); }
+  async function dsSearch(nw, q){ const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`).catch(()=>null); if(!r||!r.ok) return []; const j=await r.json(); return (j?.pairs||[]).filter(p=>p.chainId===nw); }
 
-  // Token address universe (seed + lists)
+  // Token universe
   const TOKENLISTS={
     ethereum:["https://tokens.uniswap.org","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
     arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
@@ -268,31 +267,31 @@ function initApp(){
   };
 
   async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
-  async function loadTokenAddresses(network){
-    const addrs=new Set(SEED_ADDRESSES[network]||[]);
-    const lists = TOKENLISTS[network] || [];
+  async function loadTokenAddresses(nw){
+    const addrs=new Set(SEED_ADDRESSES[nw]||[]);
+    const lists = TOKENLISTS[nw] || [];
     for(const url of lists){
       try{
         const tl=await getJSON(url);
         const tokens = tl?.tokens || [];
         for(const t of tokens){
           if(!t?.address) continue;
-          const ok=(network==="ethereum"&&t.chainId==1)||(network==="arbitrum"&&t.chainId==42161)||(network==="polygon"&&t.chainId==137)||(network==="bsc"&&t.chainId==56)||(network==="avalanche"&&t.chainId==43114);
+          const ok=(nw==="ethereum"&&t.chainId==1)||(nw==="arbitrum"&&t.chainId==42161)||(nw==="polygon"&&t.chainId==137)||(nw==="bsc"&&t.chainId==56)||(nw==="avalanche"&&t.chainId==43114);
           if(ok) addrs.add(t.address);
         }
       }catch(_){}
     }
     // Expand via search
-    const anchors = network==="bsc" ? ["USDC","USDT","WBNB"] :
-                    network==="polygon" ? ["USDC","USDT","WETH","MATIC"] :
-                    network==="avalanche" ? ["USDC","USDT","WETH","AVAX"] :
+    const anchors = nw==="bsc" ? ["USDC","USDT","WBNB"] :
+                    nw==="polygon" ? ["USDC","USDT","WETH","MATIC"] :
+                    nw==="avalanche" ? ["USDC","USDT","WETH","AVAX"] :
                     ["USDC","USDT","WETH"];
     for(const q of anchors){
       try{
         const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`);
         if(r && r.ok){
           const j=await r.json(); const pairs=j?.pairs||[];
-          for(const p of pairs){ if(p.chainId===network && p.baseToken?.address){ addrs.add(p.baseToken.address); } }
+          for(const p of pairs){ if(p.chainId===nw && p.baseToken?.address){ addrs.add(p.baseToken.address); } }
         }
       }catch(_){}
     }
@@ -300,12 +299,12 @@ function initApp(){
   }
 
   async function mapLimit(items,limit,fn){
-    const out=new Array(items.length); let i=0;
+    const out=new Array(items.length); let idx=0;
     async function worker(){
-      while(i<items.length){
-        const idx=i++;
-        try{ out[idx]=await fn(items[idx],idx); await new Promise(r=>setTimeout(r,100)); }
-        catch(_){ out[idx]=null; }
+      while(idx<items.length){
+        const i=idx++;
+        try{ out[i]=await fn(items[i],i); await new Promise(r=>setTimeout(r,100)); }
+        catch(_){ out[i]=null; }
       }
     }
     const workers=[]; const n=Math.min(limit,items.length||0);
@@ -324,7 +323,7 @@ function initApp(){
   // outlier trim: drop quotes ±15% from median
   function dropOutliersByMedian(pairs){
     const prices=pairs.map(p=>Number(p.priceUsd)).filter(x=>isFinite(x)&&x>0);
-    if(prices.length<3) return pairs; // not enough to median-trim
+    if(prices.length<3) return pairs;
     prices.sort((a,b)=>a-b);
     const med = prices[Math.floor(prices.length/2)];
     const low = med*0.85, high = med*1.15;
@@ -335,7 +334,6 @@ function initApp(){
   }
 
   function consolidatePerDex(pairs){
-    // stable quotes only + allow-listed DEXes
     const usable = pairs.filter(p=>{
       const q=(p?.quoteToken?.symbol||"").toUpperCase();
       const dex=(p?.dexId||"").toLowerCase();
@@ -355,7 +353,7 @@ function initApp(){
       .sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
   }
 
-  function plForPrincipal(net, r, principalUSD, gasUsd){
+  function plForPrincipal(nw, r, principalUSD, gasUsd){
     const spread=(r.sellPrice-r.buyPrice)/r.buyPrice;
     const gross=principalUSD*spread;
     const fee=principalUSD*PLATFORM_FEE;
@@ -363,12 +361,12 @@ function initApp(){
     return {spread, net, fee};
   }
 
-  function appendRow(net, r){
-    const tbody=el(`rows-${net}`);
+  function appendRow(nw, r){
+    const tbody=el(`rows-${nw}`);
     const tr=document.createElement('tr');
     const principal = Math.max(100, parseFloat(el('loanUsd').value||"1000"));
-    const gasUsd = state[net].gasUsd||0;
-    const pl=plForPrincipal(net,r,principal,gasUsd);
+    const gasUsd = state[nw].gasUsd||0;
+    const pl=plForPrincipal(nw,r,principal,gasUsd);
     const spreadPct=(pl.spread*100).toFixed(2);
     const netSim=pl.net;
     tr.className = netSim>0 ? "pos" : (netSim>=-3 && netSim<3 ? "meh" : "neg");
@@ -376,27 +374,25 @@ function initApp(){
     tbody.appendChild(tr);
   }
 
-  async function scan(net){
-    const status=el(`status-${net}`), tbody=el(`rows-${net}`), route=el(`route-${net}`);
+  async function scan(nw){
+    const status=el(`status-${nw}`), tbody=el(`rows-${nw}`), route=el(`route-${nw}`);
     if(!status||!tbody||!route) return;
     tbody.innerHTML=""; route.textContent=""; status.innerHTML=`<span class="spinner"></span> Building token set…`;
 
-    // gas update first so P/L uses current gas
-    await initGas(net);
+    await initGas(nw); // update gas first
 
     let addrs=[];
-    try{ addrs=await loadTokenAddresses(net); }catch(e){ showErr(e); }
+    try{ addrs=await loadTokenAddresses(nw); }catch(e){ showErr(e); }
     if(!addrs.length){ status.textContent="Could not load token addresses."; return; }
     status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
     const out = await mapLimit(addrs,10, async(addr)=>{
       const j=await dsByToken(addr);
       if(!j?.pairs?.length) return null;
-      const onNet=j.pairs.filter(p=>p.chainId===net);
+      const onNet=j.pairs.filter(p=>p.chainId===nw);
       const rows=consolidatePerDex(onNet);
       if(rows.length<2) return null;
 
-      // min/max after outlier trim
       let min=Infinity,max=-Infinity,buy=null,sell=null, baseAddr=null;
       for(const row of rows){
         const pr=Number(row.priceUsd); if(!isFinite(pr)||pr<=0) continue;
@@ -410,7 +406,7 @@ function initApp(){
       return { base:baseSym, baseTokenAddr:baseAddr, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
     });
 
-    // One row per token symbol (dedupe)
+    // Deduplicate: one row per token
     const byToken=new Map();
     for(const r of out.filter(Boolean)){
       const cur=byToken.get(r.base);
@@ -420,13 +416,13 @@ function initApp(){
 
     status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes with current guards.";
     const bar=el('errbar'); if(bar) bar.style.display = usable.length? 'none':'block';
-    usable.forEach(r=>appendRow(net,r));
+    usable.forEach(r=>appendRow(nw,r));
     if(usable[0]){
       route.innerHTML=`<span class="tag">Top candidate</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`;
     }
   }
 
-  // Wire buttons
+  // Wire header button + per-pane manual buttons
   document.getElementById("scanBtn").addEventListener("click", ()=>{
     const active = document.querySelector("#tabbar button.active")?.dataset.tab || "arbitrum";
     scan(active);
@@ -436,9 +432,9 @@ function initApp(){
   });
 
   // Gas listeners per network
-  for(const n of NETWORKS){
-    if(EVM.has(n)) initGas(n);
-    const gl=document.getElementById(`gas-limit-${n}`); if(gl) gl.addEventListener('input', ()=>calcGasUsd(n));
+  for(const nw of NETWORKS){
+    if(EVM.has(nw)) initGas(nw);
+    const gl=document.getElementById(`gas-limit-${nw}`); if(gl) gl.addEventListener('input', ()=>calcGasUsd(nw));
   }
 
   // First scan on Arbitrum

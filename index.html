@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v9.0.0 — Executable P/L (1inch)</title>
+<title>Crypto Kings Test Bed v9.0.1 — Executable P/L (prep)</title>
 <style>
   :root{
     --bg:#f3f4f6; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -78,7 +78,7 @@
     <div class="topbar-inner">
       <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v9.0.0</span>
+      <span class="chip">v9.0.1</span>
       <div class="spacer"></div>
 
       <label class="help" style="display:flex;align-items:center;gap:6px">
@@ -97,14 +97,6 @@
           <option value="10">10s</option>
           <option value="20" selected>20s</option>
           <option value="30">30s</option>
-        </select>
-      </label>
-
-      <label class="help" style="display:flex;align-items:center;gap:6px;margin-left:8px">
-        Quote Mode
-        <select id="quoteMode" style="padding:6px 8px;border-radius:8px;border:1px solid var(--border-strong);background:#fff">
-          <option value="sim" selected>Simulated</option>
-          <option value="live">Live (1inch)</option>
         </select>
       </label>
 
@@ -156,26 +148,7 @@
 </script>
 
 <script>
-/* ===== Simple Login ===== */
-const DEFAULT_USER="admin", DEFAULT_PASS="test123";
-(function(){
-  const overlay=document.getElementById("login-screen"), app=document.getElementById("app");
-  const btn=document.getElementById("login-btn"), msg=document.getElementById("login-msg");
-  function unlock(){ sessionStorage.setItem("ck_authed","yes"); overlay.style.display="none"; app.style.display="block"; initUI(); }
-  if(sessionStorage.getItem("ck_authed")==="yes"){ unlock(); }
-  btn.addEventListener("click", ()=>{
-    const u=(document.getElementById("login-user").value||"").trim();
-    const p=(document.getElementById("login-pass").value||"").trim();
-    const U=localStorage.getItem("ck_user")||DEFAULT_USER, P=localStorage.getItem("ck_pass")||DEFAULT_PASS;
-    if(u===U && p===P){ unlock(); } else { msg.textContent="Invalid username or password."; }
-  });
-  document.getElementById("login-pass").addEventListener("keydown", e=>{ if(e.key==="Enter") btn.click(); });
-  if(sessionStorage.getItem("ck_authed")!=="yes"){ app.style.display="none"; }
-})();
-</script>
-
-<script>
-/* ===== UI frame ===== */
+/* ===== App frame (defines initUI & initApp) ===== */
 function initUI(){
   const NETWORKS=["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
   const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX", solana:"SOL" };
@@ -190,7 +163,7 @@ function initUI(){
     [...panes.children].forEach(p=>p.style.display=(p.id===id)?'block':'none');
   });
 
-  initApp();
+  initApp(); // now safe (defined below)
 }
 
 function paneHTML(net, gasSym){
@@ -213,22 +186,15 @@ function paneHTML(net, gasSym){
       <div class="help" id="route-${net}" style="margin-top:6px;"></div>
       <table class="table" style="margin-top:10px">
         <thead><tr>
-          <th>Token</th>
-          <th>Buy (DEX @ $)</th>
-          <th>Sell (DEX @ $)</th>
-          <th class="right">Spread %</th>
-          <th class="right">Net @ $<span class="loanEcho">1k</span> (sim)</th>
-          <th class="right">Executable Net (1inch)</th>
+          <th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th>
+          <th class="right">Spread %</th><th class="right">Net @ $1k</th>
         </tr></thead>
         <tbody id="rows-${net}"></tbody>
       </table>
     </div>
   </div>`;
 }
-</script>
 
-<script>
-/* ===== App logic ===== */
 function initApp(){
   const NETWORKS=["ethereum","arbitrum","polygon","bsc","avalanche","solana"];
   const EVM=new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]);
@@ -236,24 +202,10 @@ function initApp(){
   const PLATFORM_FEE=0.0009;
   const FILTERS={ strict:{liq:100000, vol:25000, m5:3, ageDays:7}, normal:{liq:50000, vol:10000, m5:1, ageDays:1}, loose:{liq:10000, vol:2000, m5:0, ageDays:0} };
   const GAS_NATIVE={ ethereum:"ETH", arbitrum:"ETH", polygon:"MATIC", bsc:"BNB", avalanche:"AVAX" };
-  const ONEINCH_CHAIN={ ethereum:1, arbitrum:42161, polygon:137, bsc:56, avalanche:43114 };
-  const USDC_ADDR={
-    ethereum:"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-    arbitrum:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-    polygon:"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-    bsc:"0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
-    avalanche:"0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
-  };
-
-  /* ====== CONFIG: set this to your Cloudflare Worker URL to enable Live quotes ====== */
-  const PROXY_URL = ""; // e.g. "https://ck-quote.yourworker.workers.dev"
-  /* ================================================================================= */
-
   const el=id=>document.getElementById(id);
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
   const showErr=(msg)=>{ const bar=el('errbar'), t=el('errtxt'); if(bar&&t){ t.textContent=String(msg); bar.style.display='block'; } };
 
-  /* Auto-refresh */
   let refreshTimer=null, activeNet="ethereum";
   function startRefresh(){
     try{
@@ -264,7 +216,6 @@ function initApp(){
     }catch(e){ showErr(e); }
   }
 
-  /* Gas */
   const RPC={ ethereum:["https://rpc.ankr.com/eth","https://eth-mainnet.public.blastapi.io","https://cloudflare-eth.com"],
               arbitrum:["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"],
               polygon:["https://rpc.ankr.com/polygon","https://polygon-bor-rpc.publicnode.com","https://polygon-rpc.com"],
@@ -318,9 +269,7 @@ function initApp(){
     return cost;
   }
 
-  /* Dexscreener scanner */
-  async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
-  async function dsSearch(net, q){ const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`).catch(()=>null); if(!r||!r.ok) return []; const j=await r.json(); return (j && j.pairs ? j.pairs : []).filter(p=>p.chainId===net); }
+  async function dsByToken(addr){ const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
   function consolidatePerDex(pairs, filt){
     const preferred=["USDC","USDT"]; const byDex=new Map(); const now=Date.now();
     for(let i=0;i<pairs.length;i++){
@@ -336,7 +285,8 @@ function initApp(){
       const cur=byDex.get(dex);
       if(!cur || rank<cur.rank || (rank===cur.rank && liq>(cur.liq||0))) byDex.set(dex,{rec:p,liq,rank});
     }
-    return [...byDex.values()].map(v=>v.rec);
+    return [...byDex.values()].map(v=>v.rec)
+      .sort((a,b)=> (b?.liquidity?.usd||0) - (a?.liquidity?.usd||0));
   }
   function prettyDexId(p){
     const raw=(p && p.dexId ? p.dexId.toLowerCase() : "");
@@ -345,7 +295,6 @@ function initApp(){
     return raw? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
   }
 
-  /* Token universe (seed + tokenlists + dexscreener search) */
   const TOKENLISTS={
     ethereum:["https://tokens.uniswap.org","https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
     arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"],
@@ -362,6 +311,7 @@ function initApp(){
     avalanche:["0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7","0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","0x50b7545627a5162F82A992c33b87aDc75187B218","0xd586E7F844cEa2F87f50152665BCbc2C279D8d70"],
     solana:[]
   };
+
   async function getJSON(url){ const r=await fetch(url).catch(()=>null); if(!r||!r.ok) throw new Error(`GET ${url} -> ${r?r.status:'ERR'}`); return r.json(); }
   async function loadTokenAddresses(network){
     const addrs=new Set(SEED_ADDRESSES[network]||[]);
@@ -386,7 +336,7 @@ function initApp(){
     for(let k=0;k<anchors.length;k++){
       const q=anchors[k];
       try{
-        const r=await fetch(`${DS_BASE}/latest/dex/search?q=${encodeURIComponent(q)}`);
+        const r=await fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(q)}`);
         if(r && r.ok){
           const j=await r.json(); const pairs=(j && j.pairs)||[];
           for(let i=0;i<pairs.length;i++){ const p=pairs[i]; if(p.chainId===network && p.baseToken && p.baseToken.address){ addrs.add(p.baseToken.address); } }
@@ -428,74 +378,46 @@ function initApp(){
     const spreadPct=(pl.spread*100).toFixed(2);
     const netSim=pl.net;
     tr.className = netSim>0 ? "pos" : (netSim>=0 && netSim<5 ? "meh" : "neg");
-    tr.innerHTML=`<td>${r.base}</td>
-      <td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td>
-      <td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td>
-      <td class="right">${spreadPct}%</td>
-      <td class="right">${fmtUSD(netSim)} <span class="help">sim</span></td>
-      <td class="right" data-live="pending">—</td>`;
+    tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${spreadPct}%</td><td class="right">${fmtUSD(netSim)}</td>`;
     tr.style.cursor="pointer";
     tr.addEventListener('click',()=>{
-      el(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${r.base}: Buy ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → Sell ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (${spreadPct}%)`;
+      document.getElementById(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${r.base}: Buy ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → Sell ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (${spreadPct}%)`;
     });
     tbody.appendChild(tr);
-    // kick live quote (if enabled)
-    if(el('quoteMode').value==="live" && PROXY_URL){
-      liveExecutablePL(net, r, principal).then(val=>{
-        const cell=tr.querySelector('[data-live]');
-        cell.textContent = (val && isFinite(val.netUsd)) ? `${fmtUSD(val.netUsd)} ${val.ok?'':'(est)'}` : '—';
-        cell.className = "right " + (val && val.netUsd>0 ? "ok" : "bad");
-      }).catch(()=>{ const cell=tr.querySelector('[data-live]'); if(cell) cell.textContent="—"; });
+  }
+
+  function prettyDexId(p){
+    const raw=(p && p.dexId ? p.dexId.toLowerCase() : "");
+    const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",curve:"Curve",balancer:"Balancer",camelot:"Camelot",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",jupiter:"Jupiter",raydium:"Raydium",orca:"Orca"};
+    for(const k in map){ if(raw.indexOf(k)!==-1) return map[k]; }
+    return raw? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
+  }
+
+  async function dsByToken(addr){ const r=await fetch(`${DS_BASE}/latest/dex/tokens/${addr}`).catch(()=>null); if(!r||!r.ok) return null; return r.json(); }
+  function consolidateByDex(pairs, filt){
+    const preferred=["USDC","USDT"]; const byDex=new Map(); const now=Date.now();
+    for(const p of pairs){
+      const dex=(p && p.dexId ? p.dexId.toLowerCase(): "");
+      if(!dex) continue;
+      const price=Number(p.priceUsd); if(!isFinite(price)||price<=0) continue;
+      const liq=(p.liquidity && p.liquidity.usd)||0; if(liq<filt.liq) continue;
+      const vol=(p.volume && p.volume.h24)||0; if(vol<filt.vol) continue;
+      const m5=((p.txns && p.txns.m5 && p.txns.m5.buys)||0)+((p.txns && p.txns.m5 && p.txns.m5.sells)||0); if(m5<filt.m5) continue;
+      const created=Number(p.pairCreatedAt||0); if(created && filt.ageDays>0 && (now-created)<(filt.ageDays*86400000)) continue;
+      const quote=(p.quoteToken && p.quoteToken.symbol ? p.quoteToken.symbol.toUpperCase() : "");
+      const rank = quote==="USDC" ? 0 : quote==="USDT" ? 1 : 99;
+      const cur=byDex.get(dex);
+      if(!cur || rank<cur.rank || (rank===cur.rank && liq>(cur.liq||0))) byDex.set(dex,{rec:p,liq,rank});
     }
+    return [...byDex.values()].map(v=>v.rec)
+      .sort((a,b)=> (b?.liquidity?.usd||0) - (a?.liquidity?.usd||0));
   }
 
-  /* 1inch live quotes (via proxy to avoid CORS) */
-  function decimalsFor(addr, net){ // quick knowns (USDC 6), else 18 fallback
-    if(!addr) return 18;
-    const a=addr.toLowerCase();
-    if(a===USDC_ADDR[net].toLowerCase()) return 6;
-    return 18;
-  }
-  async function oneInchQuote(net, from, to, amountUnits){
-    if(!PROXY_URL) throw new Error("No proxy");
-    const chainId = ONEINCH_CHAIN[net]; if(!chainId) throw new Error("Chain not supported");
-    const url = `${PROXY_URL}/quote?chainId=${chainId}&fromToken=${from}&toToken=${to}&amount=${amountUnits}`;
-    const r = await fetch(url, {cache:"no-store"}); if(!r.ok) throw new Error("1inch HTTP "+r.status);
-    return r.json(); // { toTokenAmount, fromTokenAmount, ... }
-  }
-
-  async function liveExecutablePL(net, route, principalUSD){
-    try{
-      const usdc = USDC_ADDR[net]; if(!usdc) return null;
-      // 1) USDC -> TOKEN (buy)
-      const tokenAddr = route.baseTokenAddr || route.baseAddr || route.addr; // not always present in DS row
-      if(!tokenAddr) return null;
-      const usdcDec = 6, tokDec = decimalsFor(tokenAddr, net);
-      const amountInUSDC = BigInt(Math.floor(principalUSD * 10**usdcDec));
-      const q1 = await oneInchQuote(net, usdc, tokenAddr, amountInUSDC.toString());
-      const tokenOut = BigInt(q1.toTokenAmount || "0");
-      if(tokenOut<=0n) return null;
-      // 2) TOKEN -> USDC (sell)
-      const q2 = await oneInchQuote(net, tokenAddr, usdc, tokenOut.toString());
-      const usdcOut = BigInt(q2.toTokenAmount || "0");
-      // Prices & P/L
-      const buyPrice = principalUSD / (Number(tokenOut) / 10**tokDec);   // USD per token
-      const sellProceedsUSD = Number(usdcOut) / 10**usdcDec;
-      const sellPrice = sellProceedsUSD / (Number(tokenOut) / 10**tokDec);
-      const spread = (sellPrice - buyPrice)/buyPrice;
-      const flashFee = principalUSD * PLATFORM_FEE;
-      const gas = state[net].gasUsd||0;
-      const netUsd = (principalUSD*spread) - flashFee - gas;
-      return { ok:true, netUsd, buyPrice, sellPrice, spread };
-    }catch(_){ return null; }
-  }
-
-  /* Scanner */
   async function scanAll(net){
     activeNet = net;
-    const mode=el("filterSel") ? (el("filterSel").value||"normal") : "normal";
-    const filt=FILTERS[mode];
-    const status=el(`status-${net}`), tbody=el(`rows-${net}`), route=el(`route-${net}`);
+    const mode=document.getElementById("filterSel") ? (document.getElementById("filterSel").value||"normal") : "normal";
+    const filt={ strict:{liq:100000, vol:25000, m5:3, ageDays:7}, normal:{liq:50000, vol:10000, m5:1, ageDays:1}, loose:{liq:10000, vol:2000, m5:0, ageDays:0} }[mode];
+    const status=document.getElementById(`status-${net}`), tbody=document.getElementById(`rows-${net}`), route=document.getElementById(`route-${net}`);
     if(!status||!tbody||!route){ return; }
     tbody.innerHTML=""; route.textContent="";
     status.innerHTML=`<span class="spinner"></span> Loading token universe… (${mode})`;
@@ -520,45 +442,86 @@ function initApp(){
       if(!buy||!sell||!isFinite(min)||!isFinite(max)||max<=min) return null;
       const baseSym=(buy.baseToken&&buy.baseToken.symbol)||(sell.baseToken&&sell.baseToken.symbol)||"";
       baseAddr=(buy.baseToken&&buy.baseToken.address)||(sell.baseToken&&sell.baseToken.address)||null;
-      const row = { base:baseSym, baseTokenAddr:baseAddr, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
-      return row;
+      return { base:baseSym, baseTokenAddr:baseAddr, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
     });
 
     const usable=(res.filter(Boolean).sort((a,b)=>b.spread-a.spread)).slice(0,200);
     status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes with current filters.";
-    const bar=el('errbar'); if(bar) bar.style.display = usable.length? 'none':'block';
+    const bar=document.getElementById('errbar'); if(bar) bar.style.display = usable.length? 'none':'block';
     usable.forEach(r=>appendRow(net,r));
     if(usable[0]){
-      el(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`;
+      document.getElementById(`route-${net}`).innerHTML=`<span class="tag">Selected</span> ${usable[0].base}: Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)`;
     }
   }
 
-  /* Wire controls */
+  // Wire controls
   document.addEventListener('click', (e)=>{
     const btn=e.target.closest('[data-scan]'); if(btn) scanAll(btn.dataset.scan);
   });
-  const filterSel=el("filterSel"); if(filterSel){ filterSel.addEventListener("change", ()=>scanAll(activeNet)); }
-  const refreshSel=el("refreshSel"); if(refreshSel){ refreshSel.addEventListener("change", startRefresh); }
-  const quoteMode=el("quoteMode"); if(quoteMode){ quoteMode.addEventListener("change", ()=>scanAll(activeNet)); }
-  const loanUsd=el("loanUsd"); if(loanUsd){ loanUsd.addEventListener("input", ()=>{
-    document.querySelectorAll(".loanEcho").forEach(s=>s.textContent = Number(loanUsd.value)>=1000 ? (Number(loanUsd.value)/1000).toFixed(1)+'k' : String(Number(loanUsd.value)));
-    scanAll(activeNet);
-  }); }
-
-  /* Gas listeners */
-  for(let i=0;i<NETWORKS.length;i++){
-    const n=NETWORKS[i];
-    if(EVM.has(n)) initGas(n);
-    const gl=el(`gas-limit-${n}`); if(gl) gl.addEventListener('input', ()=>calcGasUsd(n));
+  const filterSel=document.getElementById("filterSel"); if(filterSel){ filterSel.addEventListener("change", ()=>scanAll(activeNet)); }
+  const refreshSel=document.getElementById("refreshSel"); if(refreshSel){
+    refreshSel.addEventListener("change", ()=>{
+      // start/stop
+      const sec=parseInt(refreshSel.value||"0",10);
+      if(window.__ck_refresh){ clearInterval(window.__ck_refresh); window.__ck_refresh=null; }
+      if(sec>0){ window.__ck_refresh=setInterval(()=>scanAll(activeNet), sec*1000); }
+    });
   }
 
-  /* First scan + auto refresh */
-  scanAll("arbitrum"); activeNet="arbitrum"; // start where gas is cheaper
-  startRefresh();
+  // Gas listeners per network
+  for(const n of NETWORKS){
+    if(new Set(["ethereum","arbitrum","polygon","bsc","avalanche"]).has(n)) initGas(n);
+    const gl=document.getElementById(`gas-limit-${n}`); if(gl) gl.addEventListener('input', ()=>calcGasUsd(n));
+  }
 
-  /* Wallet connect placeholder */
-  document.getElementById("btnConnect").addEventListener("click", ()=>alert("Wallet connect coming soon (Metamask/WalletConnect)."));
+  // First run
+  scanAll("arbitrum"); // start with cheaper gas L2
 }
+</script>
+
+<script>
+/* ===== Simple Login (fires event instead of calling initUI directly) ===== */
+const DEFAULT_USER="admin", DEFAULT_PASS="test123";
+(function(){
+  const overlay=document.getElementById("login-screen"), app=document.getElementById("app");
+  const btn=document.getElementById("login-btn"), msg=document.getElementById("login-msg");
+  function unlocked(){
+    sessionStorage.setItem("ck_authed","yes");
+    overlay.style.display="none";
+    app.style.display="block";
+    // Fire an event that app script listens to
+    window.dispatchEvent(new Event("ck:init"));
+  }
+  if(sessionStorage.getItem("ck_authed")==="yes"){
+    unlocked();
+  }
+  btn.addEventListener("click", ()=>{
+    const u=(document.getElementById("login-user").value||"").trim();
+    const p=(document.getElementById("login-pass").value||"").trim();
+    const U=localStorage.getItem("ck_user")||DEFAULT_USER, P=localStorage.getItem("ck_pass")||DEFAULT_PASS;
+    if(u===U && p===P){ unlocked(); } else { msg.textContent="Invalid username or password."; }
+  });
+  document.getElementById("login-pass").addEventListener("keydown", e=>{ if(e.key==="Enter") btn.click(); });
+  if(sessionStorage.getItem("ck_authed")!=="yes"){ app.style.display="none"; }
+})();
+
+// When the app script is loaded, listen and run initUI once.
+(function(){
+  let ran=false;
+  window.addEventListener("ck:init", ()=>{
+    if(ran) return; ran=true;
+    if(typeof initUI === "function"){ initUI(); }
+    else {
+      // If the event fired before initUI parsed, retry a few times
+      let tries=0;
+      const t=setInterval(()=>{
+        tries++;
+        if(typeof initUI === "function"){ clearInterval(t); initUI(); }
+        if(tries>20){ clearInterval(t); console.error("initUI never loaded"); }
+      }, 100);
+    }
+  });
+})();
 </script>
 </body>
 </html>

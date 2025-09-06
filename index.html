@@ -3,19 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.5.2 — Arbitrum (Multi-hop Quoter + Gas Fallback)</title>
+<title>Crypto Kings Test Bed v9.5.3 — Arbitrum (Multi-hop + 0.01% tier + fixed path)</title>
 <style>
-  :root{
-    --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280;
-    --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35);
-    --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;}
+  :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden}
   .container{max-width:1100px;width:100%;margin:0 auto;padding:0 16px}
   main{flex:1}
-  /* Topbar (flex) */
   .topbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--border)}
   .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;flex-wrap:wrap}
   .brandbox{display:flex;align-items:center;gap:10px}
@@ -30,14 +24,12 @@
   .nav-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .hamburger{display:none;appearance:none;border:1px solid var(--border-strong);background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
   @media (max-width:980px){ .nav{display:none} .hamburger{display:inline-flex} }
-  /* Mobile sheet */
   .mobile-nav{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;align-items:flex-start;justify-content:flex-end}
   .mobile-sheet{background:#fff;width:min(88%,380px);height:100%;box-shadow:-10px 0 30px rgba(0,0,0,.2);border-left:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:10px}
   .mobile-sheet header{display:flex;justify-content:space-between;align-items:center}
   .mobile-sheet ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
   .mobile-sheet a{color:#111827;text-decoration:none;font-weight:700}
   .mobile-close{appearance:none;border:1px solid var(--border-strong);background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
-  /* Controls + Actions */
   .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .group{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px 8px}
   .group input{width:160px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px}
@@ -47,14 +39,12 @@
   .btn.ghost{background:#fff;color:#111;border:1px solid var(--border-strong);box-shadow:none}
   .btn:disabled{opacity:.6;cursor:not-allowed}
   @media (max-width:560px){ .group input{width:140px} .actions .btn{flex:1 1 calc(50% - 8px)} }
-  /* Body */
   main .wrap{padding:16px 0 80px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
   @media (min-width:960px){ .row-4{grid-template-columns:repeat(4,1fr)} }
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input[readonly]{background:#f9fafb;color:#4b5563}
-  /* Table -> responsive cards */
   .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
   table{min-width:980px;width:100%}
   .table{border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
@@ -90,7 +80,7 @@
     <div class="container topbar-inner">
       <div class="brandbox">
         <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-        <span class="chip">v9.5.2</span>
+        <span class="chip">v9.5.3</span>
       </div>
       <div class="nav" aria-label="Main">
         <a href="/">Home</a><a href="#">Who we are</a><a href="#">What we do</a><a href="#">Connect with us</a>
@@ -112,7 +102,6 @@
     </div>
   </div>
 
-  <!-- Mobile Nav -->
   <div id="mobileNav" class="mobile-nav" aria-hidden="true">
     <div class="mobile-sheet">
       <header><strong>Menu</strong><button id="mobileClose" class="mobile-close">✕</button></header>
@@ -134,8 +123,7 @@
       <div class="table-wrap">
         <table class="table" id="oppsTable">
           <thead><tr><th>Token</th><th>Buy route</th><th>Sell route</th><th class="right">Raw Spread %</th><th class="right">Net (Aave+gas)</th></tr></thead>
-          <tbody id="rows"></tbody>
-        </table>
+        <tbody id="rows"></tbody></table>
       </div>
     </div>
   </main>
@@ -150,7 +138,6 @@
     <div class="copyright">© 2025 Crypto Kings. All rights reserved.</div>
   </footer>
 
-  <!-- Wallet modal -->
   <div id="walletModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:70">
     <div style="background:#fff;color:#111;max-width:420px;width:95%;border-radius:12px;border:1px solid var(--border);box-shadow:0 20px 40px rgba(0,0,0,.25)">
       <header style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:800">Connect a wallet</header>
@@ -170,27 +157,25 @@
 </script>
 
 <script>
-/* v9.5.2 — multi-hop quoter + gas fallback */
+/* v9.5.3 — fixed path encoding + includes 0.01% tier */
 (function(){
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
   const short=a=>a?`${a.slice(0,6)}…${a.slice(-4)}`:"";
 
-  /* Header menu mobile */
   on($("hamburger"),"click",()=>{const m=$("mobileNav");m.style.display='flex';m.setAttribute('aria-hidden','false');});
   on($("mobileClose"),"click",()=>{const m=$("mobileNav");m.style.display='none';m.setAttribute('aria-hidden','true');});
   on($("mobileNav"),"click",(e)=>{const m=$("mobileNav");if(e.target===m)$("mobileClose").click();});
 
-  /* Chain / Uni v3 */
   const PLATFORM_FEE=0.0009;
   const RPC_ARB="https://arbitrum.llamarpc.com";
   const CHAIN_ID=42161;
   const UNI={
-    QUOTER_V2:"0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+    QUOTER_V2:"0x61fFE014bA17989E743c5F6cB21bF9697530B21e", // QuoterV2 exists on Arbitrum too
     USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
     WETH:"0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-    FEES:[500,3000,10000] // 0.05%, 0.3%, 1%
+    FEES:[100,500,3000,10000] // include 0.01%
   };
 
   const provider=new ethers.providers.JsonRpcProvider(RPC_ARB,{chainId:CHAIN_ID,name:"arbitrum"});
@@ -203,12 +188,11 @@
   const state={rows:[],account:null};
   const gas={gwei:null,usdPerNative:null,usd:0};
 
-  /* Gas auto with fallback default */
   async function gasSuggest(){
     try{
       const payload={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
       const r=await fetch(RPC_ARB,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-      if(!r.ok) throw new Error("rpc http "+r.status);
+      if(!r.ok) throw 0;
       const j=await r.json(); const bh=j&&j.result;
       const base=parseInt(bh.baseFeePerGas.at(-1),16)/1e9;
       const tip =parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
@@ -216,25 +200,22 @@
     }catch(_){ return null; }
   }
   async function cgETH(){
-    try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"); if(!r.ok) return null; const j=await r.json(); return j?.ethereum?.usd??null; }
-    catch(_){ return null; }
+    try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"); if(!r.ok) return null; const j=await r.json(); return j?.ethereum?.usd??null; }catch(_){ return null; }
   }
   async function initGas(){
     const g=await gasSuggest(); const ethUsd=await cgETH();
     if(g){ gas.gwei=g.g; $("gas-gwei").value=`${g.g.toFixed(2)} Gwei`; $("gas-note").textContent=`base ${g.base.toFixed(2)} + tip ${g.tip.toFixed(2)} • ETH ≈ ${fmtUSD(ethUsd)}`; }
-    else { gas.gwei=0.2; $("gas-gwei").value=`0.20 Gwei`; $("gas-note").textContent=`fallback (edit if needed) • ETH ≈ ${fmtUSD(ethUsd)}`; }
-    gas.usdPerNative=ethUsd||0;
-    calcGasUSD();
+    else { gas.gwei=0.20; $("gas-gwei").value=`0.20 Gwei`; $("gas-note").textContent=`fallback (edit if needed) • ETH ≈ ${fmtUSD(ethUsd)}`; }
+    gas.usdPerNative=ethUsd||0; calcGasUSD();
   }
   function calcGasUSD(){
     const gl=parseFloat($("gas-limit").value||"0");
     const native=(gas.gwei>0 && gl>0)?(gas.gwei*gl)/1e9:0;
     gas.usd=native*(gas.usdPerNative||0);
-    $("gas-cost").value= native? `${native.toFixed(6)} ETH` : "";
-    $("gas-cost-usd").textContent= native? `≈ ${fmtUSD(gas.usd)}` : "—";
+    $("gas-cost").value=native?`${native.toFixed(6)} ETH`:"";
+    $("gas-cost-usd").textContent=native?`≈ ${fmtUSD(gas.usd)}`:"—";
   }
 
-  /* Token set */
   async function getTokenAddresses(){
     const set=new Set([
       UNI.USDC,"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9", // USDT
@@ -248,43 +229,41 @@
     return [...set];
   }
 
-  /* Helpers */
   async function decimalsOf(a){ try{ return await (new ethers.Contract(a,ERC20_ABI,provider)).decimals(); }catch(_){ return 18; } }
-  const pathEncode=(segments)=>{
-    // segments: [token,fee,token,fee,token]
-    const toHex=(addr)=>addr.toLowerCase().replace(/^0x/,'');
-    const toFeeHex=(fee)=>fee.toString(16).padStart(6,'0');
-    let hex="0x";
-    for(let i=0;i<segments.length;i++){
-      const s=segments[i];
-      if(i%2===0){ hex+=toHex(s); } else { hex+=toFeeHex(s); }
-    }
-    return hex;
-  };
 
-  async function bestBuy_USDC_to_TOKEN(token, tokenDec, usd){
+  // Correct Uniswap v3 path encoding (address, uint24, address, ...).
+  function encodePath(tokens, fees){
+    if(tokens.length !== fees.length + 1) throw new Error("bad path");
+    let hex = "0x";
+    for (let i=0;i<fees.length;i++){
+      hex += ethers.utils.hexZeroPad(tokens[i], 20).slice(2);
+      hex += ethers.utils.hexZeroPad(ethers.utils.hexlify(fees[i]), 3).slice(2);
+    }
+    hex += ethers.utils.hexZeroPad(tokens[tokens.length-1], 20).slice(2);
+    return hex;
+  }
+
+  async function bestBuy_USDC_to_TOKEN(token, dec, usd){
     const q=new ethers.Contract(UNI.QUOTER_V2,QUOTER_ABI,provider);
     const inAmt=ethers.utils.parseUnits(String(usd),6);
     let best=null;
 
-    // 1-hop
     for(const fee of UNI.FEES){
       try{
         const [out]=await q.callStatic.quoteExactInputSingle(UNI.USDC,token,fee,inAmt,0);
         if(out.gt(0)){
-          const units=Number(ethers.utils.formatUnits(out,tokenDec));
+          const units=Number(ethers.utils.formatUnits(out,dec));
           if(!best || units>best.units) best={units, route:`USDC —${fee/10000}%→ TOKEN`};
         }
       }catch(_){}
     }
-    // 2-hop USDC->WETH->TOKEN (9 combos)
     for(const f1 of UNI.FEES){
       for(const f2 of UNI.FEES){
         try{
-          const path=pathEncode([UNI.USDC,f1,UNI.WETH,f2,token]);
+          const path=encodePath([UNI.USDC,UNI.WETH,token],[f1,f2]);
           const [out]=await q.callStatic.quoteExactInput(path,inAmt);
           if(out.gt(0)){
-            const units=Number(ethers.utils.formatUnits(out,tokenDec));
+            const units=Number(ethers.utils.formatUnits(out,dec));
             if(!best || units>best.units) best={units, route:`USDC —${f1/10000}%→ WETH —${f2/10000}%→ TOKEN`};
           }
         }catch(_){}
@@ -293,12 +272,11 @@
     return best;
   }
 
-  async function bestSell_TOKEN_to_USDC(token, tokenDec, unitsTOKEN){
+  async function bestSell_TOKEN_to_USDC(token, dec, units){
     const q=new ethers.Contract(UNI.QUOTER_V2,QUOTER_ABI,provider);
-    const inAmt=ethers.utils.parseUnits(String(unitsTOKEN),tokenDec);
+    const inAmt=ethers.utils.parseUnits(String(units),dec);
     let best=null;
 
-    // 1-hop
     for(const fee of UNI.FEES){
       try{
         const [out]=await q.callStatic.quoteExactInputSingle(token,UNI.USDC,fee,inAmt,0);
@@ -308,11 +286,10 @@
         }
       }catch(_){}
     }
-    // 2-hop TOKEN->WETH->USDC
     for(const f1 of UNI.FEES){
       for(const f2 of UNI.FEES){
         try{
-          const path=pathEncode([token,f1,UNI.WETH,f2,UNI.USDC]);
+          const path=encodePath([token,UNI.WETH,UNI.USDC],[f1,f2]);
           const [out]=await q.callStatic.quoteExactInput(path,inAmt);
           if(out.gt(0)){
             const usd=Number(ethers.utils.formatUnits(out,6));
@@ -324,47 +301,42 @@
     return best;
   }
 
-  function rawSpreadPct(buyUSDC,sellUSDC){ return ((sellUSDC-buyUSDC)/Math.max(1e-9,buyUSDC))*100; }
-
-  async function evaluateToken(token){
-    try{
-      const dec=await decimalsOf(token);
-      const loanUSD=clampLoan();
-
-      // Ladder: try 100%, 50%, 20%, 10% until we get a route
-      const sizes=[loanUSD, loanUSD*0.5, loanUSD*0.2, loanUSD*0.1];
-      let used=0, buy=null, sell=null, downscaled=false;
-
-      for(const size of sizes){
-        const b=await bestBuy_USDC_to_TOKEN(token,dec,size);
-        if(!b) { downscaled=true; continue; }
-        const s=await bestSell_TOKEN_to_USDC(token,dec,b.units);
-        if(!s) { downscaled=true; continue; }
-        buy=b; sell=s; used=size; if(size<loanUSD) downscaled=true; break;
-      }
-      if(!buy||!sell) return null;
-
-      const buyCostUSD = used;
-      const sellProUSD = sell.usd;
-      const rawPct     = rawSpreadPct(buyCostUSD,sellProUSD);
-      const aaveFeeUSD = used * PLATFORM_FEE;
-      const netUSD     = sellProUSD - buyCostUSD - aaveFeeUSD - (gas.usd||0);
-      return { token, dec, buyRoute:buy.route, sellRoute:sell.route, rawPct, netUSD, usedUSD:used, downscaled };
-    }catch(_){ return null; }
-  }
+  const spreadPct=(buyUSDC,sellUSDC)=>((sellUSDC-buyUSDC)/Math.max(1e-9,buyUSDC))*100;
 
   function clampLoan(){
     let v=parseFloat($("loanUsd").value||"0"); if(!isFinite(v)) v=100000;
     v=Math.max(100,Math.min(500000,v)); v=Math.round(v/100)*100; $("loanUsd").value=String(v); return v;
   }
 
+  async function evaluateToken(token){
+    try{
+      const dec=await decimalsOf(token);
+      const loanUSD=clampLoan();
+      const sizes=[loanUSD, loanUSD*0.5, loanUSD*0.2, loanUSD*0.1];
+      let used=0,buy=null,sell=null,down=false;
+
+      for(const sz of sizes){
+        const b=await bestBuy_USDC_to_TOKEN(token,dec,sz);
+        if(!b){ down=true; continue; }
+        const s=await bestSell_TOKEN_to_USDC(token,dec,b.units);
+        if(!s){ down=true; continue; }
+        buy=b; sell=s; used=sz; if(sz<loanUSD) down=true; break;
+      }
+      if(!buy||!sell) return null;
+
+      const aave = used*PLATFORM_FEE;
+      const net  = sell.usd - used - aave - (gas.usd||0);
+      return { token, buyRoute:buy.route, sellRoute:sell.route, rawPct:spreadPct(used,sell.usd), netUSD:net, usedUSD:used, downscaled:down };
+    }catch(_){ return null; }
+  }
+
   function renderRows(rows){
     const tb=$("rows"); tb.innerHTML="";
     rows.forEach(r=>{
       const tr=document.createElement("tr");
-      tr.className = (r.netUSD>0) ? "pos" : (r.netUSD>-3 ? "meh" : "neg");
-      tr.innerHTML = `
-        <td data-label="Token"><code>${short(r.token)}</code>${r.downscaled?'<div class="help">depth-limited (quoted at '+fmtUSD(r.usedUSD)+')</div>':''}</td>
+      tr.className=(r.netUSD>0)?"pos":(r.netUSD>-3?"meh":"neg");
+      tr.innerHTML=`
+        <td data-label="Token"><code>${short(r.token)}</code>${r.downscaled?'<div class="help">depth-limited at '+fmtUSD(r.usedUSD)+'</div>':''}</td>
         <td data-label="Buy route">${r.buyRoute}</td>
         <td data-label="Sell route">${r.sellRoute}</td>
         <td class="right" data-label="Raw Spread">${r.rawPct.toFixed(2)}%</td>
@@ -379,13 +351,12 @@
     status.innerHTML=`<span class="spinner"></span> Initialising…`;
     await initGas();
 
-    let addrs=[];
-    try{ addrs=await getTokenAddresses(); }catch(_){}
+    let addrs=[]; try{ addrs=await getTokenAddresses(); }catch(_){}
     if(!addrs.length){ status.textContent="Token list unavailable. Try again."; return; }
 
     status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens (multi-hop)…`;
-    const SAMPLE=80, CONC=5, list=addrs.slice(0,SAMPLE);
-    const out=new Array(list.length); let i=0,done=0;
+    const list=addrs.slice(0,80), CONC=5, out=new Array(list.length); let i=0,done=0;
+
     async function worker(){
       while(i<list.length){
         const idx=i++; const t=list[idx];
@@ -396,8 +367,8 @@
     await Promise.all(Array.from({length:CONC},worker));
 
     const rows=out.filter(Boolean).sort((a,b)=>b.netUSD-a.netUSD);
-    status.textContent = rows.length ? `Found ${rows.length} Uni v3 round-trip routes (loan ${fmtUSD(clampLoan())}).` : "No viable Uni v3 routes at this size.";
-    state.rows=rows; renderRows(rows);
+    status.textContent= rows.length ? `Found ${rows.length} Uni v3 round-trip routes (loan ${fmtUSD(clampLoan())}).` : "No viable Uni v3 routes at this size.";
+    renderRows(rows);
     $("executeBtn").disabled=!rows.length;
   }
 
@@ -406,28 +377,14 @@
   function closeWallet(){ $("walletModal").style.display='none'; }
   async function connectMetaMask(){
     if(!window.ethereum){ alert('MetaMask not detected.'); return; }
-    try{
-      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-      state.account=accs&&accs[0]||null; $("connectBtn").textContent=state.account?short(state.account):'Connect'; $("connectBtn").classList.add('ghost'); closeWallet();
-    }catch(_){ alert('Connection rejected.'); }
+    try{ const accs=await window.ethereum.request({method:'eth_requestAccounts'}); $("connectBtn").textContent=accs[0]?short(accs[0]):'Connect'; $("connectBtn").classList.add('ghost'); closeWallet(); }
+    catch(_){ alert('Connection rejected.'); }
   }
-  function connectManual(){ const a=prompt('Paste Arbitrum (EVM) address:'); if(!a) return; state.account=a.trim(); $("connectBtn").textContent=short(state.account); $("connectBtn").classList.add('ghost'); closeWallet(); }
+  function connectManual(){ const a=prompt('Paste Arbitrum (EVM) address:'); if(!a) return; $("connectBtn").textContent=short(a.trim()); $("connectBtn").classList.add('ghost'); closeWallet(); }
   function executeMock(){
-    if(!state.account){ alert('Connect wallet first.'); return; }
-    if(!state.rows.length){ alert('Scan first.'); return; }
-    const top=state.rows.slice(0,Math.min(5,state.rows.length)).map(r=>`• ${short(r.token)}  net ${fmtUSD(r.netUSD)} | ${r.buyRoute} → ${r.sellRoute}`).join('\n');
-    const txid='0x'+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
-    alert(`(Mock) Execute batch on ARBITRUM
-Wallet: ${short(state.account)}
-Loan: ${fmtUSD(clampLoan())}
-Routes: ${state.rows.length}
-Top:
-${top}
-
-TxID: ${txid}`);
+    alert('This build only simulates. After we finalize routing, we’ll wire the executor.');
   }
 
-  /* Wire UI */
   on($("scanBtn"),"click",scan);
   on($("executeBtn"),"click",executeMock);
   on($("connectBtn"),"click",openWallet);

@@ -3,134 +3,189 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v9.2.1 — Arbitrum Focus + Batch</title>
+<title>Crypto Kings Test Bed v9.2.4 — Arbitrum</title>
 <style>
   :root{
-    --bg:#f5f6f8; --surface:#fff; --ink:#111827; --muted:#6b7280;
+    --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280;
     --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35);
     --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh}
   .container{max-width:1100px;margin:0 auto;padding:0 16px}
+  main{flex:1}
 
-  /* Topbar (simple) */
+  /* Topbar */
   .topbar{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--border)}
-  .topbar-inner{display:flex;align-items:center;gap:12px;padding:10px 0}
+  .topbar-inner{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0}
+  .brandbox{display:flex;align-items:center;gap:10px}
   .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(29,155,240,.18)}
   .logo span{font-size:14px;font-weight:900;color:white}
   .brand{font-weight:800;letter-spacing:.3px}
   .chip{display:inline-block;padding:2px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#eef2ff;color:#3b3b6d}
-  .spacer{flex:1}
+
+  .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
   .group{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px 8px}
   .group input{width:140px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px}
   .group input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
+  .help{font-size:12px;color:var(--muted)}
+
+  .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
   .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(124,92,255,.15)}
   .btn.ghost{background:#fff;color:#111;border:1px solid var(--border-strong);box-shadow:none}
   .btn:disabled{opacity:.6;cursor:not-allowed}
 
-  .wrap{padding:18px 0 80px}
+  @media (max-width:720px){
+    .topbar-inner{grid-template-columns:1fr;gap:8px}
+    .controls{justify-content:space-between}
+    .group input{width:120px}
+    .actions{justify-content:space-between}
+  }
+
+  main .wrap{padding:16px 0 80px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
+
+  .row{display:grid;grid-template-columns:1fr;gap:12px}
+  @media (min-width:960px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input[readonly]{background:#f9fafb;color:#4b5563}
-  .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:960px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
-  .help{font-size:12px;color:var(--muted)}
+
+  .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:720px}
   .table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
-  .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
+  .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
   .table th{color:#374151;font-weight:700;background:#f9fafb}
   .table tr:nth-child(even){background:#fafafa}
   .right{text-align:right}
   .pos{background:#ecfdf5} .neg{background:#fef2f2} .meh{background:#f9fafb}
+
   .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:20px;height:20px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-  .errbar{margin-top:12px}
-  .errbar .box{background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px}
-  .errbar .box pre{white-space:pre-wrap;word-break:break-word;margin:6px 0 0;font-size:12px;color:#7f1d1d}
 
-  /* Wallet modal (MetaMask + Manual) */
-  #walletModal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:60}
-  .w-card{background:#fff;color:#111;max-width:420px;width:95%;border-radius:12px;border:1px solid var(--border);box-shadow:0 20px 40px rgba(0,0,0,.25)}
-  .w-card header{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:800}
-  .w-body{padding:12px 12px 16px;display:grid;grid-template-columns:1fr;gap:10px}
-  .w-item{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;background:#fafafa}
-  .w-item:hover{background:#f3f4f6}
-  .w-icon{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center}
-  .w-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  /* Footer */
+  footer{background:#fff;border-top:1px solid var(--border);margin-top:40px}
+  .footer-inner{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding:30px 0}
+  footer h4{margin:0 0 8px;font-size:14px;color:#374151}
+  footer ul{list-style:none;margin:0;padding:0;font-size:13px;color:#4b5563}
+  footer li{margin:4px 0}
+  footer a{color:inherit;text-decoration:none}
+  footer a:hover{text-decoration:underline}
+  .copyright{border-top:1px solid var(--border);padding:12px 0;font-size:12px;color:#6b7280;text-align:center}
+
+  @media (max-width:720px){
+    .footer-inner{grid-template-columns:1fr 1fr}
+  }
 </style>
 </head>
 <body>
   <div class="topbar">
     <div class="container topbar-inner">
-      <div style="display:flex;align-items:center;gap:10px">
+      <div class="brandbox">
         <div class="logo"><span>CK</span></div>
         <div class="brand">Crypto Kings</div>
-        <span class="chip">v9.2.1</span>
+        <span class="chip">v9.2.4</span>
       </div>
-      <div class="spacer"></div>
-      <div class="group">
-        <label for="loanUsd" class="help">Loan Size (USD)</label>
-        <input id="loanUsd" type="number" min="100" max="100000" step="100" value="1000">
+
+      <div class="controls">
+        <div class="group">
+          <label for="loanUsd" class="help">Loan Size (USD)</label>
+          <input id="loanUsd" type="number" min="100" max="100000" step="100" value="1000" inputmode="decimal">
+        </div>
       </div>
-      <label class="group" style="gap:6px">
-        <input id="autoRescan" type="checkbox" checked><span class="help">Auto (60s)</span>
-      </label>
-      <button id="scanBtn" class="btn">Scan</button>
-      <button id="autoBtn" class="btn">Auto Select</button>
-      <button id="autoAllBtn" class="btn">Select All Profitable</button>
-      <button id="execBtn" class="btn" disabled>Execute</button>
-      <button id="execAllBtn" class="btn" disabled>Execute All</button>
-      <button id="connectBtn" class="btn ghost">Connect</button>
+
+      <div class="actions">
+        <button id="scanBtn" class="btn">Scan</button>
+        <button id="selectAllBtn" class="btn">Select All</button>
+        <button id="executeBtn" class="btn" disabled>Execute</button>
+        <button id="connectBtn" class="btn ghost">Connect</button>
+      </div>
     </div>
   </div>
 
-  <div class="container wrap">
-    <div id="errbar" class="errbar" style="display:none;">
-      <div class="box"><strong>App notice</strong><pre id="errtxt"></pre></div>
-    </div>
-
-    <!-- ARBITRUM ONLY -->
-    <div class="card" id="pane-arbitrum">
+  <main class="container wrap">
+    <div class="card">
       <div class="row row-4">
         <div><label>Network</label><input value="Arbitrum" readonly></div>
-        <div><label>Gas (auto)</label><input id="gas-gwei-arbitrum" placeholder="Auto" readonly><div class="help" id="gas-note-arbitrum">—</div></div>
-        <div><label>Gas Limit</label><input id="gas-limit-arbitrum" type="number" step="1000" value="170000"><div class="help">Uni/Sushi ~170–200k • Curve ~340k • Balancer ~300k</div></div>
-        <div><label>Est. Gas Cost</label><input id="gas-cost-arbitrum" placeholder="—" readonly><div class="help" id="gas-cost-usd-arbitrum">—</div></div>
+        <div><label>Gas (auto)</label><input id="gas-gwei" placeholder="Auto" readonly><div class="help" id="gas-note">—</div></div>
+        <div><label>Gas Limit</label><input id="gas-limit" type="number" step="1000" value="170000"><div class="help">Uni/Sushi ~170–200k • Curve ~340k • Balancer ~300k</div></div>
+        <div><label>Est. Gas Cost</label><input id="gas-cost" placeholder="—" readonly><div class="help" id="gas-cost-usd">—</div></div>
       </div>
 
-      <div class="row row-3" style="margin-top:8px">
-        <div><span id="status-arbitrum" class="help">Ready.</span></div>
-        <div class="help">Stable quotes only • DEX allow-list • Outlier ±25%</div>
-        <div><label>Manual Scan</label><button class="btn" data-scan="arbitrum">Scan Arbitrum</button></div>
+      <div class="row row-2" style="margin-top:6px">
+        <div><span id="status" class="help">Ready.</span></div>
+        <div class="help" id="selection">No selection.</div>
       </div>
 
-      <div class="help" id="route-arbitrum" style="margin-top:6px;"></div>
-
-      <table class="table" style="margin-top:10px">
-        <thead><tr><th>Token</th><th>Buy (DEX @ $)</th><th>Sell (DEX @ $)</th><th class="right">Spread %</th><th class="right">Net @ loan</th></tr></thead>
-        <tbody id="rows-arbitrum"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Buy (DEX @ $)</th>
+              <th>Sell (DEX @ $)</th>
+              <th class="right">Spread %</th>
+              <th class="right">Net @ loan</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div>
+        <div class="logo"><span>CK</span></div>
+        <p class="help">Crypto Kings Test Bed for Flash Loan routes.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="#" id="lkScan">Scan</a></li>
+          <li><a href="#" id="lkSelect">Select All</a></li>
+          <li><a href="#" id="lkExec">Execute</a></li>
+          <li><a href="#" id="lkConnect">Connect</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Networks</h4>
+        <ul>
+          <li>Arbitrum (active)</li>
+          <li>Ethereum (soon)</li>
+          <li>Polygon (soon)</li>
+          <li>Solana (soon)</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:info@example.com">info@example.com</a></li>
+          <li><a href="#">Docs</a></li>
+          <li><a href="#">Support</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="copyright">© 2025 Crypto Kings. All rights reserved.</div>
+  </footer>
 
   <!-- Wallet modal -->
-  <div id="walletModal">
-    <div class="w-card">
-      <header>Connect a wallet</header>
-      <div class="w-body">
-        <div class="w-item" id="wMetaMask">
-          <div class="w-icon" style="background:#fff">
+  <div id="walletModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:60">
+    <div style="background:#fff;color:#111;max-width:420px;width:95%;border-radius:12px;border:1px solid var(--border);box-shadow:0 20px 40px rgba(0,0,0,.25)">
+      <header style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:800">Connect a wallet</header>
+      <div style="padding:12px;display:grid;gap:10px">
+        <div class="w-item" id="wMetaMask" style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;background:#fafafa">
+          <div class="w-icon" style="width:26px;height:26px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center">
             <svg viewBox="0 0 64 64" width="22" height="22"><path fill="#e4761b" d="M2 2l24 18-4-10zM62 2L38 20l4-10z"/><path fill="#f6851b" d="M10 38l16-4 2 12-2 6L18 50zM54 38l-16-4-2 12 2 6 8-2z"/></svg>
           </div>
           <div><strong>MetaMask</strong><div class="help">EVM (Arbitrum)</div></div>
         </div>
-        <div class="w-item" id="wManual">
-          <div class="w-icon" style="background:#111;color:#fff;font-weight:800">@</div>
+        <div class="w-item" id="wManual" style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;background:#fafafa">
+          <div class="w-icon" style="width:26px;height:26px;border-radius:8px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">@</div>
           <div><strong>Manual address</strong><div class="help">Paste wallet address</div></div>
         </div>
       </div>
-      <div class="w-foot">
+      <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
         <button id="walletClose" class="btn ghost">Close</button>
       </div>
     </div>
@@ -141,10 +196,11 @@
 (function(){
   const show=(msg,src,line,col,err)=>{
     try{
-      const bar=document.getElementById('errbar'); const txt=document.getElementById('errtxt');
-      if(!bar||!txt) return false;
-      txt.textContent=(err&&err.stack)?err.stack:[msg,src,line+':'+col].filter(Boolean).join(' | ');
-      bar.style.display='block';
+      const bar=document.createElement('div');
+      bar.style.margin='12px auto';
+      bar.style.maxWidth='1100px';
+      bar.innerHTML='<div style="background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px"><strong>App notice</strong><pre style="white-space:pre-wrap;margin:6px 0 0;font-size:12px;color:#7f1d1d">'+(err&&err.stack ? err.stack : [msg,src,line+':'+col].filter(Boolean).join(' | '))+'</pre></div>';
+      document.body.prepend(bar);
     }catch(_){}
     return false;
   };
@@ -154,7 +210,7 @@
 </script>
 
 <script>
-/* ---------- App (Arbitrum only, with batch) ---------- */
+/* ---------- App (Arbitrum, mobile + footer) ---------- */
 (function(){
   const DS_BASE="https://api.dexscreener.com";
   const PLATFORM_FEE=0.0009; // 0.09%
@@ -162,52 +218,48 @@
   const GAS_NATIVE="ETH";
   const ALLOWED=["uniswap","uniswap-v3","sushiswap","camelot","balancer","kyber","kyberswap","curve"];
 
-  const el=id=>document.getElementById(id);
+  const $=id=>document.getElementById(id);
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
   const shortAddr=a=>a ? `${a.slice(0,6)}…${a.slice(-4)}` : "";
 
-  const state={ selected:null, selectedBatch:null, account:null, chainId:null, timer:null };
-  const gasState={ gasGwei:null, gasUsd:0, gasNativeUsd:null };
+  const state={ results:[], selection:null, selectionBatch:null, account:null, timer:null };
+  const gas={ gwei:null, usdPerNative:null, usd:0 };
 
-  /* timed fetch helpers */
+  /* ---- fetch helpers ---- */
   async function fetchWithTimeout(url, opts={}, ms=8000){
     const ctrl=new AbortController(); const id=setTimeout(()=>ctrl.abort(), ms);
-    try{ return await fetch(url, { ...opts, signal: ctrl.signal }); }
-    finally{ clearTimeout(id); }
+    try{ return await fetch(url,{...opts,signal:ctrl.signal}); } finally{ clearTimeout(id); }
   }
-  async function safeJSON(url, ms=8000){
-    const r=await fetchWithTimeout(url, {}, ms).catch(()=>null);
-    if(!r || !r.ok) return null;
-    try{ return await r.json(); }catch(_){ return null; }
+  async function safeJSON(url,ms=8000){
+    const r=await fetchWithTimeout(url,{},ms).catch(()=>null);
+    if(!r||!r.ok) return null;
+    try{ return await r.json(); } catch(_){ return null; }
   }
 
-  /* wallet */
-  function openWallet(){ document.getElementById('walletModal').style.display='flex'; }
-  function closeWallet(){ document.getElementById('walletModal').style.display='none'; }
+  /* ---- wallet ---- */
+  function openWallet(){ $("walletModal").style.display='flex'; }
+  function closeWallet(){ $("walletModal").style.display='none'; }
   async function connectMetaMask(){
     if(!window.ethereum){ alert('MetaMask not detected.'); return; }
     try{
       const accs=await window.ethereum.request({method:'eth_requestAccounts'});
       state.account=accs&&accs[0]||null;
-      state.chainId=await window.ethereum.request({method:'eth_chainId'});
-      el('connectBtn').textContent=shortAddr(state.account)||'Connect';
-      el('connectBtn').classList.add('ghost');
-      el('execBtn').disabled=!state.selected;
-      el('execAllBtn').disabled=!(state.selectedBatch && state.selectedBatch.routes?.length);
+      $("connectBtn").textContent=shortAddr(state.account)||'Connect';
+      $("connectBtn").classList.add('ghost');
+      updateExecuteEnabled();
       closeWallet();
     }catch(_){ alert('Connection rejected.'); }
   }
   function connectManual(){
     const addr=prompt('Paste Arbitrum (EVM) address:'); if(!addr) return;
-    state.account=addr.trim(); state.chainId='manual';
-    el('connectBtn').textContent=shortAddr(state.account);
-    el('connectBtn').classList.add('ghost');
-    el('execBtn').disabled=!state.selected;
-    el('execAllBtn').disabled=!(state.selectedBatch && state.selectedBatch.routes?.length);
+    state.account=addr.trim();
+    $("connectBtn").textContent=shortAddr(state.account);
+    $("connectBtn").classList.add('ghost');
+    updateExecuteEnabled();
     closeWallet();
   }
 
-  /* gas (Arbitrum) */
+  /* ---- gas ---- */
   const RPC_ARB=["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"];
   async function gasSuggestGwei(){
     const payload={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
@@ -224,37 +276,30 @@
     }
     return null;
   }
-  async function cgUSD(){
-    const j=await safeJSON(`https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd`,10000);
+  async function cgETH(){
+    const j=await safeJSON('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',10000);
     return j?.ethereum?.usd ?? null;
   }
   async function initGas(){
     const g=await gasSuggestGwei().catch(()=>null);
-    const natUsd=await cgUSD().catch(()=>null);
-    gasState.gasGwei=g?g.g:null; gasState.gasNativeUsd=natUsd??null;
-    const gEl=el('gas-gwei-arbitrum'), note=el('gas-note-arbitrum');
-    if(g){ gEl.value=`${g.g.toFixed(1)} Gwei`; note.textContent=`base ${g.base.toFixed(1)} + tip ${g.tip.toFixed(1)} • ETH ≈ ${fmtUSD(natUsd)}`; }
-    else{ gEl.value=""; note.textContent="auto gas failed."; }
-    calcGasUsd();
+    const ethUsd=await cgETH().catch(()=>null);
+    gas.gwei=g?g.g:null; gas.usdPerNative=ethUsd??null;
+    if(g){ $("gas-gwei").value=`${g.g.toFixed(1)} Gwei`; $("gas-note").textContent=`base ${g.base.toFixed(1)} + tip ${g.tip.toFixed(1)} • ETH ≈ ${fmtUSD(ethUsd)}`; }
+    else{ $("gas-gwei").value=""; $("gas-note").textContent="auto gas failed."; }
+    calcGasUSD();
   }
-  function calcGasUsd(){
-    const g=gasState.gasGwei, gl=parseFloat(el('gas-limit-arbitrum').value||"0"), usd=gasState.gasNativeUsd;
-    const native=(g>0 && gl>0)?(g*gl)/1e9:0, cost=native*(usd||0);
-    gasState.gasUsd=cost;
-    el('gas-cost-arbitrum').value=native?`${native.toFixed(6)} ${GAS_NATIVE}`:"";
-    el('gas-cost-usd-arbitrum').textContent=native?`≈ ${fmtUSD(cost)}`:"—";
-    return cost;
+  function calcGasUSD(){
+    const gl=parseFloat($("gas-limit").value||"0");
+    const native=(gas.gwei>0 && gl>0)?(gas.gwei*gl)/1e9:0;
+    gas.usd = native*(gas.usdPerNative||0);
+    $("gas-cost").value = native? `${native.toFixed(6)} ${GAS_NATIVE}` : "";
+    $("gas-cost-usd").textContent = native? `≈ ${fmtUSD(gas.usd)}` : "—";
+    recomputeNetFromState();
   }
 
-  /* Dexscreener */
-  async function dsByToken(addr){ return await safeJSON(`${DS_BASE}/latest/dex/tokens/${addr}`,9000); }
-
-  const TOKENLISTS={
-    arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"]
-  };
-  const SEED={
-    arbitrum:["0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9","0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548","0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"]
-  };
+  /* ---- token addresses ---- */
+  const TOKENLISTS={ arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"] };
+  const SEED={ arbitrum:["0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9","0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548","0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"] };
   async function getJSON(url){ const j=await safeJSON(url,10000); if(!j) throw new Error(`GET ${url} failed`); return j; }
   async function loadTokenAddresses(){
     const addrs=new Set(SEED.arbitrum||[]);
@@ -270,8 +315,9 @@
     return [...addrs].slice(0,450);
   }
 
+  /* ---- Dexscreener ---- */
+  async function dsByToken(addr){ return await safeJSON(`${DS_BASE}/latest/dex/tokens/${addr}`,9000); }
   const MIN_LIQ=25000, MIN_VOL=10000, OUTLIER_BAND=0.25;
-
   function dropOutliersByMedian(pairs){
     const prices=pairs.map(p=>Number(p.priceUsd)).filter(x=>isFinite(x)&&x>0);
     if(prices.length<3) return pairs;
@@ -306,44 +352,101 @@
     return raw? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
   }
 
-  function appendRow(r){
-    const tbody=el('rows-arbitrum');
-    const tr=document.createElement('tr');
-    const principal=Math.min(100000, Math.max(100, parseFloat(el('loanUsd').value||"1000")));
-    const gas=gasState.gasUsd||0;
-    const spread=(r.sellPrice-r.buyPrice)/r.buyPrice;
-    const gross=principal*spread;
-    const fee=principal*PLATFORM_FEE;
-    const net=gross-fee-gas;
-    tr.className = net>0 ? "pos" : (net>-3 ? "meh" : "neg");
-    tr.innerHTML=`<td>${r.base}</td><td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td><td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td><td class="right">${(spread*100).toFixed(2)}%</td><td class="right">${fmtUSD(net)}</td>`;
-    tbody.appendChild(tr);
+  /* ---- render & recompute ---- */
+  function clampLoan(){
+    let v=parseFloat($("loanUsd").value||"0");
+    if(!isFinite(v)) v=1000;
+    v=Math.max(100, Math.min(100000, v));
+    $("loanUsd").value = String(Math.round(v/100)*100);
+    return v;
+  }
+  function principalUSD(){ return clampLoan(); }
+
+  function rowHTML(r, net){
+    const spreadPct=((r.sellPrice-r.buyPrice)/r.buyPrice)*100;
+    return `<td>${r.base}</td>
+            <td>${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td>
+            <td>${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td>
+            <td class="right">${spreadPct.toFixed(2)}%</td>
+            <td class="right">${fmtUSD(net)}</td>`;
   }
 
+  function computeNetUSD(r){
+    const P = principalUSD();
+    const spread = (r.sellPrice - r.buyPrice) / r.buyPrice;
+    const gross = P * spread;
+    const fee   = P * PLATFORM_FEE;
+    const net   = gross - fee - (gas.usd||0);
+    return net;
+  }
+
+  function recomputeNetFromState(){
+    const tbody=$("rows");
+    const rows=[...tbody.querySelectorAll("tr")];
+    rows.forEach((tr,idx)=>{
+      const r = state.results[idx]; if(!r) return;
+      const net = computeNetUSD(r);
+      tr.className = net>0 ? "pos" : (net>-3 ? "meh" : "neg");
+      tr.innerHTML = rowHTML(r, net);
+    });
+    if(state.selectionBatch){
+      const total = state.selectionBatch.reduce((s,idx)=> s + computeNetUSD(state.results[idx]), 0);
+      $("selection").textContent = `Batch selected: ${state.selectionBatch.length} • Est. net ${fmtUSD(total)}`;
+    } else if(state.selection!=null) {
+      const net = computeNetUSD(state.results[state.selection]);
+      const r = state.results[state.selection];
+      $("selection").textContent = `Selected: ${r.base} • ${r.buyDex} → ${r.sellDex} • Est. net ${fmtUSD(net)}`;
+    } else {
+      $("selection").textContent = "No selection.";
+    }
+    updateExecuteEnabled();
+  }
+
+  function renderResults(results){
+    state.results = results.slice(0,150);
+    state.selection = null;
+    state.selectionBatch = null;
+    $("selection").textContent = "No selection.";
+    const tbody=$("rows");
+    tbody.innerHTML="";
+    for(const r of state.results){
+      const net = computeNetUSD(r);
+      const tr=document.createElement("tr");
+      tr.className = net>0 ? "pos" : (net>-3 ? "meh" : "neg");
+      tr.innerHTML = rowHTML(r, net);
+      tbody.appendChild(tr);
+    }
+    updateExecuteEnabled();
+  }
+
+  /* ---- scanning ---- */
   async function mapLimit(items,limit,fn,delay=80){
-    const out=new Array(items.length); let idx=0;
+    const out=new Array(items.length); let i=0;
     async function worker(){
-      while(idx<items.length){
-        const i=idx++;
-        try{ out[i]=await fn(items[i],i); if(delay) await new Promise(r=>setTimeout(r,delay)); }
-        catch(_){ out[i]=null; }
+      while(i<items.length){
+        const idx=i++;
+        try{ out[idx]=await fn(items[idx],idx); if(delay) await new Promise(r=>setTimeout(r,delay)); }
+        catch(_){ out[idx]=null; }
       }
     }
-    const workers=[]; const n=Math.min(limit,items.length||0);
-    for(let k=0;k<n;k++) workers.push(worker());
-    await Promise.all(workers);
+    const n=Math.min(limit,items.length||0);
+    await Promise.all(Array.from({length:n},()=>worker()));
     return out;
   }
 
-  async function scanArbitrum(){
-    const status=el('status-arbitrum'), tbody=el('rows-arbitrum'), route=el('route-arbitrum');
-    tbody.innerHTML=""; route.textContent="";
+  async function scan(){
+    const status=$("status"), tbody=$("rows");
+    tbody.innerHTML=""; state.results=[]; state.selection=null; state.selectionBatch=null;
+    $("selection").textContent = "No selection.";
     status.innerHTML=`<span class="spinner"></span> Preparing…`;
 
     await initGas();
 
-    let addrs=[]; try{ addrs=await loadTokenAddresses(); }catch(_){}
-    if(!addrs.length){ status.textContent="Could not load token addresses. Try again."; return; }
+    let addrs=[];
+    try{ addrs=await loadTokenAddresses(); }
+    catch(e){ status.textContent='Tokenlist error: '+(e?.message||e); }
+    if(!addrs.length){ status.textContent="No token addresses (rate-limit?). Try again."; return; }
+
     status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
     const out=await mapLimit(addrs,10, async(addr)=>{
@@ -359,106 +462,99 @@
       }
       if(!buy||!sell||max<=min) return null;
       const base=(buy.baseToken?.symbol)||(sell.baseToken?.symbol)||"";
-      return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
+      return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max };
     }, 60);
 
     const byToken=new Map();
     out.filter(Boolean).forEach(r=>{
       const cur=byToken.get(r.base);
-      if(!cur || r.spread>cur.spread) byToken.set(r.base,r);
+      const curSpread = cur ? (cur.sellPrice-cur.buyPrice)/cur.buyPrice : -Infinity;
+      const newSpread = (r.sellPrice-r.buyPrice)/r.buyPrice;
+      if(!cur || newSpread>curSpread) byToken.set(r.base,r);
     });
-    const usable=[...byToken.values()].sort((a,b)=>b.spread-a.spread).slice(0,150);
-
-    status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes with current guards.";
-    usable.forEach(r=>appendRow(r));
-    if(usable[0]){
-      route.innerHTML=`<span class="help"><span class="mono">Top:</span> ${usable[0].base} — Buy ${usable[0].buyDex} @ ${fmtUSD(usable[0].buyPrice)} → Sell ${usable[0].sellDex} @ ${fmtUSD(usable[0].sellPrice)} (${(usable[0].spread*100).toFixed(2)}%)</span>`;
-    }
-
-    // reset selections after a new scan
-    state.selected = null;
-    state.selectedBatch = null;
-    el('execBtn').disabled = true;
-    el('execAllBtn').disabled = true;
+    const results=[...byToken.values()].sort((a,b)=>((b.sellPrice-b.buyPrice)/b.buyPrice)-((a.sellPrice-a.buyPrice)/a.buyPrice));
+    status.textContent = results.length? `Found ${results.length} opportunities` : "No viable routes with current guards.";
+    renderResults(results);
   }
 
-  /* -------- Selection helpers (single & batch) -------- */
-  function readRoutesFromTable() {
-    const rows = Array.from(document.querySelectorAll('#rows-arbitrum tr'));
-    return rows.map(tr=>{
-      const tds = tr.querySelectorAll('td');
-      if (tds.length < 5) return null;
-      const token = tds[0].textContent.trim();
-      const buy   = tds[1].textContent.trim();   // "DEX @ $price"
-      const sell  = tds[2].textContent.trim();
-      const net   = parseFloat(tds[4].textContent.replace(/[,$]/g,''));
-      return isFinite(net) ? { token, buy, sell, net } : null;
-    }).filter(Boolean);
+  /* ---- selection & execute (mock) ---- */
+  function selectAllProfitable(){
+    if(!state.results.length){ alert('Scan first.'); return; }
+    state.selection = null;
+    const profIdx = state.results
+      .map((r,i)=>({i,net:computeNetUSD(r)}))
+      .filter(x=>x.net>0)
+      .map(x=>x.i);
+    if(!profIdx.length){ alert('No profitable rows at this loan size.'); state.selectionBatch=null; $("selection").textContent="No selection."; updateExecuteEnabled(); return; }
+    state.selectionBatch = profIdx;
+    const total = profIdx.reduce((s,i)=> s + computeNetUSD(state.results[i]), 0);
+    $("selection").textContent = `Batch selected: ${profIdx.length} • Est. net ${fmtUSD(total)}`;
+    updateExecuteEnabled();
+    alert(`Selected ${profIdx.length} profitable routes.\nCombined est. net: ${fmtUSD(total)}\n(Execute is mock for now)`);
   }
 
-  function autoSelect(){
-    const routes = readRoutesFromTable();
-    if(!routes.length){ alert('No routes yet. Click Scan.'); return; }
-    let best = routes.reduce((a,b)=> a.net>b.net?a:b);
-    if(!best){ alert('No viable routes.'); return; }
-    state.selected={ network:'arbitrum', ...best };
-    el('route-arbitrum').innerHTML=`<span class="help"><span class="mono">Selected:</span> ${best.token} — ${best.buy} → ${best.sell} • Est. net ${fmtUSD(best.net)}</span>`;
-    el('execBtn').disabled=!state.account;
-    alert(`Selected:\n${best.token}\n${best.buy} → ${best.sell}\nNet @ loan: ${fmtUSD(best.net)}`);
-  }
-
-  function autoSelectAll() {
-    const routes = readRoutesFromTable();
-    const profitable = routes.filter(r => r.net > 0);
-    if (!profitable.length) { alert('No profitable routes yet.'); return; }
-    state.selectedBatch = { network:'arbitrum', routes: profitable };
-    const total = profitable.reduce((s,r)=>s + r.net, 0);
-    el('route-arbitrum').innerHTML =
-      `<span class="help"><span class="mono">Selected (batch):</span> ${profitable.length} routes • Est. net ${fmtUSD(total)}</span>`;
-    el('execAllBtn').disabled = !state.account;
-    alert(`Selected ${profitable.length} profitable routes.\nCombined est. net: ${fmtUSD(total)}\n(Execute All is mock for now)`);
-  }
-
-  /* -------- Execute (mock) -------- */
-  function randTxId(){ return '0x' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
   function executeMock(){
-    if(!state.account){ alert('Connect wallet (or set manual address) first.'); return; }
-    if(!state.selected){ alert('Auto Select a route first.'); return; }
-    const txid=randTxId();
-    alert(`(Mock) Executed on ARBITRUM\n${state.selected.token}\n${state.selected.buy} → ${state.selected.sell}\nWallet: ${shortAddr(state.account)}\nTxID: ${txid}`);
+    if(!state.account){ alert('Connect wallet first.'); return; }
+    if(state.selectionBatch && state.selectionBatch.length){
+      const total = state.selectionBatch.reduce((s,i)=> s + computeNetUSD(state.results[i]), 0);
+      const sample = state.selectionBatch.slice(0,8).map(i=>{
+        const r=state.results[i]; return `• ${r.base}: ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (${fmtUSD(computeNetUSD(r))})`;
+      }).join('\n');
+      const txid = '0x'+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
+      alert(`(Mock) Batch Execute on ARBITRUM\nWallet: ${shortAddr(state.account)}\nRoutes: ${state.selectionBatch.length}\nCombined est. net: ${fmtUSD(total)}\n\nSample:\n${sample}\n\nTxID: ${txid}`);
+    } else if(state.selection!=null){
+      const r=state.results[state.selection];
+      const txid = '0x'+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
+      alert(`(Mock) Execute on ARBITRUM\n${r.base}\n${r.buyDex} → ${r.sellDex}\nNet @ loan: ${fmtUSD(computeNetUSD(r))}\nWallet: ${shortAddr(state.account)}\nTxID: ${txid}`);
+    } else {
+      alert('Select All (or tap a row) first.');
+    }
   }
-  function executeAllMock() {
-    if (!state.account) { alert('Connect wallet first.'); return; }
-    if (!state.selectedBatch || !state.selectedBatch.routes?.length) { alert('Select All Profitable first.'); return; }
-    const txid = randTxId();
-    const total = state.selectedBatch.routes.reduce((s,r)=>s + r.net, 0);
-    const lines = state.selectedBatch.routes.slice(0,10).map(r => `• ${r.token}: ${r.buy} → ${r.sell} (${fmtUSD(r.net)})`);
-    const more  = state.selectedBatch.routes.length > 10 ? `\n…and ${state.selectedBatch.routes.length - 10} more` : '';
-    alert(`(Mock) Batch Execute on ARBITRUM\nWallet: ${shortAddr(state.account)}\nRoutes: ${state.selectedBatch.routes.length}\nCombined est. net: ${fmtUSD(total)}${more}\n\nSample:\n${lines.join('\n')}\n\nTxID: ${txid}`);
+
+  $("rows").addEventListener("click", e=>{
+    const tr=e.target.closest("tr"); if(!tr) return;
+    const idx=[...$("rows").children].indexOf(tr);
+    if(idx<0 || !state.results[idx]) return;
+    state.selectionBatch=null; state.selection=idx;
+    const r=state.results[idx];
+    $("selection").textContent = `Selected: ${r.base} • ${r.buyDex} → ${r.sellDex} • Est. net ${fmtUSD(computeNetUSD(r))}`;
+    updateExecuteEnabled();
+  });
+
+  function updateExecuteEnabled(){
+    const can = state.account && ((state.selection!=null) || (state.selectionBatch && state.selectionBatch.length));
+    $("executeBtn").disabled = !can;
   }
 
-  /* wire UI */
-  document.getElementById('scanBtn').addEventListener('click', scanArbitrum);
-  document.getElementById('autoBtn').addEventListener('click', autoSelect);
-  document.getElementById('autoAllBtn').addEventListener('click', autoSelectAll);
-  document.getElementById('execBtn').addEventListener('click', executeMock);
-  document.getElementById('execAllBtn').addEventListener('click', executeAllMock);
-  document.getElementById('gas-limit-arbitrum').addEventListener('input', calcGasUsd);
+  /* ---- wire UI ---- */
+  $("scanBtn").addEventListener("click", scan);
+  $("selectAllBtn").addEventListener("click", selectAllProfitable);
+  $("executeBtn").addEventListener("click", executeMock);
+  $("connectBtn").addEventListener("click", openWallet);
+  $("walletClose").addEventListener("click", closeWallet);
+  $("wMetaMask").addEventListener("click", connectMetaMask);
+  $("wManual").addEventListener("click", connectManual);
+  $("gas-limit").addEventListener("input", calcGasUSD);
 
-  document.getElementById('connectBtn').addEventListener('click', openWallet);
-  document.getElementById('walletClose').addEventListener('click', closeWallet);
-  document.getElementById('wMetaMask').addEventListener('click', connectMetaMask);
-  document.getElementById('wManual').addEventListener('click', connectManual);
+  // Footer quick links
+  $("lkScan").addEventListener("click", e=>{e.preventDefault(); $("scanBtn").click();});
+  $("lkSelect").addEventListener("click", e=>{e.preventDefault(); $("selectAllBtn").click();});
+  $("lkExec").addEventListener("click", e=>{e.preventDefault(); $("executeBtn").click();});
+  $("lkConnect").addEventListener("click", e=>{e.preventDefault(); $("connectBtn").click();});
 
-  // Auto rescan
-  function startAuto(){
-    clearInterval(state.timer);
-    state.timer=setInterval(()=>{ if(!document.getElementById('autoRescan').checked) return; scanArbitrum(); }, 60000);
-  }
-  startAuto();
+  // Loan input: debounce + recompute, no re-scan needed
+  let loanTimer=null;
+  $("loanUsd").addEventListener("input", ()=>{
+    if(loanTimer) clearTimeout(loanTimer);
+    loanTimer=setTimeout(()=>{ clampLoan(); recomputeNetFromState(); }, 180);
+  });
+  $("loanUsd").addEventListener("change", ()=>{ clampLoan(); recomputeNetFromState(); });
 
-  // initial gas + first scan
-  initGas(); scanArbitrum();
+  // Optional: auto-rescan every 60s (kept off by default for simplicity)
+  // state.timer=setInterval(()=>scan(), 60000);
+
+  // init
+  (async()=>{ await initGas(); await scan(); })();
 })();
 </script>
 </body>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings Test Bed v9.1.0 — Wallet + Auto Select + Mock Execute</title>
+<title>Crypto Kings Test Bed v9.1.1 — Multi-Chain Scan + Wider Discovery</title>
 <style>
   :root{
     --bg:#f3f4f6; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -17,7 +17,7 @@
   .container{max-width:1200px;margin:0 auto;padding:0 16px}
 
   .topbar{position:sticky;top:0;z-index:40;background:var(--topbar);border-bottom:1px solid var(--topbar-border)}
-  .topbar-inner{display:flex;align-items:center;gap:12px;padding:12px 0}
+  .topbar-inner{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
   .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(29,155,240,.18)}
   .logo span{font-size:14px;font-weight:900;color:white}
   .brand{font-weight:800;letter-spacing:.3px}
@@ -49,18 +49,6 @@
   .errbar{margin-top:12px}
   .errbar .box{background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px}
   .errbar .box pre{white-space:pre-wrap;word-break:break-word;margin:6px 0 0;font-size:12px;color:#7f1d1d}
-
-  /* HUD / Modal */
-  #hud{position:fixed;inset:0;background:rgba(0,0,0,.25);display:none;align-items:center;justify-content:center;z-index:60}
-  #hud .panel{background:#fff;color:#111;border:1px solid var(--border);border-radius:14px;min-width:320px;max-width:520px;padding:18px;box-shadow:0 18px 48px rgba(0,0,0,.18)}
-  #hud h3{margin:0 0 10px}
-  .steps{list-style:none;margin:10px 0 0;padding:0}
-  .steps li{display:flex;align-items:center;gap:8px;margin:6px 0}
-  .dot{width:10px;height:10px;border-radius:50%;background:#d1d5db}
-  .dot.on{background:var(--brand)}
-  .dot.ok{background:var(--ok)}
-  .dot.err{background:var(--bad)}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
 </style>
 </head>
 <body>
@@ -68,7 +56,7 @@
     <div class="container topbar-inner">
       <div class="logo"><span>CK</span></div>
       <div class="brand">Crypto Kings</div>
-      <span class="chip">v9.1.0</span>
+      <span class="chip">v9.1.1</span>
       <div class="spacer"></div>
 
       <div class="help" style="display:flex;align-items:center;gap:6px">
@@ -76,8 +64,13 @@
         <input id="loanUsd" type="number" min="100" step="100" value="1000" style="width:120px">
       </div>
 
+      <label class="help" style="display:flex;align-items:center;gap:6px">
+        <input id="autoRescan" type="checkbox" checked> Auto rescan (60s)
+      </label>
+
       <button id="scanBtn" class="btn">Scan</button>
-      <button id="autoBtn" class="btn" title="Pick best route from table">Auto Select</button>
+      <button id="scanAllBtn" class="btn">Scan All</button>
+      <button id="autoBtn" class="btn" title="Pick best route in tab">Auto Select</button>
       <button id="execBtn" class="btn" disabled title="Execute (mock)">Execute</button>
       <button id="connectBtn" class="btn ghost" title="Connect MetaMask">Connect Wallet</button>
     </div>
@@ -97,25 +90,6 @@
     </div>
 
     <div id="panes"></div>
-  </div>
-
-  <!-- HUD -->
-  <div id="hud">
-    <div class="panel">
-      <h3 id="hudTitle">Executing route…</h3>
-      <div class="help" id="hudSub">—</div>
-      <ul class="steps">
-        <li><span class="dot" id="st1"></span> Taking flash loan</li>
-        <li><span class="dot" id="st2"></span> Buying on buy DEX</li>
-        <li><span class="dot" id="st3"></span> Selling on sell DEX</li>
-        <li><span class="dot" id="st4"></span> Repaying loan + fee</li>
-        <li><span class="dot" id="st5"></span> Sending profit to wallet</li>
-      </ul>
-      <div id="hudFoot" class="help" style="margin-top:10px"></div>
-      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
-        <button id="hudClose" class="btn ghost">Close</button>
-      </div>
-    </div>
   </div>
 
 <script>
@@ -154,7 +128,7 @@ function paneHTML(nw){
       </div>
       <div class="row row-3" style="margin-top:8px">
         <div><span id="status-${nw}" class="help">Ready.</span></div>
-        <div class="help">Stable quotes only • DEX allow-list • Outlier filter ±15%</div>
+        <div class="help">Broader search • Wider outlier band • DEX allow-list</div>
         <div><label>Manual Scan</label><button class="btn" data-scan="${nw}">Scan ${pretty}</button></div>
       </div>
       <div class="help" id="route-${nw}" style="margin-top:6px;"></div>
@@ -179,18 +153,19 @@ function buildUI(){
 </script>
 
 <script>
-/* ---------- App logic + Wallet + AutoSelect + Mock Execute ---------- */
+/* ---------- App logic + wallet + multi-scan ---------- */
 (function(){
   const DS_BASE="https://api.dexscreener.com";
   const PLATFORM_FEE=0.0009;
-  const ALLOWED=["uniswap","uniswap-v3","sushiswap","camelot","balancer","traderjoe","pangolin","pancakeswap","pancakeswap-v3","quickswap"];
+  // Expanded allow-list (still filtered to stables as quote)
+  const ALLOWED=["uniswap","uniswap-v3","sushiswap","camelot","balancer","traderjoe","pangolin","pancakeswap","pancakeswap-v3","quickswap","kyberswap","kyber","curve"];
 
   const el=id=>document.getElementById(id);
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
   const shortAddr=a=>a ? `${a.slice(0,6)}…${a.slice(-4)}` : "";
 
   // ------- Wallet -------
-  const state={ selected:null, account:null, chainId:null };
+  const state={ selected:null, account:null, chainId:null, timers:{} };
   async function connectWallet(){
     const btn=el('connectBtn');
     if(!window.ethereum){
@@ -206,6 +181,7 @@ function buildUI(){
       btn.textContent = shortAddr(state.account);
       btn.classList.add('ghost');
       btn.title = `Connected: ${state.account}`;
+      el('execBtn').disabled = !state.selected;
     }catch(e){
       el('errtxt').textContent = e.message || String(e);
       el('errbar').style.display='block';
@@ -292,15 +268,21 @@ function buildUI(){
         }
       }catch(_){}
     }
-    return [...addrs].slice(0,250);
+    // bigger sample
+    return [...addrs].slice(0,600);
   }
+
+  // discovery guards (wider than before)
+  const MIN_LIQ=25000;   // USD
+  const MIN_VOL=10000;   // USD 24h
+  const OUTLIER_BAND=0.25; // ±25%
 
   function dropOutliersByMedian(pairs){
     const prices=pairs.map(p=>Number(p.priceUsd)).filter(x=>isFinite(x)&&x>0);
     if(prices.length<3) return pairs;
     prices.sort((a,b)=>a-b);
     const med=prices[Math.floor(prices.length/2)];
-    const low=med*0.85, high=med*1.15;
+    const low=med*(1-OUTLIER_BAND), high=med*(1+OUTLIER_BAND);
     return pairs.filter(p=>{ const pr=Number(p.priceUsd); return isFinite(pr) && pr>=low && pr<=high; });
   }
   function consolidatePerDex(pairs){
@@ -309,7 +291,8 @@ function buildUI(){
       const dex=(p?.dexId||"").toLowerCase();
       const liq=p?.liquidity?.usd||0, vol=p?.volume?.h24||0;
       const allowed=ALLOWED.some(k=>dex.includes(k));
-      return allowed && (q==="USDC"||q==="USDT") && liq>=75000 && vol>=15000;
+      // keep only USD stables quotes (USDC/USDT) to keep math consistent
+      return allowed && (q==="USDC"||q==="USDT") && liq>=MIN_LIQ && vol>=MIN_VOL;
     });
     const trimmed=dropOutliersByMedian(usable);
     const byDex=new Map();
@@ -324,7 +307,7 @@ function buildUI(){
   }
   function prettyDexId(p){
     const raw=(p?.dexId||"").toLowerCase();
-    const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",camelot:"Camelot",balancer:"Balancer",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin"};
+    const map={uniswap:"Uniswap V3","uniswap-v3":"Uniswap V3",sushiswap:"SushiSwap",camelot:"Camelot",balancer:"Balancer",quickswap:"QuickSwap",pancakeswap:"PancakeSwap","pancakeswap-v3":"PancakeSwap",traderjoe:"Trader Joe",pangolin:"Pangolin",kyberswap:"KyberSwap",kyber:"KyberSwap",curve:"Curve"};
     for(const k in map){ if(raw.includes(k)) return map[k]; }
     return raw? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
   }
@@ -343,12 +326,12 @@ function buildUI(){
     tbody.appendChild(tr);
   }
 
-  async function mapLimit(items,limit,fn){
+  async function mapLimit(items,limit,fn,delay=60){
     const out=new Array(items.length); let idx=0;
     async function worker(){
       while(idx<items.length){
         const i=idx++;
-        try{ out[i]=await fn(items[i],i); await new Promise(r=>setTimeout(r,80)); }
+        try{ out[i]=await fn(items[i],i); if(delay) await new Promise(r=>setTimeout(r,delay)); }
         catch(_){ out[i]=null; }
       }
     }
@@ -371,7 +354,8 @@ function buildUI(){
     if(!addrs.length){ status.textContent="Could not load token addresses (rate-limit?). Try again."; return; }
     status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens…`;
 
-    const out=await mapLimit(addrs,10, async(addr)=>{
+    // higher concurrency + slight delay to be kind to the API
+    const out=await mapLimit(addrs,12, async(addr)=>{
       const j=await dsByToken(addr);
       if(!j?.pairs?.length) return null;
       const onNet=j.pairs.filter(p=>p.chainId===nw);
@@ -386,14 +370,14 @@ function buildUI(){
       if(!buy||!sell||max<=min) return null;
       const base=(buy.baseToken?.symbol)||(sell.baseToken?.symbol)||"";
       return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max, spread:(max-min)/min };
-    });
+    }, 50);
 
     const byToken=new Map();
     out.filter(Boolean).forEach(r=>{
       const cur=byToken.get(r.base);
       if(!cur || r.spread>cur.spread) byToken.set(r.base,r);
     });
-    const usable=[...byToken.values()].sort((a,b)=>b.spread-a.spread).slice(0,150);
+    const usable=[...byToken.values()].sort((a,b)=>b.spread-a.spread).slice(0,200);
 
     status.textContent = usable.length? `Found ${usable.length} opportunities` : "No viable routes with current guards.";
     const bar=el('errbar'); if(bar) bar.style.display = usable.length? 'none':'block';
@@ -403,7 +387,7 @@ function buildUI(){
     }
   }
 
-  // ------- Auto Select -------
+  // ------- Auto Select + Execute (mock) -------
   function autoSelect(){
     const active = document.querySelector('#tabbar button.active')?.dataset.tab || 'arbitrum';
     const rows = document.querySelectorAll(`#rows-${active} tr`);
@@ -414,10 +398,9 @@ function buildUI(){
       const token=tds[0].textContent.trim();
       const buy  =tds[1].textContent.trim();
       const sell =tds[2].textContent.trim();
-      const spreadPct=parseFloat((tds[3].textContent||"").replace('%',''))/100;
       const netTxt=tds[4].textContent.replace(/[,$]/g,'');
       const netVal=parseFloat(netTxt);
-      if(isFinite(netVal) && netVal>bestVal){ bestVal=netVal; best={token,buy,sell,spreadPct,netVal}; }
+      if(isFinite(netVal) && netVal>bestVal){ bestVal=netVal; best={token,buy,sell,netVal}; }
     });
     if(!best){ alert('No viable routes.'); return; }
     state.selected = { network: active, ...best };
@@ -425,62 +408,38 @@ function buildUI(){
     if(routeEl){
       routeEl.innerHTML = `<span class="tag">Selected</span> ${best.token}: ${best.buy} → ${best.sell} • Est. net ${fmtUSD(best.netVal)}`;
     }
-    el('execBtn').disabled = !state.account; // need wallet to execute
+    el('execBtn').disabled = !state.account;
     alert(`Selected on ${active.toUpperCase()}:\n${best.token}\n${best.buy}\n${best.sell}\nNet @ loan: ${fmtUSD(best.netVal)}`);
   }
 
-  // ------- Mock Execute with HUD -------
   function randTxId(){ return '0x' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-  function setDot(i,klass){ const d=el('st'+i); if(d){ d.classList.remove('on','ok','err'); if(klass) d.classList.add(klass); } }
-  function showHUD(title, sub){ el('hudTitle').textContent=title; el('hudSub').textContent=sub||''; el('hudFoot').textContent=''; [1,2,3,4,5].forEach(i=>setDot(i,null)); el('hud').style.display='flex'; }
-  function closeHUD(){ el('hud').style.display='none'; }
-
-  async function executeMock(){
+  function executeMock(){
     if(!state.account){ alert('Connect wallet first.'); return; }
     if(!state.selected){ alert('Auto Select a route first.'); return; }
-    const s=state.selected;
-    const loan = Math.max(100, parseFloat(el('loanUsd').value||"1000"));
-    showHUD('Executing (mock)', `${s.token} • ${s.network.toUpperCase()} • Loan ${fmtUSD(loan)}`);
-
-    // Simple pre-check
-    if(!(s.netVal>0)){ el('hudFoot').textContent='Aborted: estimated net is not positive.'; setDot(1,'err'); return; }
-
-    // Simulate steps
-    const steps = [
-      async()=>{ setDot(1,'on'); await new Promise(r=>setTimeout(r,700)); setDot(1,'ok'); },
-      async()=>{ setDot(2,'on'); await new Promise(r=>setTimeout(r,800)); setDot(2,'ok'); },
-      async()=>{ setDot(3,'on'); await new Promise(r=>setTimeout(r,900)); setDot(3,'ok'); },
-      async()=>{ setDot(4,'on'); await new Promise(r=>setTimeout(r,800)); setDot(4,'ok'); },
-      async()=>{ setDot(5,'on'); await new Promise(r=>setTimeout(r,600)); setDot(5,'ok'); },
-    ];
-    for(const fn of steps){ await fn(); }
-    const txid = randTxId();
-    el('hudFoot').innerHTML = `Transaction successful (mock). TxID <span class="mono">${txid}</span><br><span class="help">To go live, deploy CKFlash and replace the placeholder call with contract.flash(route).</span>`;
+    const txid=randTxId();
+    alert(`(Mock) Executed on ${state.selected.network.toUpperCase()}\n${state.selected.token}\n${state.selected.buy} → ${state.selected.sell}\nTxID: ${txid}`);
   }
 
-  // ------- Wire up UI -------
-  function buildUI(){
-    const panes=document.getElementById('panes');
-    panes.innerHTML = NETWORKS.map(nw=>paneHTML(nw)).join('');
-    const tabbar=document.getElementById('tabbar');
-    tabbar.addEventListener('click',e=>{
-      const b=e.target.closest('button[data-tab]'); if(!b) return;
-      [...tabbar.children].forEach(x=>x.classList.remove('active')); b.classList.add('active');
-      const id='pane-'+b.dataset.tab;
-      NETWORKS.forEach(nw=>{ const elx=document.getElementById('pane-'+nw); if(elx) elx.style.display=(elx.id===id)?'block':'none'; });
-    });
-  }
-
-  // Init UI & events
+  // ------- Build UI & wire events -------
   buildUI();
   document.getElementById('scanBtn').addEventListener('click',()=>{
     const active=document.querySelector('#tabbar button.active')?.dataset.tab || 'arbitrum';
     scan(active);
   });
+  document.getElementById('scanAllBtn').addEventListener('click', async()=>{
+    for(const nw of ["arbitrum","ethereum","polygon","bsc","avalanche"]){
+      // switch tab visually
+      const btn=[...document.querySelectorAll('#tabbar button')].find(b=>b.dataset.tab===nw);
+      if(btn){ [...btn.parentNode.children].forEach(x=>x.classList.remove('active')); btn.classList.add('active'); }
+      NETWORKS.forEach(n=>{ const elx=document.getElementById('pane-'+n); if(elx) elx.style.display = (n===nw)?'block':'none'; });
+      await scan(nw);
+      // small delay between networks to be gentle
+      await new Promise(r=>setTimeout(r,400));
+    }
+  });
   document.getElementById('autoBtn').addEventListener('click', autoSelect);
   document.getElementById('execBtn').addEventListener('click', executeMock);
   document.getElementById('connectBtn').addEventListener('click', connectWallet);
-  document.getElementById('hudClose').addEventListener('click', closeHUD);
 
   // Gas listeners & init
   NETWORKS.forEach(nw=>{
@@ -488,7 +447,19 @@ function buildUI(){
     initGas(nw);
   });
 
-  // First scan
+  // Auto rescan per active tab every 60s (toggleable)
+  function startAutoRescan(){
+    clearInterval(state.timers.autoScan);
+    state.timers.autoScan = setInterval(()=>{
+      if(!document.getElementById('autoRescan').checked) return;
+      const active=document.querySelector('#tabbar button.active')?.dataset.tab || 'arbitrum';
+      scan(active);
+    }, 60000);
+  }
+  startAutoRescan();
+  document.getElementById('autoRescan').addEventListener('change', startAutoRescan);
+
+  // First scan (Arbitrum) + hint: click Scan All for the rest
   scan('arbitrum');
 })();
 </script>

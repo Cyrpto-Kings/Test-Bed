@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.2.5 — Arbitrum</title>
+<title>Crypto Kings Test Bed v9.3.0 — Arbitrum (Slippage-Aware)</title>
 <style>
   :root{
     --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -16,63 +16,36 @@
     margin:0;background:var(--bg);color:var(--ink);
     font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;
     display:flex;flex-direction:column;min-height:100vh;
-    overflow-x:hidden; /* 🔒 stop sideways scroll on mobile */
+    overflow-x:hidden;
   }
   .container{max-width:1100px;width:100%;margin:0 auto;padding:0 16px}
   main{flex:1}
 
   /* Topbar */
   .topbar{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--border)}
-  .topbar-inner{
-    display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;
-  }
+  .topbar-inner{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0}
   .brandbox{display:flex;align-items:center;gap:10px;min-width:0}
-  .logo{
-    width:34px;height:34px;border-radius:10px;
-    background:linear-gradient(135deg,var(--brand),var(--brand2));
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 6px 16px rgba(29,155,240,.18);flex:0 0 auto;
-  }
+  .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(29,155,240,.18)}
   .logo span{font-size:14px;font-weight:900;color:white}
   .brand{font-weight:800;letter-spacing:.3px;white-space:nowrap}
-  .chip{display:inline-block;padding:2px 8px;border:1px solid var(--border-strong);
-    border-radius:999px;font-size:12px;background:#eef2ff;color:#3b3b6d}
+  .chip{display:inline-block;padding:2px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#eef2ff;color:#3b3b6d}
 
   .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-  .group{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);
-    border-radius:12px;padding:6px 8px}
-  .group input{width:140px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px}
+  .group{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px 8px}
+  .group input{width:160px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px}
   .group input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
   .help{font-size:12px;color:var(--muted)}
 
   .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-  .btn{
-    appearance:none;border:0;border-radius:10px;padding:10px 14px;
-    font-weight:700;cursor:pointer;color:white;
-    background:linear-gradient(135deg,var(--brand),var(--brand2));
-    box-shadow:0 6px 16px rgba(124,92,255,.15); min-height:44px; /* 👆 44px tap target */
-  }
+  .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(124,92,255,.15);min-height:44px}
   .btn.ghost{background:#fff;color:#111;border:1px solid var(--border-strong);box-shadow:none}
   .btn:disabled{opacity:.6;cursor:not-allowed}
-
-  /* Tablet down */
-  @media (max-width:960px){
-    .topbar-inner{grid-template-columns:1fr;gap:10px}
-    .actions{justify-content:space-between}
-  }
-  /* Small phones */
-  @media (max-width:560px){
-    .controls{justify-content:space-between}
-    .group input{width:110px}
-    .actions .btn{flex:1 1 calc(50% - 8px)} /* two per row */
-  }
-  @media (max-width:390px){
-    .actions .btn{flex:1 1 100%} /* full width on very small phones */
-  }
+  @media (max-width:960px){ .topbar-inner{grid-template-columns:1fr;gap:10px} .actions{justify-content:space-between} }
+  @media (max-width:560px){ .controls{justify-content:space-between} .group input{width:140px} .actions .btn{flex:1 1 calc(50% - 8px)} }
+  @media (max-width:390px){ .actions .btn{flex:1 1 100%} }
 
   main .wrap{padding:16px 0 80px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
-
   .row{display:grid;grid-template-columns:1fr;gap:12px}
   @media (min-width:960px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -80,7 +53,7 @@
 
   /* Table -> Card mode on mobile */
   .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:720px;width:100%}
+  table{min-width:860px;width:100%}
   .table{border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
   .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
   .table th{color:#374151;font-weight:700;background:#f9fafb}
@@ -88,27 +61,16 @@
   .right{text-align:right}
   .pos{background:#ecfdf5} .neg{background:#fef2f2} .meh{background:#f9fafb}
 
-  /* Card rows for phones */
   @media (max-width:560px){
     table{min-width:0}
     .table thead{display:none}
-    .table tr{
-      display:grid;grid-template-columns:1fr;gap:6px;
-      background:#fff;border:1px solid var(--border);border-radius:12px;margin:10px 0;padding:10px 10px;
-    }
-    .table td{
-      display:flex;justify-content:space-between;align-items:center;gap:10px;
-      white-space:normal;border:0;padding:6px 0;
-    }
-    .table td::before{
-      content:attr(data-label);
-      font-size:12px;color:#6b7280;margin-right:10px;flex:0 0 auto;
-    }
+    .table tr{display:grid;grid-template-columns:1fr;gap:6px;background:#fff;border:1px solid var(--border);border-radius:12px;margin:10px 0;padding:10px 10px}
+    .table td{display:flex;justify-content:space-between;align-items:center;gap:10px;white-space:normal;border:0;padding:6px 0}
+    .table td::before{content:attr(data-label);font-size:12px;color:#6b7280;margin-right:10px;flex:0 0 auto}
     .right{text-align:right}
   }
 
-  .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;
-    width:20px;height:20px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
+  .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:20px;height:20px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 
   /* Footer */
@@ -130,13 +92,13 @@
       <div class="brandbox">
         <div class="logo"><span>CK</span></div>
         <div class="brand">Crypto Kings</div>
-        <span class="chip">v9.2.5</span>
+        <span class="chip">v9.3.0</span>
       </div>
 
       <div class="controls">
         <div class="group">
           <label for="loanUsd" class="help">Loan Size (USD)</label>
-          <input id="loanUsd" type="number" min="100" max="100000" step="100" value="1000" inputmode="decimal">
+          <input id="loanUsd" type="number" min="100" max="500000" step="500" value="100000" inputmode="decimal">
         </div>
       </div>
 
@@ -171,7 +133,7 @@
               <th>Buy (DEX @ $)</th>
               <th>Sell (DEX @ $)</th>
               <th class="right">Spread %</th>
-              <th class="right">Net @ loan</th>
+              <th class="right">Net after slippage</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -256,10 +218,10 @@
 </script>
 
 <script>
-/* ---------- App (Arbitrum, mobile-optimized) ---------- */
+/* ---------- App (Arbitrum, slippage-aware) ---------- */
 (function(){
   const DS_BASE="https://api.dexscreener.com";
-  const PLATFORM_FEE=0.0009; // 0.09%
+  const PLATFORM_FEE=0.0009; // 0.09% Aave v3
   const NETWORK="arbitrum";
   const GAS_NATIVE="ETH";
   const ALLOWED=["uniswap","uniswap-v3","sushiswap","camelot","balancer","kyber","kyberswap","curve"];
@@ -268,9 +230,10 @@
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
   const shortAddr=a=>a ? `${a.slice(0,6)}…${a.slice(-4)}` : "";
 
-  const state={ results:[], selection:null, selectionBatch:null, account:null, timer:null };
+  const state={ results:[], selection:null, selectionBatch:null, account:null };
   const gas={ gwei:null, usdPerNative:null, usd:0 };
 
+  /* fetch helpers */
   async function fetchWithTimeout(url, opts={}, ms=8000){
     const ctrl=new AbortController(); const id=setTimeout(()=>ctrl.abort(), ms);
     try{ return await fetch(url,{...opts,signal:ctrl.signal}); } finally{ clearTimeout(id); }
@@ -281,7 +244,7 @@
     try{ return await r.json(); } catch(_){ return null; }
   }
 
-  /* ---- wallet ---- */
+  /* wallet */
   function openWallet(){ $("walletModal").style.display='flex'; }
   function closeWallet(){ $("walletModal").style.display='none'; }
   async function connectMetaMask(){
@@ -291,8 +254,7 @@
       state.account=accs&&accs[0]||null;
       $("connectBtn").textContent=shortAddr(state.account)||'Connect';
       $("connectBtn").classList.add('ghost');
-      updateExecuteEnabled();
-      closeWallet();
+      updateExecuteEnabled(); closeWallet();
     }catch(_){ alert('Connection rejected.'); }
   }
   function connectManual(){
@@ -300,11 +262,10 @@
     state.account=addr.trim();
     $("connectBtn").textContent=shortAddr(state.account);
     $("connectBtn").classList.add('ghost');
-    updateExecuteEnabled();
-    closeWallet();
+    updateExecuteEnabled(); closeWallet();
   }
 
-  /* ---- gas ---- */
+  /* gas */
   const RPC_ARB=["https://rpc.ankr.com/arbitrum","https://arbitrum.llamarpc.com","https://arb1.arbitrum.io/rpc"];
   async function gasSuggestGwei(){
     const payload={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
@@ -342,9 +303,9 @@
     recomputeNetFromState();
   }
 
-  /* ---- token addresses ---- */
+  /* token list */
   const TOKENLISTS={ arbitrum:["https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json"] };
-  const SEED={ arbitrum:["0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9","0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548","0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"] };
+  const SEED={ arbitrum:["0xaf88d065e77c8cC2239327C5EDb3A432268e5831","0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9","0x82af49447d8a07e3bd95bd0d56f35241523fbab1","0x912CE59144191C1204E64559FE8253a0e49E6548","0xda10009cbd5d07dd0cecc61"] }; // shortened DAI ok
   async function getJSON(url){ const j=await safeJSON(url,10000); if(!j) throw new Error(`GET ${url} failed`); return j; }
   async function loadTokenAddresses(){
     const addrs=new Set(SEED.arbitrum||[]);
@@ -360,7 +321,7 @@
     return [...addrs].slice(0,450);
   }
 
-  /* ---- Dexscreener ---- */
+  /* Dexscreener helpers */
   async function dsByToken(addr){ return await safeJSON(`${DS_BASE}/latest/dex/tokens/${addr}`,9000); }
   const MIN_LIQ=25000, MIN_VOL=10000, OUTLIER_BAND=0.25;
   function dropOutliersByMedian(pairs){
@@ -397,33 +358,60 @@
     return raw? raw.charAt(0).toUpperCase()+raw.slice(1) : "DEX";
   }
 
-  /* ---- render & recompute ---- */
+  /* ---- Slippage model (CPMM approx) ----
+     We treat pair.liquidity.usd as total USD across both sides.
+     Approx quote reserve Rq ≈ liquidity.usd / 2.
+     Buy: avg price ≈ mid * (1 + tUSD / (2*Rq))
+     Sell: avg price ≈ mid * (1 - tUSD / (2*Rq))
+     Cap impact at 90% to avoid nonsense for tiny pools.
+  --------------------------------------- */
+  function effBuyPrice(midUSD, tUSD, liqUSD){
+    const R = (liqUSD||0)/2;
+    if(!(R>0)) return midUSD*1.10;
+    const impact = Math.min(0.9, Math.max(0, tUSD/(2*R)));
+    return midUSD * (1 + impact);
+  }
+  function effSellPrice(midUSD, tUSD, liqUSD){
+    const R = (liqUSD||0)/2;
+    if(!(R>0)) return midUSD*0.90;
+    const impact = Math.min(0.9, Math.max(0, tUSD/(2*R)));
+    return midUSD * (1 - impact);
+  }
+
+  /* UI helpers */
   function clampLoan(){
     let v=parseFloat($("loanUsd").value||"0");
-    if(!isFinite(v)) v=1000;
-    v=Math.max(100, Math.min(100000, v));
+    if(!isFinite(v)) v=100000;
+    v=Math.max(100, Math.min(500000, v));
     $("loanUsd").value = String(Math.round(v/100)*100);
     return v;
   }
   function principalUSD(){ return clampLoan(); }
 
-  function rowHTML(r, net){
-    const spreadPct=((r.sellPrice-r.buyPrice)/r.buyPrice)*100;
-    /* Add data-labels for mobile card rows */
-    return `<td data-label="Token">${r.base}</td>
-            <td data-label="Buy">${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td>
-            <td data-label="Sell">${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td>
-            <td class="right" data-label="Spread">${spreadPct.toFixed(2)}%</td>
-            <td class="right" data-label="Net @ loan">${fmtUSD(net)}</td>`;
-  }
-
-  function computeNetUSD(r){
+  function computeNetAfterSlippageUSD(r){
     const P = principalUSD();
-    const spread = (r.sellPrice - r.buyPrice) / r.buyPrice;
-    const gross = P * spread;
+    const buyMid  = r.buyPrice;
+    const sellMid = r.sellPrice;
+    const buyEff  = effBuyPrice(buyMid,  P, r.buyLiqUSD);
+    const units   = P / buyEff;
+    // For sell, we model impact relative to *value exiting*, approximate with P again
+    const sellEff = effSellPrice(sellMid, P, r.sellLiqUSD);
+    const proceedsUSD = units * sellEff;
+
+    const gross = proceedsUSD - P;
     const fee   = P * PLATFORM_FEE;
     const net   = gross - fee - (gas.usd||0);
-    return net;
+    return { net, buyEff, sellEff, gross, fee };
+  }
+
+  function rowHTML(r, netAfter){
+    const rawSpread=((r.sellPrice-r.buyPrice)/r.buyPrice)*100;
+    const info = `(${r.buyDex} L:${fmtUSD(r.buyLiqUSD)} → ${r.sellDex} L:${fmtUSD(r.sellLiqUSD)})`;
+    return `<td data-label="Token"><strong>${r.base}</strong><div class="help">${info}</div></td>
+            <td data-label="Buy">${r.buyDex} @ ${fmtUSD(r.buyPrice)}</td>
+            <td data-label="Sell">${r.sellDex} @ ${fmtUSD(r.sellPrice)}</td>
+            <td class="right" data-label="Spread">${rawSpread.toFixed(2)}%</td>
+            <td class="right" data-label="Net after slippage">${fmtUSD(netAfter)}</td>`;
   }
 
   function recomputeNetFromState(){
@@ -431,16 +419,17 @@
     const rows=[...tbody.querySelectorAll("tr")];
     rows.forEach((tr,idx)=>{
       const r = state.results[idx]; if(!r) return;
-      const net = computeNetUSD(r);
+      const { net } = computeNetAfterSlippageUSD(r);
       tr.className = net>0 ? "pos" : (net>-3 ? "meh" : "neg");
       tr.innerHTML = rowHTML(r, net);
     });
+
     if(state.selectionBatch){
-      const total = state.selectionBatch.reduce((s,idx)=> s + computeNetUSD(state.results[idx]), 0);
+      const total = state.selectionBatch.reduce((s,idx)=> s + computeNetAfterSlippageUSD(state.results[idx]).net, 0);
       $("selection").textContent = `Batch selected: ${state.selectionBatch.length} • Est. net ${fmtUSD(total)}`;
     } else if(state.selection!=null) {
-      const net = computeNetUSD(state.results[state.selection]);
       const r = state.results[state.selection];
+      const net = computeNetAfterSlippageUSD(r).net;
       $("selection").textContent = `Selected: ${r.base} • ${r.buyDex} → ${r.sellDex} • Est. net ${fmtUSD(net)}`;
     } else {
       $("selection").textContent = "No selection.";
@@ -456,7 +445,7 @@
     const tbody=$("rows");
     tbody.innerHTML="";
     for(const r of state.results){
-      const net = computeNetUSD(r);
+      const { net } = computeNetAfterSlippageUSD(r);
       const tr=document.createElement("tr");
       tr.className = net>0 ? "pos" : (net>-3 ? "meh" : "neg");
       tr.innerHTML = rowHTML(r, net);
@@ -465,7 +454,7 @@
     updateExecuteEnabled();
   }
 
-  /* ---- scanning ---- */
+  /* scan */
   async function mapLimit(items,limit,fn,delay=80){
     const out=new Array(items.length); let i=0;
     async function worker(){
@@ -508,7 +497,11 @@
       }
       if(!buy||!sell||max<=min) return null;
       const base=(buy.baseToken?.symbol)||(sell.baseToken?.symbol)||"";
-      return { base, buyDex:prettyDexId(buy), buyPrice:min, sellDex:prettyDexId(sell), sellPrice:max };
+      return {
+        base,
+        buyDex:prettyDexId(buy), buyPrice:min,  buyLiqUSD: (buy?.liquidity?.usd)||0,
+        sellDex:prettyDexId(sell),sellPrice:max, sellLiqUSD:(sell?.liquidity?.usd)||0
+      };
     }, 60);
 
     const byToken=new Map();
@@ -523,17 +516,20 @@
     renderResults(results);
   }
 
-  /* ---- selection & execute (mock) ---- */
+  /* selection & execute (mock) */
   function selectAllProfitable(){
     if(!state.results.length){ alert('Scan first.'); return; }
     state.selection = null;
     const profIdx = state.results
-      .map((r,i)=>({i,net:computeNetUSD(r)}))
+      .map((r,i)=>({i,net:computeNetAfterSlippageUSD(r).net}))
       .filter(x=>x.net>0)
       .map(x=>x.i);
-    if(!profIdx.length){ alert('No profitable rows at this loan size.'); state.selectionBatch=null; $("selection").textContent="No selection."; updateExecuteEnabled(); return; }
+    if(!profIdx.length){
+      alert('No profitable rows at this loan size.');
+      state.selectionBatch=null; $("selection").textContent="No selection."; updateExecuteEnabled(); return;
+    }
     state.selectionBatch = profIdx;
-    const total = profIdx.reduce((s,i)=> s + computeNetUSD(state.results[i]), 0);
+    const total = profIdx.reduce((s,i)=> s + computeNetAfterSlippageUSD(state.results[i]).net, 0);
     $("selection").textContent = `Batch selected: ${profIdx.length} • Est. net ${fmtUSD(total)}`;
     updateExecuteEnabled();
     alert(`Selected ${profIdx.length} profitable routes.\nCombined est. net: ${fmtUSD(total)}\n(Execute is mock for now)`);
@@ -542,28 +538,29 @@
   function executeMock(){
     if(!state.account){ alert('Connect wallet first.'); return; }
     if(state.selectionBatch && state.selectionBatch.length){
-      const total = state.selectionBatch.reduce((s,i)=> s + computeNetUSD(state.results[i]), 0);
+      const total = state.selectionBatch.reduce((s,i)=> s + computeNetAfterSlippageUSD(state.results[i]).net, 0);
       const sample = state.selectionBatch.slice(0,8).map(i=>{
-        const r=state.results[i]; return `• ${r.base}: ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → ${r.sellDex} @ ${fmtUSD(r.sellPrice)} (${fmtUSD(computeNetUSD(r))})`;
+        const r=state.results[i]; return `• ${r.base}: ${r.buyDex} → ${r.sellDex} (${fmtUSD(computeNetAfterSlippageUSD(r).net)})`;
       }).join('\n');
       const txid = '0x'+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
       alert(`(Mock) Batch Execute on ARBITRUM\nWallet: ${shortAddr(state.account)}\nRoutes: ${state.selectionBatch.length}\nCombined est. net: ${fmtUSD(total)}\n\nSample:\n${sample}\n\nTxID: ${txid}`);
     } else if(state.selection!=null){
       const r=state.results[state.selection];
       const txid = '0x'+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
-      alert(`(Mock) Execute on ARBITRUM\n${r.base}\n${r.buyDex} → ${r.sellDex}\nNet @ loan: ${fmtUSD(computeNetUSD(r))}\nWallet: ${shortAddr(state.account)}\nTxID: ${txid}`);
+      alert(`(Mock) Execute on ARBITRUM\n${r.base}\n${r.buyDex} → ${r.sellDex}\nNet after slippage: ${fmtUSD(computeNetAfterSlippageUSD(r).net)}\nWallet: ${shortAddr(state.account)}\nTxID: ${txid}`);
     } else {
       alert('Select All (or tap a row) first.');
     }
   }
 
+  /* row click select */
   $("rows").addEventListener("click", e=>{
     const tr=e.target.closest("tr"); if(!tr) return;
     const idx=[...$("rows").children].indexOf(tr);
     if(idx<0 || !state.results[idx]) return;
     state.selectionBatch=null; state.selection=idx;
     const r=state.results[idx];
-    $("selection").textContent = `Selected: ${r.base} • ${r.buyDex} → ${r.sellDex} • Est. net ${fmtUSD(computeNetUSD(r))}`;
+    $("selection").textContent = `Selected: ${r.base} • ${r.buyDex} → ${r.sellDex} • Est. net ${fmtUSD(computeNetAfterSlippageUSD(r).net)}`;
     updateExecuteEnabled();
   });
 
@@ -572,7 +569,7 @@
     $("executeBtn").disabled = !can;
   }
 
-  /* ---- wire UI ---- */
+  /* wire UI */
   $("scanBtn").addEventListener("click", scan);
   $("selectAllBtn").addEventListener("click", selectAllProfitable);
   $("executeBtn").addEventListener("click", executeMock);
@@ -588,7 +585,7 @@
   $("lkExec").addEventListener("click", e=>{e.preventDefault(); $("executeBtn").click();});
   $("lkConnect").addEventListener("click", e=>{e.preventDefault(); $("connectBtn").click();});
 
-  // Loan input: debounce + recompute, no re-scan needed
+  // Loan input: debounce + recompute
   let loanTimer=null;
   $("loanUsd").addEventListener("input", ()=>{
     if(loanTimer) clearTimeout(loanTimer);

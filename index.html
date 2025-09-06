@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.5.1 — Arbitrum (Quoter + Fixed Header)</title>
+<title>Crypto Kings Test Bed v9.5.2 — Arbitrum (Multi-hop Quoter + Gas Fallback)</title>
 <style>
   :root{
     --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280;
@@ -13,11 +13,9 @@
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;}
-
   .container{max-width:1100px;width:100%;margin:0 auto;padding:0 16px}
   main{flex:1}
-
-  /* Topbar (flex, robust on mobile) */
+  /* Topbar (flex) */
   .topbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--border)}
   .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;flex-wrap:wrap}
   .brandbox{display:flex;align-items:center;gap:10px}
@@ -26,16 +24,12 @@
   .logo span{font-size:14px;font-weight:900;color:white}
   .brand{font-weight:800;letter-spacing:.3px;white-space:nowrap}
   .chip{display:inline-block;padding:2px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#eef2ff;color:#3b3b6d}
-
-  /* Nav */
   .nav{display:flex;align-items:center;gap:18px}
   .nav a{color:#111827;text-decoration:none;font-weight:600;font-size:14px}
   .nav a:hover{text-decoration:underline}
   .nav-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .hamburger{display:none;appearance:none;border:1px solid var(--border-strong);background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
-  .hamburger:focus{outline:none;box-shadow:0 0 0 3px var(--ring)}
   @media (max-width:980px){ .nav{display:none} .hamburger{display:inline-flex} }
-
   /* Mobile sheet */
   .mobile-nav{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;align-items:flex-start;justify-content:flex-end}
   .mobile-sheet{background:#fff;width:min(88%,380px);height:100%;box-shadow:-10px 0 30px rgba(0,0,0,.2);border-left:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:10px}
@@ -43,8 +37,7 @@
   .mobile-sheet ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
   .mobile-sheet a{color:#111827;text-decoration:none;font-weight:700}
   .mobile-close{appearance:none;border:1px solid var(--border-strong);background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
-
-  /* Controls & Actions */
+  /* Controls + Actions */
   .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .group{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px 8px}
   .group input{width:160px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px}
@@ -54,14 +47,13 @@
   .btn.ghost{background:#fff;color:#111;border:1px solid var(--border-strong);box-shadow:none}
   .btn:disabled{opacity:.6;cursor:not-allowed}
   @media (max-width:560px){ .group input{width:140px} .actions .btn{flex:1 1 calc(50% - 8px)} }
-
+  /* Body */
   main .wrap{padding:16px 0 80px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
   @media (min-width:960px){ .row-4{grid-template-columns:repeat(4,1fr)} }
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input[readonly]{background:#f9fafb;color:#4b5563}
-
   /* Table -> responsive cards */
   .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
   table{min-width:980px;width:100%}
@@ -79,10 +71,8 @@
     .table td::before{content:attr(data-label);font-size:12px;color:#6b7280;margin-right:10px;flex:0 0 auto}
     .right{text-align:right}
   }
-
   .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:20px;height:20px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-
   footer{background:#fff;border-top:1px solid var(--border);margin-top:40px}
   .footer-inner{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding:30px 0}
   footer h4{margin:0 0 8px;font-size:14px;color:#374151}
@@ -98,24 +88,13 @@
 <body>
   <div class="topbar" style="padding-top: env(safe-area-inset-top)">
     <div class="container topbar-inner">
-      <!-- Left: brand/home -->
       <div class="brandbox">
-        <a class="home-link" href="/">
-          <div class="logo" aria-label="Home"><span>CK</span></div>
-          <div class="brand">Crypto Kings</div>
-        </a>
-        <span class="chip">v9.5.1</span>
+        <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
+        <span class="chip">v9.5.2</span>
       </div>
-
-      <!-- Center: desktop nav -->
       <div class="nav" aria-label="Main">
-        <a href="/">Home</a>
-        <a href="#" title="Who we are">Who we are</a>
-        <a href="#" title="What we do">What we do</a>
-        <a href="#" title="Connect with us">Connect with us</a>
+        <a href="/">Home</a><a href="#">Who we are</a><a href="#">What we do</a><a href="#">Connect with us</a>
       </div>
-
-      <!-- Right: controls & actions -->
       <div class="nav-right">
         <div class="controls">
           <div class="group">
@@ -133,19 +112,11 @@
     </div>
   </div>
 
-  <!-- Mobile Nav Sheet -->
+  <!-- Mobile Nav -->
   <div id="mobileNav" class="mobile-nav" aria-hidden="true">
     <div class="mobile-sheet">
-      <header>
-        <strong>Menu</strong>
-        <button id="mobileClose" class="mobile-close" aria-label="Close menu">✕</button>
-      </header>
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="#" title="Who we are">Who we are</a></li>
-        <li><a href="#" title="What we do">What we do</a></li>
-        <li><a href="#" title="Connect with us">Connect with us</a></li>
-      </ul>
+      <header><strong>Menu</strong><button id="mobileClose" class="mobile-close">✕</button></header>
+      <ul><li><a href="/">Home</a></li><li><a href="#">Who we are</a></li><li><a href="#">What we do</a></li><li><a href="#">Connect with us</a></li></ul>
     </div>
   </div>
 
@@ -154,25 +125,15 @@
       <div class="row row-4">
         <div><label>Network</label><input value="Arbitrum" readonly></div>
         <div><label>Gas (auto)</label><input id="gas-gwei" placeholder="Auto" readonly><div class="help" id="gas-note">—</div></div>
-        <div><label>Gas Limit</label><input id="gas-limit" type="number" step="1000" value="170000"><div class="help">Uni/Sushi ~170–200k • Curve ~340k • Balancer ~300k</div></div>
+        <div><label>Gas Limit</label><input id="gas-limit" type="number" step="1000" value="380000"><div class="help">Two swaps + callback ≈ 350–450k</div></div>
         <div><label>Est. Gas Cost</label><input id="gas-cost" placeholder="—" readonly><div class="help" id="gas-cost-usd">—</div></div>
       </div>
 
-      <div class="row" style="margin-top:6px">
-        <div><span id="status" class="help">Ready.</span></div>
-      </div>
+      <div class="row" style="margin-top:6px"><div><span id="status" class="help">Ready.</span></div></div>
 
       <div class="table-wrap">
         <table class="table" id="oppsTable">
-          <thead>
-            <tr>
-              <th>Token</th>
-              <th>Uni v3 Buy (best tier)</th>
-              <th>Uni v3 Sell (best tier)</th>
-              <th class="right">Raw Spread %</th>
-              <th class="right">Net (after Aave fee + gas)</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Token</th><th>Buy route</th><th>Sell route</th><th class="right">Raw Spread %</th><th class="right">Net (Aave+gas)</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
@@ -181,17 +142,8 @@
 
   <footer>
     <div class="container footer-inner">
-      <div>
-        <div class="logo"><span>CK</span></div>
-        <p class="help">On-chain quoter (Arbitrum, Uniswap v3) for realistic P/L.</p>
-      </div>
-      <div>
-        <h4>Quick</h4>
-        <ul>
-          <li><a href="#" id="lkScan">Scan</a></li>
-          <li><a href="#" id="lkExec">Execute</a></li>
-        </ul>
-      </div>
+      <div><div class="logo"><span>CK</span></div><p class="help">On-chain quoter (Arbitrum, Uniswap v3) for realistic P/L.</p></div>
+      <div><h4>Quick</h4><ul><li><a href="#" id="lkScan">Scan</a></li><li><a href="#" id="lkExec">Execute</a></li></ul></div>
       <div><h4>Networks</h4><ul><li>Arbitrum (active)</li><li>Others (soon)</li></ul></div>
       <div><h4>Contact</h4><ul><li><a href="mailto:info@example.com">info@example.com</a></li></ul></div>
     </div>
@@ -203,269 +155,270 @@
     <div style="background:#fff;color:#111;max-width:420px;width:95%;border-radius:12px;border:1px solid var(--border);box-shadow:0 20px 40px rgba(0,0,0,.25)">
       <header style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:800">Connect a wallet</header>
       <div style="padding:12px;display:grid;gap:10px">
-        <div class="w-item" id="wMetaMask" style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;background:#fafafa">
-          <div class="w-icon" style="width:26px;height:26px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center">
-            <svg viewBox="0 0 64 64" width="22" height="22"><path fill="#e4761b" d="M2 2l24 18-4-10zM62 2L38 20l4-10z"/><path fill="#f6851b" d="M10 38l16-4 2 12-2 6L18 50zM54 38l-16-4-2 12 2 6 8-2z"/></svg>
-          </div>
-          <div><strong>MetaMask</strong><div class="help">EVM (Arbitrum)</div></div>
-        </div>
-        <div class="w-item" id="wManual" style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;background:#fafafa">
-          <div class="w-icon" style="width:26px;height:26px;border-radius:8px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">@</div>
-          <div><strong>Manual address</strong><div class="help">Paste wallet address</div></div>
-        </div>
+        <div id="wMetaMask" style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;background:#fafafa"><div style="width:26px;height:26px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 64 64" width="22" height="22"><path fill="#e4761b" d="M2 2l24 18-4-10zM62 2L38 20l4-10z"/><path fill="#f6851b" d="M10 38l16-4 2 12-2 6L18 50zM54 38l-16-4-2 12 2 6 8-2z"/></svg></div><div><strong>MetaMask</strong><div class="help">EVM (Arbitrum)</div></div></div>
+        <div id="wManual" style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;background:#fafafa"><div style="width:26px;height:26px;border-radius:8px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">@</div><div><strong>Manual address</strong><div class="help">Paste wallet address</div></div></div>
       </div>
-      <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
-        <button id="walletClose" class="mobile-close">Close</button>
-      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end"><button id="walletClose" class="mobile-close">Close</button></div>
     </div>
   </div>
 
-  <!-- Ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" crossorigin="anonymous"></script>
 
 <script>
-/* Error banner (non-blocking) */
-(function(){
-  const show=(msg,src,line,col,err)=>{
-    try{
-      const bar=document.createElement('div');
-      bar.style.margin='12px auto'; bar.style.maxWidth='1100px';
-      bar.innerHTML='<div style="background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px"><strong>App notice</strong><pre style="white-space:pre-wrap;margin:6px 0 0;font-size:12px;color:#7f1d1d">'+(err&&err.stack ? err.stack : [msg,src,line+':'+col].filter(Boolean).join(' | '))+'</pre></div>';
-      document.body.prepend(bar);
-    }catch(_){}
-    return false;
-  };
-  window.onerror=show;
-  window.onunhandledrejection=e=>show('Unhandled promise rejection','','','',e&&(e.reason||e));
-})();
+/* Error banner */
+(function(){const show=(m,s,l,c,e)=>{try{const b=document.createElement('div');b.style.margin='12px auto';b.style.maxWidth='1100px';b.innerHTML='<div style="background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px"><strong>App notice</strong><pre style="white-space:pre-wrap;margin:6px 0 0;font-size:12px;color:#7f1d1d">'+(e&&e.stack?e.stack:[m,s,l+':'+c].filter(Boolean).join(' | '))+'</pre></div>';document.body.prepend(b);}catch(_){}return false;};window.onerror=show;window.onunhandledrejection=e=>show('Unhandled promise rejection','','','',e&&(e.reason||e));})();
 </script>
 
 <script>
-/* App v9.5.1 — Arbitrum + Uni v3 QuoterV2 + hardened init */
+/* v9.5.2 — multi-hop quoter + gas fallback */
 (function(){
-  /* Utilities */
-  const $ = (id)=>document.getElementById(id);
-  const on = (el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
+  const $=id=>document.getElementById(id);
+  const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
-  const shortAddr=a=>a?`${a.slice(0,6)}…${a.slice(-4)}`:"";
+  const short=a=>a?`${a.slice(0,6)}…${a.slice(-4)}`:"";
 
-  /* Header menu (mobile) */
-  on($("hamburger"),"click", ()=>{ const m=$("mobileNav"); if(m){ m.style.display='flex'; m.setAttribute('aria-hidden','false'); } });
-  on($("mobileClose"),"click", ()=>{ const m=$("mobileNav"); if(m){ m.style.display='none'; m.setAttribute('aria-hidden','true'); } });
-  on($("mobileNav"),"click", (e)=>{ const m=$("mobileNav"); if(e.target===m) $("mobileClose").click(); });
+  /* Header menu mobile */
+  on($("hamburger"),"click",()=>{const m=$("mobileNav");m.style.display='flex';m.setAttribute('aria-hidden','false');});
+  on($("mobileClose"),"click",()=>{const m=$("mobileNav");m.style.display='none';m.setAttribute('aria-hidden','true');});
+  on($("mobileNav"),"click",(e)=>{const m=$("mobileNav");if(e.target===m)$("mobileClose").click();});
 
-  /* DeFi constants */
-  const PLATFORM_FEE=0.0009; // Aave v3 ~0.09%
-  const GAS_NATIVE="ETH";
+  /* Chain / Uni v3 */
+  const PLATFORM_FEE=0.0009;
   const RPC_ARB="https://arbitrum.llamarpc.com";
   const CHAIN_ID=42161;
-
-  const UNI = {
-    QUOTER_V2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
-    WETH: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-    USDC: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-    FEES: [500,3000,10000]
+  const UNI={
+    QUOTER_V2:"0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+    USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    WETH:"0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    FEES:[500,3000,10000] // 0.05%, 0.3%, 1%
   };
 
-  /* Ethers provider */
-  const provider = new ethers.providers.JsonRpcProvider(RPC_ARB, { chainId:CHAIN_ID, name:"arbitrum" });
-
-  /* ABIs */
+  const provider=new ethers.providers.JsonRpcProvider(RPC_ARB,{chainId:CHAIN_ID,name:"arbitrum"});
   const ERC20_ABI=[ "function decimals() view returns (uint8)" ];
-  const QUOTER_ABI=[ "function quoteExactInputSingle(address,address,uint24,uint256,uint160) external returns (uint256 amountOut, uint160, uint32, uint256)" ];
+  const QUOTER_ABI=[
+    "function quoteExactInputSingle(address,address,uint24,uint256,uint160) external returns (uint256 amountOut, uint160, uint32, uint256)",
+    "function quoteExactInput(bytes,uint256) external returns (uint256 amountOut, uint160, uint32, uint256)"
+  ];
 
-  /* State */
-  const state={ rows:[], account:null };
-  const gas={ gwei:null, usdPerNative:null, usd:0 };
+  const state={rows:[],account:null};
+  const gas={gwei:null,usdPerNative:null,usd:0};
 
-  /* Gas auto */
-  async function gasSuggestGwei(){
+  /* Gas auto with fallback default */
+  async function gasSuggest(){
     try{
       const payload={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
       const r=await fetch(RPC_ARB,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-      if(!r.ok) return null;
+      if(!r.ok) throw new Error("rpc http "+r.status);
       const j=await r.json(); const bh=j&&j.result;
-      if(!bh?.baseFeePerGas||!bh?.reward) return null;
       const base=parseInt(bh.baseFeePerGas.at(-1),16)/1e9;
       const tip =parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
       return {g:base+tip, base, tip};
     }catch(_){ return null; }
   }
   async function cgETH(){
-    try{
-      const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd");
-      if(!r.ok) return null; const j=await r.json();
-      return j?.ethereum?.usd ?? null;
-    }catch(_){ return null; }
+    try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"); if(!r.ok) return null; const j=await r.json(); return j?.ethereum?.usd??null; }
+    catch(_){ return null; }
   }
   async function initGas(){
-    const g=await gasSuggestGwei(); const ethUsd=await cgETH();
-    gas.gwei=g?g.g:null; gas.usdPerNative=ethUsd??null;
-    if(g){ $("gas-gwei").value=`${g.g.toFixed(1)} Gwei`; $("gas-note").textContent=`base ${g.base.toFixed(1)} + tip ${g.tip.toFixed(1)} • ETH ≈ ${fmtUSD(ethUsd)}`; }
-    else{ $("gas-gwei").value=""; $("gas-note").textContent="auto gas failed."; }
+    const g=await gasSuggest(); const ethUsd=await cgETH();
+    if(g){ gas.gwei=g.g; $("gas-gwei").value=`${g.g.toFixed(2)} Gwei`; $("gas-note").textContent=`base ${g.base.toFixed(2)} + tip ${g.tip.toFixed(2)} • ETH ≈ ${fmtUSD(ethUsd)}`; }
+    else { gas.gwei=0.2; $("gas-gwei").value=`0.20 Gwei`; $("gas-note").textContent=`fallback (edit if needed) • ETH ≈ ${fmtUSD(ethUsd)}`; }
+    gas.usdPerNative=ethUsd||0;
     calcGasUSD();
   }
   function calcGasUSD(){
     const gl=parseFloat($("gas-limit").value||"0");
     const native=(gas.gwei>0 && gl>0)?(gas.gwei*gl)/1e9:0;
-    gas.usd = native*(gas.usdPerNative||0);
-    $("gas-cost").value = native? `${native.toFixed(6)} ${GAS_NATIVE}` : "";
-    $("gas-cost-usd").textContent = native? `≈ ${fmtUSD(gas.usd)}` : "—";
+    gas.usd=native*(gas.usdPerNative||0);
+    $("gas-cost").value= native? `${native.toFixed(6)} ETH` : "";
+    $("gas-cost-usd").textContent= native? `≈ ${fmtUSD(gas.usd)}` : "—";
   }
 
-  /* Token universe (majors + tokenlist sample) */
+  /* Token set */
   async function getTokenAddresses(){
     const set=new Set([
-      UNI.USDC, // USDC
-      "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9", // USDT
-      UNI.WETH, // WETH
-      "0x912CE59144191C1204E64559FE8253a0e49E6548", // ARB
-      "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1" // DAI (fixed)
+      UNI.USDC,"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9", // USDT
+      UNI.WETH,"0x912CE59144191C1204E64559FE8253a0e49E6548", // ARB
+      "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1" // DAI
     ]);
     try{
       const r=await fetch("https://unpkg.com/@uniswap/default-token-list@latest/build/uniswap-default.tokenlist.json");
-      if(r.ok){
-        const tl=await r.json();
-        tl.tokens.filter(t=>t.chainId===42161).slice(0,120).forEach(t=>set.add(t.address));
-      }
+      if(r.ok){ const tl=await r.json(); tl.tokens.filter(t=>t.chainId===42161).slice(0,120).forEach(t=>set.add(t.address)); }
     }catch(_){}
     return [...set];
   }
 
-  /* On-chain helpers */
-  async function getDecimals(token){
-    try{ const c=new ethers.Contract(token, ERC20_ABI, provider); return await c.decimals(); }
-    catch(_){ return 18; }
-  }
-  async function bestQuoteIn_USDC_to_TOKEN(token, tokenDecimals, amountUSDC){
-    const q=new ethers.Contract(UNI.QUOTER_V2, QUOTER_ABI, provider);
-    const inAmt = ethers.utils.parseUnits(String(amountUSDC), 6);
+  /* Helpers */
+  async function decimalsOf(a){ try{ return await (new ethers.Contract(a,ERC20_ABI,provider)).decimals(); }catch(_){ return 18; } }
+  const pathEncode=(segments)=>{
+    // segments: [token,fee,token,fee,token]
+    const toHex=(addr)=>addr.toLowerCase().replace(/^0x/,'');
+    const toFeeHex=(fee)=>fee.toString(16).padStart(6,'0');
+    let hex="0x";
+    for(let i=0;i<segments.length;i++){
+      const s=segments[i];
+      if(i%2===0){ hex+=toHex(s); } else { hex+=toFeeHex(s); }
+    }
+    return hex;
+  };
+
+  async function bestBuy_USDC_to_TOKEN(token, tokenDec, usd){
+    const q=new ethers.Contract(UNI.QUOTER_V2,QUOTER_ABI,provider);
+    const inAmt=ethers.utils.parseUnits(String(usd),6);
     let best=null;
+
+    // 1-hop
     for(const fee of UNI.FEES){
       try{
-        const [out]=await q.callStatic.quoteExactInputSingle(UNI.USDC, token, fee, inAmt, 0);
+        const [out]=await q.callStatic.quoteExactInputSingle(UNI.USDC,token,fee,inAmt,0);
         if(out.gt(0)){
-          const units = Number(ethers.utils.formatUnits(out, tokenDecimals));
-          if(!best || units>best.units) best={fee,units};
+          const units=Number(ethers.utils.formatUnits(out,tokenDec));
+          if(!best || units>best.units) best={units, route:`USDC —${fee/10000}%→ TOKEN`};
         }
       }catch(_){}
     }
-    return best;
-  }
-  async function bestQuoteOut_TOKEN_to_USDC(token, tokenDecimals, unitsTOKEN){
-    const q=new ethers.Contract(UNI.QUOTER_V2, QUOTER_ABI, provider);
-    const inAmt = ethers.utils.parseUnits(String(unitsTOKEN), tokenDecimals);
-    let best=null;
-    for(const fee of UNI.FEES){
-      try{
-        const [out]=await q.callStatic.quoteExactInputSingle(token, UNI.USDC, fee, inAmt, 0);
-        if(out.gt(0)){
-          const usd = Number(ethers.utils.formatUnits(out, 6));
-          if(!best || usd>best.usd) best={fee,usd};
-        }
-      }catch(_){}
+    // 2-hop USDC->WETH->TOKEN (9 combos)
+    for(const f1 of UNI.FEES){
+      for(const f2 of UNI.FEES){
+        try{
+          const path=pathEncode([UNI.USDC,f1,UNI.WETH,f2,token]);
+          const [out]=await q.callStatic.quoteExactInput(path,inAmt);
+          if(out.gt(0)){
+            const units=Number(ethers.utils.formatUnits(out,tokenDec));
+            if(!best || units>best.units) best={units, route:`USDC —${f1/10000}%→ WETH —${f2/10000}%→ TOKEN`};
+          }
+        }catch(_){}
+      }
     }
     return best;
   }
-  const rawSpreadPct=(buyUSDC, sellUSDC)=> ((sellUSDC - buyUSDC)/Math.max(1e-9,buyUSDC))*100;
+
+  async function bestSell_TOKEN_to_USDC(token, tokenDec, unitsTOKEN){
+    const q=new ethers.Contract(UNI.QUOTER_V2,QUOTER_ABI,provider);
+    const inAmt=ethers.utils.parseUnits(String(unitsTOKEN),tokenDec);
+    let best=null;
+
+    // 1-hop
+    for(const fee of UNI.FEES){
+      try{
+        const [out]=await q.callStatic.quoteExactInputSingle(token,UNI.USDC,fee,inAmt,0);
+        if(out.gt(0)){
+          const usd=Number(ethers.utils.formatUnits(out,6));
+          if(!best || usd>best.usd) best={usd, route:`TOKEN —${fee/10000}%→ USDC`};
+        }
+      }catch(_){}
+    }
+    // 2-hop TOKEN->WETH->USDC
+    for(const f1 of UNI.FEES){
+      for(const f2 of UNI.FEES){
+        try{
+          const path=pathEncode([token,f1,UNI.WETH,f2,UNI.USDC]);
+          const [out]=await q.callStatic.quoteExactInput(path,inAmt);
+          if(out.gt(0)){
+            const usd=Number(ethers.utils.formatUnits(out,6));
+            if(!best || usd>best.usd) best={usd, route:`TOKEN —${f1/10000}%→ WETH —${f2/10000}%→ USDC`};
+          }
+        }catch(_){}
+      }
+    }
+    return best;
+  }
+
+  function rawSpreadPct(buyUSDC,sellUSDC){ return ((sellUSDC-buyUSDC)/Math.max(1e-9,buyUSDC))*100; }
 
   async function evaluateToken(token){
     try{
-      const dec = await getDecimals(token);
-      const loanUSD = clampLoan();
-      const buy = await bestQuoteIn_USDC_to_TOKEN(token, dec, loanUSD);
-      if(!buy) return null;
-      const sell = await bestQuoteOut_TOKEN_to_USDC(token, dec, buy.units);
-      if(!sell) return null;
+      const dec=await decimalsOf(token);
+      const loanUSD=clampLoan();
 
-      const buyCostUSD=loanUSD, sellProUSD=sell.usd;
-      const rawPct=rawSpreadPct(buyCostUSD, sellProUSD);
-      const aaveFeeUSD=loanUSD*PLATFORM_FEE;
-      const netUSD=sellProUSD - buyCostUSD - aaveFeeUSD - (gas.usd||0);
+      // Ladder: try 100%, 50%, 20%, 10% until we get a route
+      const sizes=[loanUSD, loanUSD*0.5, loanUSD*0.2, loanUSD*0.1];
+      let used=0, buy=null, sell=null, downscaled=false;
 
-      return { token, dec, buyTier:buy.fee, sellTier:sell.fee, buyUSDC:buyCostUSD, sellUSDC:sellProUSD, rawPct, netUSD };
+      for(const size of sizes){
+        const b=await bestBuy_USDC_to_TOKEN(token,dec,size);
+        if(!b) { downscaled=true; continue; }
+        const s=await bestSell_TOKEN_to_USDC(token,dec,b.units);
+        if(!s) { downscaled=true; continue; }
+        buy=b; sell=s; used=size; if(size<loanUSD) downscaled=true; break;
+      }
+      if(!buy||!sell) return null;
+
+      const buyCostUSD = used;
+      const sellProUSD = sell.usd;
+      const rawPct     = rawSpreadPct(buyCostUSD,sellProUSD);
+      const aaveFeeUSD = used * PLATFORM_FEE;
+      const netUSD     = sellProUSD - buyCostUSD - aaveFeeUSD - (gas.usd||0);
+      return { token, dec, buyRoute:buy.route, sellRoute:sell.route, rawPct, netUSD, usedUSD:used, downscaled };
     }catch(_){ return null; }
   }
 
   function clampLoan(){
     let v=parseFloat($("loanUsd").value||"0"); if(!isFinite(v)) v=100000;
-    v=Math.max(100, Math.min(500000, v)); v=Math.round(v/100)*100;
-    $("loanUsd").value=String(v); return v;
+    v=Math.max(100,Math.min(500000,v)); v=Math.round(v/100)*100; $("loanUsd").value=String(v); return v;
   }
 
   function renderRows(rows){
-    const tbody=$("rows"); if(!tbody) return; tbody.innerHTML="";
+    const tb=$("rows"); tb.innerHTML="";
     rows.forEach(r=>{
       const tr=document.createElement("tr");
       tr.className = (r.netUSD>0) ? "pos" : (r.netUSD>-3 ? "meh" : "neg");
       tr.innerHTML = `
-        <td data-label="Token"><code>${shortAddr(r.token)}</code><div class="help">Uni v3 tiers: buy ${r.buyTier/10000}% • sell ${r.sellTier/10000}%</div></td>
-        <td data-label="Uni v3 Buy">USDC → TOKEN (best of 0.05/0.3/1%)</td>
-        <td data-label="Uni v3 Sell">TOKEN → USDC (best of 0.05/0.3/1%)</td>
+        <td data-label="Token"><code>${short(r.token)}</code>${r.downscaled?'<div class="help">depth-limited (quoted at '+fmtUSD(r.usedUSD)+')</div>':''}</td>
+        <td data-label="Buy route">${r.buyRoute}</td>
+        <td data-label="Sell route">${r.sellRoute}</td>
         <td class="right" data-label="Raw Spread">${r.rawPct.toFixed(2)}%</td>
         <td class="right" data-label="Net">${fmtUSD(r.netUSD)}</td>
       `;
-      tbody.appendChild(tr);
+      tb.appendChild(tr);
     });
   }
 
   async function scan(){
-    const status=$("status"); const rowsEl=$("rows");
-    if(rowsEl) rowsEl.innerHTML="";
-    if(status) status.innerHTML=`<span class="spinner"></span> Initialising…`;
+    const status=$("status"); const tb=$("rows"); tb.innerHTML="";
+    status.innerHTML=`<span class="spinner"></span> Initialising…`;
     await initGas();
 
     let addrs=[];
-    try{ addrs = await getTokenAddresses(); }
-    catch(e){ if(status) status.textContent='Token list error'; }
+    try{ addrs=await getTokenAddresses(); }catch(_){}
+    if(!addrs.length){ status.textContent="Token list unavailable. Try again."; return; }
 
-    if(!addrs.length){ if(status) status.textContent="No token addresses yet. Try again."; return; }
-
-    if(status) status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens via Uniswap Quoter…`;
-
-    const SAMPLE=80, CONCURRENCY=6, list=addrs.slice(0,SAMPLE);
-    const out=new Array(list.length); let i=0, done=0;
-
+    status.innerHTML=`<span class="spinner"></span> Scanning ${addrs.length} tokens (multi-hop)…`;
+    const SAMPLE=80, CONC=5, list=addrs.slice(0,SAMPLE);
+    const out=new Array(list.length); let i=0,done=0;
     async function worker(){
       while(i<list.length){
         const idx=i++; const t=list[idx];
         out[idx]=await evaluateToken(t);
-        done++; if(status && done%5===0) status.textContent=`Quoting ${done}/${list.length}…`;
+        done++; if(done%3===0) status.textContent=`Quoting ${done}/${list.length}…`;
       }
     }
-    await Promise.all(Array.from({length:CONCURRENCY}, worker));
+    await Promise.all(Array.from({length:CONC},worker));
 
     const rows=out.filter(Boolean).sort((a,b)=>b.netUSD-a.netUSD);
-    if(status) status.textContent = rows.length ? `Found ${rows.length} Uni v3 round-trip routes (loan ${fmtUSD(clampLoan())}).` : "No viable Uni v3 routes at this size.";
+    status.textContent = rows.length ? `Found ${rows.length} Uni v3 round-trip routes (loan ${fmtUSD(clampLoan())}).` : "No viable Uni v3 routes at this size.";
     state.rows=rows; renderRows(rows);
-    if($("executeBtn")) $("executeBtn").disabled=!rows.length;
+    $("executeBtn").disabled=!rows.length;
   }
 
   /* Wallet + mock execute */
-  function openWallet(){ const m=$("walletModal"); if(m) m.style.display='flex'; }
-  function closeWallet(){ const m=$("walletModal"); if(m) m.style.display='none'; }
+  function openWallet(){ $("walletModal").style.display='flex'; }
+  function closeWallet(){ $("walletModal").style.display='none'; }
   async function connectMetaMask(){
     if(!window.ethereum){ alert('MetaMask not detected.'); return; }
     try{
       const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-      state.account=accs&&accs[0]||null;
-      const b=$("connectBtn"); if(b) { b.textContent=state.account?shortAddr(state.account):'Connect'; b.classList.add('ghost'); }
-      closeWallet();
+      state.account=accs&&accs[0]||null; $("connectBtn").textContent=state.account?short(state.account):'Connect'; $("connectBtn").classList.add('ghost'); closeWallet();
     }catch(_){ alert('Connection rejected.'); }
   }
-  function connectManual(){
-    const addr=prompt('Paste Arbitrum (EVM) address:'); if(!addr) return;
-    state.account=addr.trim();
-    const b=$("connectBtn"); if(b){ b.textContent=shortAddr(state.account); b.classList.add('ghost'); }
-    closeWallet();
-  }
+  function connectManual(){ const a=prompt('Paste Arbitrum (EVM) address:'); if(!a) return; state.account=a.trim(); $("connectBtn").textContent=short(state.account); $("connectBtn").classList.add('ghost'); closeWallet(); }
   function executeMock(){
     if(!state.account){ alert('Connect wallet first.'); return; }
     if(!state.rows.length){ alert('Scan first.'); return; }
-    const top=state.rows.slice(0,Math.min(5,state.rows.length)).map(r=>`• ${shortAddr(r.token)}  net ${fmtUSD(r.netUSD)} (tiers ${r.buyTier/10000}%/${r.sellTier/10000}%)`).join('\n');
+    const top=state.rows.slice(0,Math.min(5,state.rows.length)).map(r=>`• ${short(r.token)}  net ${fmtUSD(r.netUSD)} | ${r.buyRoute} → ${r.sellRoute}`).join('\n');
     const txid='0x'+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
     alert(`(Mock) Execute batch on ARBITRUM
-Wallet: ${shortAddr(state.account)}
+Wallet: ${short(state.account)}
 Loan: ${fmtUSD(clampLoan())}
 Routes: ${state.rows.length}
 Top:
@@ -474,20 +427,19 @@ ${top}
 TxID: ${txid}`);
   }
 
-  /* Wire UI safely */
-  on($("scanBtn"),"click", scan);
-  on($("executeBtn"),"click", executeMock);
-  on($("connectBtn"),"click", openWallet);
-  on($("walletClose"),"click", closeWallet);
-  on($("wMetaMask"),"click", connectMetaMask);
-  on($("wManual"),"click", connectManual);
-  on($("lkScan"),"click", e=>{ e.preventDefault(); scan(); });
-  on($("lkExec"),"click", e=>{ e.preventDefault(); executeMock(); });
-  on($("gas-limit"),"input", calcGasUSD);
-  on($("loanUsd"),"change", calcGasUSD);
+  /* Wire UI */
+  on($("scanBtn"),"click",scan);
+  on($("executeBtn"),"click",executeMock);
+  on($("connectBtn"),"click",openWallet);
+  on($("walletClose"),"click",closeWallet);
+  on($("wMetaMask"),"click",connectMetaMask);
+  on($("wManual"),"click",connectManual);
+  on($("lkScan"),"click",e=>{e.preventDefault();scan();});
+  on($("lkExec"),"click",e=>{e.preventDefault();executeMock();});
+  on($("gas-limit"),"input",calcGasUSD);
+  on($("loanUsd"),"change",calcGasUSD);
 
-  /* Init (no auto-scan to avoid rate limits; page renders regardless) */
-  (async()=>{ try{ await initGas(); }catch(_){ /* noop */ } })();
+  (async()=>{ await initGas(); })();
 })();
 </script>
 </body>

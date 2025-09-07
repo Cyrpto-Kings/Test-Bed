@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.7.1 — Live Activity + Stop</title>
+<title>Crypto Kings Test Bed v9.7.2 — Live Activity + Stop</title>
 <style>
   :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
   *{box-sizing:border-box} html,body{height:100%}
@@ -85,7 +85,7 @@
   <div class="topbar" style="padding-top: env(safe-area-inset-top)">
     <div class="container topbar-inner">
       <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-      <span class="chip">v9.7.1</span>
+      <span class="chip">v9.7.2</span>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button id="scanBtn" class="btn">Scan</button>
         <button id="stopBtn" class="btn ghost danger" disabled>Stop</button>
@@ -203,22 +203,20 @@
 </script>
 
 <script>
-/* v9.7.1 — non-blocking UI with Stop + Activity log */
-(function(){
+/* v9.7.2 — guards + DOMContentLoaded */
+document.addEventListener("DOMContentLoaded", () => {
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
   const pct=(a,b)=>((b-a)/Math.max(1e-9,a))*100;
 
-  const statusEl=$("status"), spinner=$("#liveSpinner");
+  const statusEl=$("status"), spinner=$("liveSpinner"), logWrap=$("log");
   function setStatus(msg, spinning=false){
-    statusEl.textContent = msg;
-    spinner.style.display = spinning ? "inline-block" : "none";
+    if(statusEl) statusEl.textContent = msg;
+    if(spinner) spinner.style.display = spinning ? "inline-block" : "none";
   }
-
-  /* Activity log */
-  const logWrap=$("#log");
   function addLog(kind, text, tone=null){
+    if(!logWrap) return;
     const row=document.createElement("div");
     row.className="log-item";
     const tag=`<span class="log-tag">${kind}</span>`;
@@ -228,16 +226,15 @@
     if(tone==="warn") row.classList.add("log-warn");
     if(tone==="bad")  row.classList.add("log-bad");
     logWrap.appendChild(row);
-    // keep last 200
     while(logWrap.children.length>200){ logWrap.removeChild(logWrap.firstChild); }
     logWrap.scrollTop = logWrap.scrollHeight;
   }
 
   /* Inputs */
-  function loanUSD(){ let v=parseFloat($("loanUsd").value||"0"); if(!isFinite(v)) v=10000; v=Math.max(100,Math.min(1_000_000,v)); $("loanUsd").value=String(v); return v; }
-  function liqMultiplier(){ let v=parseFloat($("liqMult").value||"10"); if(!isFinite(v)||v<1) v=10; $("liqMult").value=String(Math.round(v)); return Math.round(v); }
-  function minPoolLiq(){ let v=parseFloat($("minLiq").value||"25000"); if(!isFinite(v)||v<0) v=25000; $("minLiq").value=String(Math.round(v)); return Math.round(v); }
-  function rescanEvery(){ let v=parseInt(($("rescanEvery").value||"30"),10); if(!isFinite(v)||v<10) v=30; $("rescanEvery").value=String(v); return v; }
+  function loanUSD(){ let v=parseFloat($("loanUsd")?.value||"0"); if(!isFinite(v)) v=10000; v=Math.max(100,Math.min(1_000_000,v)); if($("loanUsd")) $("loanUsd").value=String(v); return v; }
+  function liqMultiplier(){ let v=parseFloat($("liqMult")?.value||"10"); if(!isFinite(v)||v<1) v=10; if($("liqMult")) $("liqMult").value=String(Math.round(v)); return Math.round(v); }
+  function minPoolLiq(){ let v=parseFloat($("minLiq")?.value||"25000"); if(!isFinite(v)||v<0) v=25000; if($("minLiq")) $("minLiq").value=String(Math.round(v)); return Math.round(v); }
+  function rescanEvery(){ let v=parseInt(($("rescanEvery")?.value||"30"),10); if(!isFinite(v)||v<10) v=30; if($("rescanEvery")) $("rescanEvery").value=String(v); return v; }
 
   /* Gas */
   const gas={ gwei:0.20, usdPerNative:0, usd:0 };
@@ -264,26 +261,26 @@
       return baseGwei + tipGwei;
     }catch(_){ return null; }
   }
+  function calcGasUSD(){
+    const gl=parseFloat($("gas-limit")?.value||"0");
+    const native=(gas.gwei>0&&gl>0)?(gas.gwei*gl)/1e9:0;
+    gas.usd=native*(gas.usdPerNative||0);
+    if($("gas-cost")) $("gas-cost").value=native?`${native.toFixed(6)} ETH`:"";
+    if($("gas-cost-usd")) $("gas-cost-usd").textContent=native?`≈ ${fmtUSD(gas.usd)}`:"—";
+  }
   async function initGas(){
     if(gasAbort) gasAbort.abort();
     gasAbort = new AbortController();
     const {signal}=gasAbort;
     const [ethUsd,g]=await Promise.all([cgETH(signal),ethFeeHistory(signal)]);
     gas.usdPerNative=ethUsd||0; gas.gwei=(typeof g==='number'&&g>0)?g:0.20;
-    $("gas-gwei").value=`${gas.gwei.toFixed(2)} Gwei`;
-    $("gas-note").textContent=`ETH ≈ ${fmtUSD(gas.usdPerNative)} • ${g?"auto":"fallback"}`;
+    if($("gas-gwei")) $("gas-gwei").value=`${gas.gwei.toFixed(2)} Gwei`;
+    if($("gas-note")) $("gas-note").textContent=`ETH ≈ ${fmtUSD(gas.usdPerNative)} • ${g?"auto":"fallback"}`;
     calcGasUSD();
-  }
-  function calcGasUSD(){
-    const gl=parseFloat($("gas-limit").value||"0");
-    const native=(gas.gwei>0&&gl>0)?(gas.gwei*gl)/1e9:0;
-    gas.usd=native*(gas.usdPerNative||0);
-    $("gas-cost").value=native?`${native.toFixed(6)} ETH`:"";
-    $("gas-cost-usd").textContent=native?`≈ ${fmtUSD(gas.usd)}`:"—";
   }
   on($("gas-limit"),"input",calcGasUSD); on($("loanUsd"),"change",calcGasUSD);
 
-  /* Dexscreener search (Arbitrum) */
+  /* Dexscreener (Arbitrum) */
   const CHAIN="arbitrum";
   const SEARCH_TERMS=["USDC","USDT","WETH","ETH","ARB","DAI","WBTC","LINK","UNI","AAVE","MKR","OP","CRV","BAL","FRAX","LDO","GMX","RDNT","GNS","MAGIC","PENDLE","RPL","ENS","LUSD","wstETH","weETH","AERO","AERO-USDC","USD+","USDe","sDAI","rsETH","ezETH","swETH","STONE"];
   let scanAbort=null;
@@ -356,18 +353,19 @@
     const selIdx=cbs.map((cb,i)=>cb.checked?i:null).filter(i=>i!==null);
     const selected=selIdx.length;
     const totalNet=selIdx.reduce((s,i)=>s+(CURRENT_ROWS[i]?.net||0),0);
-    $("#statFound").textContent=`Found: ${total}`;
-    $("#statProf").textContent=`Profitable: ${prof}`;
-    $("#statSel").textContent=`Selected: ${selected}`;
-    $("#statTotalNet").textContent=`Total Selected Net: ${fmtUSD(totalNet)}`;
-    $("#btnSelectProf").disabled=prof===0;
-    $("#btnClearSel").disabled=selected===0;
-    $("#btnExecute").disabled=selected===0;
+    if($("statFound")) $("statFound").textContent=`Found: ${total}`;
+    if($("statProf")) $("statProf").textContent=`Profitable: ${prof}`;
+    if($("statSel")) $("statSel").textContent=`Selected: ${selected}`;
+    if($("statTotalNet")) $("statTotalNet").textContent=`Total Selected Net: ${fmtUSD(totalNet)}`;
+    if($("btnSelectProf")) $("btnSelectProf").disabled=prof===0;
+    if($("btnClearSel")) $("btnClearSel").disabled=selected===0;
+    if($("btnExecute")) $("btnExecute").disabled=selected===0;
   }
 
   function render(rows){
     CURRENT_ROWS=rows;
-    const tb=$("#rows"); tb.innerHTML="";
+    const tb=$("rows"); if(!tb) return;
+    tb.innerHTML="";
     rows.forEach((r,idx)=>{
       const tr=document.createElement("tr");
       const cls=r.net>0?"pos":(r.net>-3?"meh":"neg");
@@ -384,9 +382,11 @@
       tb.appendChild(tr);
     });
     tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.addEventListener('change',updateStats));
-    const master=$("#chkAll");
-    master.checked=false;
-    master.onchange=()=>{ tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.checked=master.checked); updateStats(); };
+    const master=$("chkAll");
+    if(master){
+      master.checked=false;
+      master.onchange=()=>{ tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.checked=master.checked); updateStats(); };
+    }
     updateStats();
   }
 
@@ -404,19 +404,19 @@
       return {...r, rawPct, net, minLiq, liqOK};
     });
     const kept=enriched.filter(r=>r.liqOK).sort((a,b)=>b.net-a.net).slice(0,MAX_ROWS);
-    $("#statFiltered").textContent=`Filtered by Liquidity: ${filteredByLiq}`;
+    if($("statFiltered")) $("statFiltered").textContent=`Filtered by Liquidity: ${filteredByLiq}`;
     return kept;
   }
 
   function selectAllProfitable(){
-    const tb=$("rows");
+    const tb=$("rows"); if(!tb) return;
     const cbs=tb.querySelectorAll('input[type="checkbox"]');
     CURRENT_ROWS.forEach((r,i)=>{ const cb=cbs[i]; if(!cb) return; cb.checked = r.net>0; });
     updateStats();
   }
   function clearSelection(){
     document.querySelectorAll('#rows input[type="checkbox"]').forEach(cb=>cb.checked=false);
-    $("chkAll").checked=false; updateStats();
+    if($("chkAll")) $("chkAll").checked=false; updateStats();
   }
 
   function executeSelectedMock(){
@@ -442,12 +442,12 @@
 
   /* Scan pipeline */
   let scanning=false, countdownTimer=null, countdown=0, lastExecuteAt=0;
-  function updateCountdownUI(){ $("rescanCountdown").textContent = countdown>0 ? (countdown+"s") : "—"; }
+  function updateCountdownUI(){ if($("rescanCountdown")) $("rescanCountdown").textContent = countdown>0 ? (countdown+"s") : "—"; }
 
   async function scan(showSpinner=true){
     if(scanning) return false;
     scanning=true;
-    $("stopBtn").disabled=false;
+    if($("stopBtn")) $("stopBtn").disabled=false;
     try{
       if(showSpinner){ setStatus("Fetching gas…", true); addLog("SCAN","Fetching gas…"); }
       await initGas();
@@ -466,11 +466,11 @@
       const scored=scoreAndFilter(routes);
       render(scored);
       setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; guard ${liqMultiplier()}×; minLiq ${fmtUSD(minPoolLiq())})`, false);
-      $("lastScan").textContent = "Last scan: " + new Date().toLocaleTimeString();
+      if($("lastScan")) $("lastScan").textContent = "Last scan: " + new Date().toLocaleTimeString();
       addLog("SCAN",`Finished • ${scored.length} routes.`, scored.length?"good":"warn");
 
-      const autoSel=$("autoSelect").checked;
-      const autoEx=$("autoExecute").checked;
+      const autoSel=$("autoSelect")?.checked;
+      const autoEx=$("autoExecute")?.checked;
       if(autoSel){ selectAllProfitable(); addLog("SELECT","Auto-selected profitable routes."); }
       if(autoEx && scored.some(r=>r.net>0)){
         const now=Date.now();
@@ -479,7 +479,7 @@
       return true;
     } finally {
       scanning=false;
-      $("stopBtn").disabled=true;
+      if($("stopBtn")) $("stopBtn").disabled=true;
       setStatus("Idle.", false);
     }
   }
@@ -488,7 +488,7 @@
     if(gasAbort) gasAbort.abort();
     if(scanAbort) scanAbort.abort();
     stopRescanLoop();
-    $("stopBtn").disabled=true;
+    if($("stopBtn")) $("stopBtn").disabled=true;
     setStatus("Stopped.", false);
     addLog("CTRL","Stopped scan and auto-rescan.","warn");
   }
@@ -522,11 +522,11 @@
 
   // Auto-rescan toggle / interval
   on($("autoRescan"),"change",()=>{ $("autoRescan").checked ? startRescanLoop() : (stopRescanLoop(), addLog("CTRL","Auto-rescan disabled.","warn")); });
-  on($("rescanEvery"),"change",()=>{ if($("autoRescan").checked){ startRescanLoop(); } });
+  on($("rescanEvery"),"change",()=>{ if($("autoRescan")?.checked){ startRescanLoop(); } });
 
   // Init
-  (async()=>{ try{ await initGas(); }catch(_){/* ignore */} if($("autoRescan").checked){ startRescanLoop(); } })();
-})();
+  (async()=>{ try{ await initGas(); }catch(_){/* ignore */} if($("autoRescan")?.checked){ startRescanLoop(); } })();
+});
 </script>
 </body>
 </html>

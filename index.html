@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.5.7 — Arbitrum (Dexscreener search, stable)</title>
+<title>Crypto Kings Test Bed v9.5.8 — Multi-select Profitable Routes</title>
 <style>
   :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
   *{box-sizing:border-box} html,body{height:100%}
@@ -17,12 +17,15 @@
   .logo span{font-size:14px;font-weight:900;color:white}
   .brand{font-weight:800;letter-spacing:.3px;white-space:nowrap}
   .chip{display:inline-block;padding:2px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#eef2ff;color:#3b3b6d}
-  .nav-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
   .group{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px 8px}
   .group input{width:180px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px}
   .group input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
   .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(124,92,255,.15);min-height:44px}
+  .btn.ghost{background:#fff;color:#111;border:1px solid var(--border-strong);box-shadow:none}
+  .btn.small{padding:8px 12px;min-height:36px;font-weight:700}
   .btn:disabled{opacity:.6;cursor:not-allowed}
+
   main .wrap{padding:16px 0 80px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
@@ -30,8 +33,11 @@
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input[readonly]{background:#f9fafb;color:#4b5563}
 
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  .stat{font-size:12px;color:#6b7280;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff}
+
   .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:960px;width:100%}
+  table{min-width:980px;width:100%}
   .table{border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
   .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
   .table th{color:#374151;font-weight:700;background:#f9fafb}
@@ -64,8 +70,8 @@
   <div class="topbar" style="padding-top: env(safe-area-inset-top)">
     <div class="container topbar-inner">
       <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-      <span class="chip">v9.5.7</span>
-      <div class="nav-right">
+      <span class="chip">v9.5.8</span>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <div class="group">
           <label for="loanUsd" class="help">Loan Size (USD)</label>
           <input id="loanUsd" type="number" min="100" max="500000" step="500" value="100000" inputmode="decimal">
@@ -98,9 +104,28 @@
 
       <div class="row" style="margin-top:6px"><div><span id="status" class="help">Ready.</span></div></div>
 
+      <div class="toolbar">
+        <span id="statFound" class="stat">Found: 0</span>
+        <span id="statProf" class="stat">Profitable: 0</span>
+        <span id="statSel" class="stat">Selected: 0</span>
+        <button id="btnSelectProf" class="btn small ghost" disabled>Select all profitable</button>
+        <button id="btnClearSel" class="btn small ghost" disabled>Clear selection</button>
+        <button id="btnExecute" class="btn small" disabled>Execute selected (mock)</button>
+      </div>
+
       <div class="table-wrap">
         <table class="table" id="oppsTable">
-          <thead><tr><th>Token</th><th>Best Buy</th><th>Best Sell</th><th class="right">Raw Spread %</th><th class="right">Net (Aave+gas)</th></tr></thead>
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="chkAll" /></th>
+              <th>Token</th>
+              <th>Best Buy</th>
+              <th>Best Sell</th>
+              <th class="right">Raw Spread %</th>
+              <th class="right">Net (Aave+gas)</th>
+              <th class="right">Min Pool Liquidity</th>
+            </tr>
+          </thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
@@ -109,7 +134,7 @@
 
   <footer>
     <div class="container footer-inner">
-      <div><div class="logo"><span>CK</span></div><p class="help">Stable scan using Dexscreener search; realistic P/L with gas + flash fee.</p></div>
+      <div><div class="logo"><span>CK</span></div><p class="help">Dexscreener search → best buy/sell per token. Multi-select profitable routes with liquidity gating.</p></div>
       <div><h4>Quick</h4><ul><li><a href="#" id="lkScan">Scan</a></li></ul></div>
       <div><h4>Networks</h4><ul><li>Arbitrum (active)</li><li>Others (soon)</li></ul></div>
       <div><h4>Contact</h4><ul><li><a href="mailto:info@example.com">info@example.com</a></li></ul></div>
@@ -123,200 +148,214 @@
 </script>
 
 <script>
-/* v9.5.7 — Dexscreener search (Arbitrum), best buy/sell per token */
+/* v9.5.8 — Dexscreener search + multi-select profitable routes */
 (function(){
-  const $ = id => document.getElementById(id);
+  const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
-  const fmtUSD = v => isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
-  const pct = (a,b)=> ((b-a)/Math.max(1e-9,a))*100;
-  const setStatus = msg => { const s=$("status"); if(s) s.textContent=msg; };
+  const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
+  const pct=(a,b)=>((b-a)/Math.max(1e-9,a))*100;
+  const setStatus=msg=>{ const s=$("status"); if(s) s.textContent=msg; };
 
-  const PLATFORM_FEE = 0.0009;      // Aave 0.09%
-  const CHAIN = "arbitrum";
-  const MIN_LIQ_USD = 25000;        // filter small pools
-  const MAX_ROWS = 200;
+  /* Tunables */
+  const PLATFORM_FEE=0.0009;               // Aave 0.09%
+  const CHAIN="arbitrum";
+  const MIN_LIQ_USD=25000;                 // basic filter
+  const MAX_ROWS=300;                      // display cap
+  const LIQ_MULTIPLIER=10;                 // require min(buyLiq, sellLiq) >= loanUSD * LIQ_MULTIPLIER
 
-  /* Gas auto */
-  const gas = { gwei:0.20, usdPerNative:0, usd:0 };
-  async function cgETH(){
-    try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
-      if(!r.ok) return null; const j=await r.json(); return j?.ethereum?.usd??null;
-    }catch(_){ return null; }
-  }
+  /* Gas */
+  const gas={ gwei:0.20, usdPerNative:0, usd:0 };
+  async function cgETH(){ try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"}); if(!r.ok) return null; const j=await r.json(); return j?.ethereum?.usd??null; }catch(_){ return null; } }
   async function ethFeeHistory(){
-    try{
-      const r=await fetch("https://arbitrum-one.publicnode.com",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]})});
-      if(!r.ok) return null;
-      const j=await r.json(); const bh=j?.result;
-      const base=parseInt(bh.baseFeePerGas.at(-1),16)/1e9;
-      const tip =parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
-      return base+tip;
-    }catch(_){ return null; }
+    try{ const r=await fetch("https://arbitrum-one.publicnode.com",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]})}); if(!r.ok) return null; const j=await r.json(),bh=j?.result; const base=parseInt(bh.baseFeePerGas.at(-1),16)/1e9; const tip=parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9; return base+tip; }catch(_){ return null; }
   }
   async function initGas(){
-    const [ethUsd,g] = await Promise.all([cgETH(), ethFeeHistory()]);
-    gas.usdPerNative = ethUsd || 0;
-    gas.gwei = (typeof g === "number" && g>0) ? g : 0.20;
-    $("gas-gwei").value = `${gas.gwei.toFixed(2)} Gwei`;
-    $("gas-note").textContent = `ETH ≈ ${fmtUSD(gas.usdPerNative)} • ${g ? "auto" : "fallback"}`;
+    const [ethUsd,g]=await Promise.all([cgETH(),ethFeeHistory()]);
+    gas.usdPerNative=ethUsd||0; gas.gwei=(typeof g==='number'&&g>0)?g:0.20;
+    $("gas-gwei").value=`${gas.gwei.toFixed(2)} Gwei`;
+    $("gas-note").textContent=`ETH ≈ ${fmtUSD(gas.usdPerNative)} • ${g?"auto":"fallback"}`;
     calcGasUSD();
   }
   function calcGasUSD(){
     const gl=parseFloat($("gas-limit").value||"0");
-    const native=(gas.gwei>0 && gl>0)?(gas.gwei*gl)/1e9:0;
-    gas.usd = native * (gas.usdPerNative||0);
-    $("gas-cost").value = native?`${native.toFixed(6)} ETH`:"";
-    $("gas-cost-usd").textContent = native?`≈ ${fmtUSD(gas.usd)}`:"—";
+    const native=(gas.gwei>0&&gl>0)?(gas.gwei*gl)/1e9:0;
+    gas.usd=native*(gas.usdPerNative||0);
+    $("gas-cost").value=native?`${native.toFixed(6)} ETH`:"";
+    $("gas-cost-usd").textContent=native?`≈ ${fmtUSD(gas.usd)}`:"—";
   }
-  on($("gas-limit"),"input",calcGasUSD);
-  on($("loanUsd"),"change",calcGasUSD);
+  on($("gas-limit"),"input",calcGasUSD); on($("loanUsd"),"change",calcGasUSD);
+  function loanUSD(){ let v=parseFloat($("loanUsd").value||"0"); if(!isFinite(v)) v=100000; v=Math.max(100,Math.min(500000,v)); v=Math.round(v/100)*100; $("loanUsd").value=String(v); return v; }
 
-  function clampLoan(){
-    let v=parseFloat($("loanUsd").value||"0"); if(!isFinite(v)) v=100000;
-    v=Math.max(100,Math.min(500000,v)); v=Math.round(v/100)*100; $("loanUsd").value=String(v); return v;
-  }
-
-  /* Dexscreener search aggregator */
-  const SEARCH_TERMS = [
-    "USDC","USDT","WETH","ETH","ARB","DAI","WBTC","LINK","UNI","AAVE","MKR","OP",
-    "CRV","BAL","FRAX","LDO","GMX","RDNT","GNS","MAGIC","PENDLE","RPL","ENS","LUSD","wstETH"
-  ];
+  /* Dexscreener search */
+  const SEARCH_TERMS=["USDC","USDT","WETH","ETH","ARB","DAI","WBTC","LINK","UNI","AAVE","MKR","OP","CRV","BAL","FRAX","LDO","GMX","RDNT","GNS","MAGIC","PENDLE","RPL","ENS","LUSD","wstETH","weETH","AERO"];
   async function fetchSearch(term){
-    const url = `https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(term)}`;
-    const r = await fetch(url, { cache:"no-store" });
-    if(!r.ok) throw new Error(`Dexscreener HTTP ${r.status}`);
-    const j = await r.json();
-    return Array.isArray(j?.pairs) ? j.pairs.filter(p=>p.chainId===CHAIN) : [];
+    const url=`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(term)}`;
+    const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error(`Dexscreener HTTP ${r.status}`);
+    const j=await r.json(); return Array.isArray(j?.pairs)?j.pairs.filter(p=>p.chainId===CHAIN):[];
   }
   async function fetchArbitrumPairs(){
-    let all=[]; let ok=0, fail=0;
-    for(const t of SEARCH_TERMS){
-      try{ const arr = await fetchSearch(t); all=all.concat(arr); ok++; }
-      catch(_){ fail++; }
-    }
-    // Deduplicate by pairAddress
-    const seen=new Set(), uniq=[];
-    for(const p of all){
-      const key=(p?.pairAddress||p?.url||"").toLowerCase();
-      if(!key || seen.has(key)) continue;
-      seen.add(key); uniq.push(p);
-    }
+    let all=[]; for(const t of SEARCH_TERMS){ try{ all=all.concat(await fetchSearch(t)); }catch(_){/*skip*/} }
+    // dedupe
+    const seen=new Set(), uniq=[]; for(const p of all){ const key=(p?.pairAddress||p?.url||"").toLowerCase(); if(!key||seen.has(key)) continue; seen.add(key); uniq.push(p); }
     return uniq;
   }
 
-  /* Compute best buy/sell per base token across DEXes */
+  /* Build best buy/sell with liquidity retained */
   function computeBestRoutes(pairs){
-    const rows = pairs.filter(p=>{
-      const liq = Number(p?.liquidity?.usd||0);
-      const price = Number(p?.priceUsd||NaN);
-      const base = p?.baseToken?.symbol;
-      const quote = p?.quoteToken?.symbol;
-      return isFinite(liq) && liq>=MIN_LIQ_USD && isFinite(price) && base && quote;
+    const valid=pairs.filter(p=>{
+      const liq=Number(p?.liquidity?.usd||0), price=Number(p?.priceUsd||NaN);
+      return isFinite(liq)&&liq>=MIN_LIQ_USD&&isFinite(price)&&p?.baseToken?.symbol&&p?.quoteToken?.symbol;
     });
-
-    const byBase = new Map();
-    for(const p of rows){
-      const baseAddr = (p?.baseToken?.address||"").toLowerCase();
-      if(!baseAddr) continue;
-      (byBase.get(baseAddr) || byBase.set(baseAddr, []).get(baseAddr)).push(p);
-    }
-
-    const out = [];
-    for(const [baseAddr, list] of byBase.entries()){
-      let minP=Infinity, maxP=-Infinity, buy=null, sell=null;
-      for(const px of list){
-        const price = Number(px.priceUsd);
-        if(!isFinite(price)) continue;
-        if(price < minP){ minP=price; buy=px; }
-        if(price > maxP){ maxP=price; sell=px; }
-      }
-      if(!buy || !sell || !isFinite(minP) || !isFinite(maxP) || maxP<=0 || minP<=0) continue;
-      const tokenSym = buy.baseToken?.symbol || sell.baseToken?.symbol || baseAddr.slice(0,6);
+    const byBase=new Map();
+    for(const p of valid){ const base=(p?.baseToken?.address||"").toLowerCase(); if(!base) continue; (byBase.get(base)||byBase.set(base,[]).get(base)).push(p); }
+    const out=[];
+    for(const [base, list] of byBase.entries()){
+      let buy=null,sell=null,minP=Infinity,maxP=-Infinity;
+      for(const px of list){ const pr=Number(px.priceUsd); if(!isFinite(pr)) continue; if(pr<minP){minP=pr; buy=px;} if(pr>maxP){maxP=pr; sell=px;} }
+      if(!buy||!sell||!isFinite(minP)||!isFinite(maxP)||maxP<=0||minP<=0) continue;
       out.push({
-        tokenAddr: baseAddr,
-        tokenSym,
-        buyDex: (buy.dexId||"").toUpperCase(),
-        buyPair: `${buy.baseToken?.symbol}/${buy.quoteToken?.symbol}`,
-        buyPrice: minP,
-        buyUrl: buy.url,
-        sellDex: (sell.dexId||"").toUpperCase(),
-        sellPair: `${sell.baseToken?.symbol}/${sell.quoteToken?.symbol}`,
-        sellPrice: maxP,
-        sellUrl: sell.url
+        tokenAddr:base,
+        tokenSym:buy.baseToken?.symbol || sell.baseToken?.symbol || base.slice(0,6),
+        buyDex:(buy.dexId||"").toUpperCase(),
+        buyPair:`${buy.baseToken?.symbol}/${buy.quoteToken?.symbol}`,
+        buyPrice:minP,
+        buyUrl:buy.url,
+        buyLiq:Number(buy?.liquidity?.usd||0),
+        sellDex:(sell.dexId||"").toUpperCase(),
+        sellPair:`${sell.baseToken?.symbol}/${sell.quoteToken?.symbol}`,
+        sellPrice:maxP,
+        sellUrl:sell.url,
+        sellLiq:Number(sell?.liquidity?.usd||0)
       });
     }
     return out;
   }
 
+  /* State + render */
+  let CURRENT_ROWS=[]; // after scoring
+  function updateStats(){
+    const total=CURRENT_ROWS.length;
+    const prof=CURRENT_ROWS.filter(r=>r.net>0).length;
+    const selected=[...document.querySelectorAll('tbody input[type="checkbox"]:checked')].length;
+    $("statFound").textContent=`Found: ${total}`;
+    $("statProf").textContent=`Profitable: ${prof}`;
+    $("statSel").textContent=`Selected: ${selected}`;
+    $("btnSelectProf").disabled=prof===0;
+    $("btnClearSel").disabled=selected===0;
+    $("btnExecute").disabled=selected===0;
+  }
+
   function render(rows){
+    CURRENT_ROWS=rows;
     const tb=$("rows"); tb.innerHTML="";
-    rows.forEach(r=>{
-      const rawPct = pct(r.buyPrice, r.sellPrice);
-      const loanUSD = clampLoan();
-      const aaveFee = loanUSD * PLATFORM_FEE;
-      const revenue = (loanUSD / r.buyPrice) * r.sellPrice;
-      const net = revenue - loanUSD - aaveFee - (window.__gasUSD||0);
+    rows.forEach((r,idx)=>{
       const tr=document.createElement("tr");
-      tr.className = net>0 ? "pos" : (net>-3 ? "meh" : "neg");
-      tr.innerHTML = `
+      const cls=r.net>0?"pos":(r.net>-3?"meh":"neg");
+      tr.className=cls;
+      const minPoolLiq=Math.min(r.buyLiq||0,r.sellLiq||0);
+      tr.innerHTML=`
+        <td data-label="Select"><input type="checkbox" data-idx="${idx}"></td>
         <td data-label="Token"><code title="${r.tokenAddr}">${r.tokenSym}</code></td>
-        <td data-label="Best Buy">
-          <a href="${r.buyUrl}" target="_blank" rel="noopener">${r.buyDex}</a>
-          <div class="help">${r.buyPair} @ ${fmtUSD(r.buyPrice)}</div>
-        </td>
-        <td data-label="Best Sell">
-          <a href="${r.sellUrl}" target="_blank" rel="noopener">${r.sellDex}</a>
-          <div class="help">${r.sellPair} @ ${fmtUSD(r.sellPrice)}</div>
-        </td>
-        <td class="right" data-label="Raw Spread">${rawPct.toFixed(2)}%</td>
-        <td class="right" data-label="Net">${fmtUSD(net)}</td>`;
+        <td data-label="Best Buy"><a href="${r.buyUrl}" target="_blank" rel="noopener">${r.buyDex}</a><div class="help">${r.buyPair} @ ${fmtUSD(r.buyPrice)} • liq ${fmtUSD(r.buyLiq||0)}</div></td>
+        <td data-label="Best Sell"><a href="${r.sellUrl}" target="_blank" rel="noopener">${r.sellDex}</a><div class="help">${r.sellPair} @ ${fmtUSD(r.sellPrice)} • liq ${fmtUSD(r.sellLiq||0)}</div></td>
+        <td class="right" data-label="Raw Spread">${r.rawPct.toFixed(2)}%</td>
+        <td class="right" data-label="Net">${fmtUSD(r.net)}</td>
+        <td class="right" data-label="Min Pool Liquidity">${fmtUSD(minPoolLiq)}</td>`;
       tb.appendChild(tr);
     });
+    // Hook checkboxes
+    tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      cb.addEventListener('change',updateStats);
+    });
+    // master checkbox
+    const master=$("chkAll");
+    master.checked=false;
+    master.onchange=()=>{
+      const cbs=tb.querySelectorAll('input[type="checkbox"]'); cbs.forEach(cb=>cb.checked=master.checked);
+      updateStats();
+    };
+    updateStats();
+  }
+
+  function scoreAndFilter(routes){
+    const L=loanUSD(), gasUSD=gas.usd||0;
+    const enriched=routes.map(r=>{
+      const rawPct=pct(r.buyPrice,r.sellPrice);
+      const revenue=(L/r.buyPrice)*r.sellPrice;
+      const net = revenue - L - (L*PLATFORM_FEE) - gasUSD;
+      const minLiq=Math.min(r.buyLiq||0,r.sellLiq||0);
+      const liqOK = minLiq >= (L*LIQ_MULTIPLIER);
+      return {...r, rawPct, net, minLiq, liqOK};
+    });
+    // keep only those that pass liquidity gate OR show small negative for awareness
+    return enriched
+      .filter(r=>r.liqOK) // strict: only routes that can plausibly absorb the size
+      .sort((a,b)=>b.net-a.net)
+      .slice(0,MAX_ROWS);
   }
 
   async function scan(){
     const tb=$("rows"); tb.innerHTML="";
     setStatus("Fetching gas…");
     await initGas();
-    window.__gasUSD = (function(){
-      const gl=parseFloat($("gas-limit").value||"0");
-      const native=(Number($("#gas-gwei")?.value||0)||gas.gwei)*gl/1e9;
-      return native*(gas.usdPerNative||0);
-    })();
-
-    setStatus("Querying Dexscreener search (multiple terms) …");
+    setStatus("Querying Dexscreener…");
     let pairs=[];
     try{
-      const res = await fetchArbitrumPairs();
-      if(!res.length){ setStatus("Dexscreener returned 0 pairs for these searches."); return; }
-      // keep the most liquid N to keep it snappy
-      pairs = res.sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0)).slice(0,2000);
-    }catch(e){
-      setStatus("Dexscreener error: "+(e?.message||e));
-      return;
-    }
+      const res=await (async()=>{ // fetch searches sequentially to be gentle
+        let all=[]; for(const t of SEARCH_TERMS){ try{ all=all.concat(await fetchSearch(t)); }catch(_){ } }
+        // keep the most liquid N
+        all.sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
+        return all.slice(0,2000);
+      })();
+      if(!res.length){ setStatus("No pairs from Dexscreener."); return; }
+      pairs=res;
+    }catch(e){ setStatus("Dexscreener error: "+(e?.message||e)); return; }
 
     setStatus(`Processing ${pairs.length} pairs…`);
-    const collapsed = computeBestRoutes(pairs);
-    if(!collapsed.length){ setStatus("No viable markets after filtering."); render([]); return; }
+    const routes=computeBestRoutes(pairs);
+    if(!routes.length){ setStatus("No viable markets after filtering."); render([]); return; }
 
-    const loanUSD = clampLoan();
-    const scored = collapsed.map(r=>{
-      const rawPct = pct(r.buyPrice, r.sellPrice);
-      const revenue = (loanUSD / r.buyPrice) * r.sellPrice;
-      const net = revenue - loanUSD - (loanUSD*PLATFORM_FEE) - (window.__gasUSD||0);
-      return {...r, rawPct, net};
-    }).sort((a,b)=>b.net-a.net).slice(0, MAX_ROWS);
-
+    const scored=scoreAndFilter(routes);
     render(scored);
-    setStatus(`Done • ${scored.length} tokens (loan ${fmtUSD(loanUSD)})`);
+    setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; liq≥${LIQ_MULTIPLIER}× loan)`);
+
+    // enable quick select buttons
+    $("btnSelectProf").disabled = scored.filter(r=>r.net>0).length===0;
+    $("btnClearSel").disabled = true;
+    $("btnExecute").disabled = true;
   }
 
+  function selectAllProfitable(){
+    const tb=$("rows");
+    const cbs=tb.querySelectorAll('input[type="checkbox"]');
+    CURRENT_ROWS.forEach((r,i)=>{ const cb=cbs[i]; if(!cb) return; cb.checked = r.net>0; });
+    updateStats();
+  }
+  function clearSelection(){
+    const cbs=document.querySelectorAll('#rows input[type="checkbox"]'); cbs.forEach(cb=>cb.checked=false);
+    $("chkAll").checked=false; updateStats();
+  }
+  function executeSelectedMock(){
+    const cbs=[...document.querySelectorAll('#rows input[type="checkbox"]')];
+    const sel=cbs.map((cb,i)=>cb.checked?CURRENT_ROWS[i]:null).filter(Boolean);
+    if(!sel.length){ alert("Select at least one route."); return; }
+    const lines=sel.slice(0,20).map(r=>`${r.tokenSym}: BUY ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → SELL ${r.sellDex} @ ${fmtUSD(r.sellPrice)} | Net ${fmtUSD(r.net)} | MinLiq ${fmtUSD(r.minLiq)}`);
+    const txid='0x'+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
+    alert(`(Mock) Execute ${sel.length} route(s) with loan ${fmtUSD(loanUSD())}\n\n• ${lines.join('\n• ')}\n\nTxID: ${txid}`);
+  }
+
+  // Wire UI
   on($("scanBtn"),"click",scan);
   on($("lkScan"),"click",(e)=>{e.preventDefault();scan();});
+  on($("btnSelectProf"),"click",selectAllProfitable);
+  on($("btnClearSel"),"click",clearSelection);
+  on($("btnExecute"),"click",executeSelectedMock);
 
-  (async()=>{ try{ await initGas(); }catch(_){} })(); // init gas on load
+  // enable/disable execute/clear when selection changes (handled in render via updateStats)
+
+  // Init gas display on load
+  (async()=>{ try{ await initGas(); }catch(_){} })();
+
 })();
 </script>
 </body>

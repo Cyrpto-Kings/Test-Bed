@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.6.2 — Auto-Select & Auto-Execute</title>
+<title>Crypto Kings Test Bed v9.6.3 — Auto-Select & Auto-Execute</title>
 <style>
   :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
   *{box-sizing:border-box} html,body{height:100%}
@@ -28,8 +28,8 @@
   @media (min-width:960px){ .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input[readonly]{background:#f9fafb;color:#4b5563}
-  .switch{display:flex;align-items:center;gap:10px}
-  .switch input{transform:scale(1.2)}
+  .switch{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .switch input{transform:scale(1.1)}
 
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
   .stat{font-size:12px;color:#6b7280;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff}
@@ -75,7 +75,7 @@
   <div class="topbar" style="padding-top: env(safe-area-inset-top)">
     <div class="container topbar-inner">
       <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-      <span class="chip">v9.6.2</span>
+      <span class="chip">v9.6.3</span>
       <button id="scanBtn" class="btn">Scan</button>
     </div>
   </div>
@@ -164,11 +164,23 @@
 
 <script>
 /* Error banner */
-(function(){const show=(m,s,l,c,e)=>{try{const b=document.createElement('div');b.style.margin='12px auto';b.style.maxWidth='1100px';b.innerHTML='<div style="background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px"><strong>App notice</strong><pre style="white-space:pre-wrap;margin:6px 0 0;font-size:12px;color:#7f1d1d">'+(e&&e.stack?e.stack:[m,s,l+':'+c].filter(Boolean).join(' | '))+'</pre></div>';document.body.prepend(b);}catch(_){}return false;};window.onerror=show;window.onunhandledrejection=e=>show('Unhandled promise rejection','','','',e&&(e.reason||e));})();
+(function(){
+  const show=(m,s,l,c,e)=>{
+    try{
+      const details=(e&&e.stack)?e.stack:([m,s,l?l+':'+c:''].filter(Boolean).join(' | '));
+      const b=document.createElement('div'); b.style.margin='12px auto'; b.style.maxWidth='1100px';
+      b.innerHTML='<div style="background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px"><strong>App notice</strong><pre style="white-space:pre-wrap;margin:6px 0 0;font-size:12px;color:#7f1d1d">'+details+'</pre></div>';
+      document.body.prepend(b);
+    }catch(_){}
+    return false;
+  };
+  window.onerror=show;
+  window.onunhandledrejection=e=>show('Unhandled promise rejection','','','',e&&(e.reason||e));
+})();
 </script>
 
 <script>
-/* v9.6.2 — auto-select + auto-exec + overlay */
+/* v9.6.3 — fixes + robust scan */
 (function(){
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
@@ -182,7 +194,7 @@
   function minPoolLiq(){ let v=parseFloat($("minLiq").value||"25000"); if(!isFinite(v)||v<0) v=25000; $("minLiq").value=String(Math.round(v)); return Math.round(v); }
 
   /* Overlay */
-  const overlay=$("#overlay"), overlayText=$("#overlayText");
+  const overlay=$("overlay"), overlayText=$("overlayText");
   function showOverlay(text){ overlayText.textContent=text||"Working…"; overlay.classList.add("show"); }
   function updateOverlay(text){ overlayText.textContent=text||overlayText.textContent; }
   function hideOverlay(){ overlay.classList.remove("show"); }
@@ -194,37 +206,64 @@
 
   /* Gas */
   const gas={ gwei:0.20, usdPerNative:0, usd:0 };
-  async function cgETH(){ try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"}); if(!r.ok) return null; const j=await r.json(); return j?.ethereum?.usd??null; }catch(_){ return null; } }
+  async function cgETH(){
+    try{
+      const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
+      if(!r.ok) return null; const j=await r.json(); return j&&j.ethereum&&typeof j.ethereum.usd==="number"?j.ethereum.usd:null;
+    }catch(_){ return null; }
+  }
   async function ethFeeHistory(){
-    try{ const r=await fetch("https://arbitrum-one.publicnode.com",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]})}); if(!r.ok) return null; const j=await r.json(),bh=j?.result; const base=parseInt(bh.baseFeePerGas.at(-1),16)/1e9; const tip=parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9; return base+tip; }catch(_){ return null; }
+    try{
+      const r=await fetch("https://arbitrum-one.publicnode.com",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]})
+      });
+      if(!r.ok) return null; const j=await r.json(); const bh=j&&j.result;
+      if(!bh||!Array.isArray(bh.baseFeePerGas)||!Array.isArray(bh.reward)) return null;
+      const lastBaseHex = bh.baseFeePerGas[bh.baseFeePerGas.length-1];
+      const baseWei = parseInt(lastBaseHex||"0x0",16);
+      const rewardsLast = bh.reward[bh.reward.length-1] || [];
+      const medianTipWei = parseInt((rewardsLast[1]||"0x0"),16);
+      const baseGwei = baseWei/1e9, tipGwei=medianTipWei/1e9;
+      return baseGwei + tipGwei;
+    }catch(_){ return null; }
   }
   async function initGas(){
     const [ethUsd,g]=await Promise.all([cgETH(),ethFeeHistory()]);
     gas.usdPerNative=ethUsd||0; gas.gwei=(typeof g==='number'&&g>0)?g:0.20;
-    $("#gas-gwei").value=`${gas.gwei.toFixed(2)} Gwei`;
-    $("#gas-note").textContent=`ETH ≈ ${fmtUSD(gas.usdPerNative)} • ${g?"auto":"fallback"}`;
+    $("gas-gwei").value=`${gas.gwei.toFixed(2)} Gwei`;
+    $("gas-note").textContent=`ETH ≈ ${fmtUSD(gas.usdPerNative)} • ${g?"auto":"fallback"}`;
     calcGasUSD();
   }
   function calcGasUSD(){
-    const gl=parseFloat($("#gas-limit").value||"0");
+    const gl=parseFloat($("gas-limit").value||"0");
     const native=(gas.gwei>0&&gl>0)?(gas.gwei*gl)/1e9:0;
     gas.usd=native*(gas.usdPerNative||0);
-    $("#gas-cost").value=native?`${native.toFixed(6)} ETH`:"";
-    $("#gas-cost-usd").textContent=native?`≈ ${fmtUSD(gas.usd)}`:"—";
+    $("gas-cost").value=native?`${native.toFixed(6)} ETH`:"";
+    $("gas-cost-usd").textContent=native?`≈ ${fmtUSD(gas.usd)}`:"—";
   }
-  on($("#gas-limit"),"input",calcGasUSD); on($("#loanUsd"),"change",calcGasUSD);
+  on($("gas-limit"),"input",calcGasUSD); on($("loanUsd"),"change",calcGasUSD);
 
   /* Dexscreener search */
   const SEARCH_TERMS=["USDC","USDT","WETH","ETH","ARB","DAI","WBTC","LINK","UNI","AAVE","MKR","OP","CRV","BAL","FRAX","LDO","GMX","RDNT","GNS","MAGIC","PENDLE","RPL","ENS","LUSD","wstETH","weETH","AERO","AERO-USDC","USD+","USDe","sDAI","rsETH","ezETH","swETH","STONE"];
   async function fetchSearch(term){
     const url=`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(term)}`;
-    const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error(`Dexscreener HTTP ${r.status}`);
-    const j=await r.json(); return Array.isArray(j?.pairs)?j.pairs.filter(p=>p.chainId===CHAIN):[];
+    const r=await fetch(url,{cache:"no-store"});
+    if(!r.ok) throw new Error(`Dexscreener HTTP ${r.status}`);
+    const j=await r.json(); const arr=Array.isArray(j&&j.pairs?j.pairs:[])?j.pairs:[]; return arr.filter(p=>p.chainId===CHAIN);
   }
   async function fetchArbitrumPairs(){
-    let all=[]; for(const t of SEARCH_TERMS){ try{ all=all.concat(await fetchSearch(t)); }catch(_){/*skip*/} }
-    const seen=new Set(), uniq=[]; for(const p of all){ const key=(p?.pairAddress||p?.url||"").toLowerCase(); if(!key||seen.has(key)) continue; seen.add(key); uniq.push(p); }
-    uniq.sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
+    let all=[];
+    for(const t of SEARCH_TERMS){
+      try{ const got=await fetchSearch(t); if(Array.isArray(got)&&got.length) all=all.concat(got); }catch(_){/*skip*/ }
+    }
+    // dedupe by pairAddress/url
+    const seen=new Set(), uniq=[];
+    for(const p of all){
+      const key=((p&&p.pairAddress)||p&&p.url||"").toLowerCase();
+      if(!key||seen.has(key)) continue; seen.add(key); uniq.push(p);
+    }
+    uniq.sort((a,b)=>((b?.liquidity?.usd||0)-(a?.liquidity?.usd||0)));
     return uniq.slice(0,3000);
   }
 
@@ -236,11 +275,17 @@
       return isFinite(liq)&&liq>=minLiq&&isFinite(price)&&p?.baseToken?.symbol&&p?.quoteToken?.symbol;
     });
     const byBase=new Map();
-    for(const p of valid){ const base=(p?.baseToken?.address||"").toLowerCase(); if(!base) continue; (byBase.get(base)||byBase.set(base,[]).get(base)).push(p); }
+    for(const p of valid){
+      const base=(p?.baseToken?.address||"").toLowerCase(); if(!base) continue;
+      const list=byBase.get(base); if(list) list.push(p); else byBase.set(base,[p]);
+    }
     const out=[];
     for(const [base, list] of byBase.entries()){
       let buy=null,sell=null,minP=Infinity,maxP=-Infinity;
-      for(const px of list){ const pr=Number(px.priceUsd); if(!isFinite(pr)) continue; if(pr<minP){minP=pr; buy=px;} if(pr>maxP){maxP=pr; sell=px;} }
+      for(const px of list){
+        const pr=Number(px.priceUsd); if(!isFinite(pr)) continue;
+        if(pr<minP){minP=pr; buy=px;} if(pr>maxP){maxP=pr; sell=px;}
+      }
       if(!buy||!sell||!isFinite(minP)||!isFinite(maxP)||maxP<=0||minP<=0) continue;
       out.push({
         tokenAddr:base,
@@ -269,18 +314,18 @@
     const selIdx=cbs.map((cb,i)=>cb.checked?i:null).filter(i=>i!==null);
     const selected=selIdx.length;
     const totalNet=selIdx.reduce((s,i)=>s+(CURRENT_ROWS[i]?.net||0),0);
-    $("#statFound").textContent=`Found: ${total}`;
-    $("#statProf").textContent=`Profitable: ${prof}`;
-    $("#statSel").textContent=`Selected: ${selected}`;
-    $("#statTotalNet").textContent=`Total Selected Net: ${fmtUSD(totalNet)}`;
-    $("#btnSelectProf").disabled=prof===0;
-    $("#btnClearSel").disabled=selected===0;
-    $("#btnExecute").disabled=selected===0;
+    $("statFound").textContent=`Found: ${total}`;
+    $("statProf").textContent=`Profitable: ${prof}`;
+    $("statSel").textContent=`Selected: ${selected}`;
+    $("statTotalNet").textContent=`Total Selected Net: ${fmtUSD(totalNet)}`;
+    $("btnSelectProf").disabled=prof===0;
+    $("btnClearSel").disabled=selected===0;
+    $("btnExecute").disabled=selected===0;
   }
 
   function render(rows){
     CURRENT_ROWS=rows;
-    const tb=$("#rows"); tb.innerHTML="";
+    const tb=$("rows"); tb.innerHTML="";
     rows.forEach((r,idx)=>{
       const tr=document.createElement("tr");
       const cls=r.net>0?"pos":(r.net>-3?"meh":"neg");
@@ -297,7 +342,7 @@
       tb.appendChild(tr);
     });
     tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.addEventListener('change',updateStats));
-    const master=$("#chkAll");
+    const master=$("chkAll");
     master.checked=false;
     master.onchange=()=>{ tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.checked=master.checked); updateStats(); };
     updateStats();
@@ -316,19 +361,19 @@
       return {...r, rawPct, net, minLiq, liqOK};
     });
     const kept=enriched.filter(r=>r.liqOK).sort((a,b)=>b.net-a.net).slice(0,MAX_ROWS);
-    $("#statFiltered").textContent=`Filtered by Liquidity: ${filteredByLiq}`;
+    $("statFiltered").textContent=`Filtered by Liquidity: ${filteredByLiq}`;
     return kept;
   }
 
   function selectAllProfitable(){
-    const tb=$("#rows");
+    const tb=$("rows");
     const cbs=tb.querySelectorAll('input[type="checkbox"]');
     CURRENT_ROWS.forEach((r,i)=>{ const cb=cbs[i]; if(!cb) return; cb.checked = r.net>0; });
     updateStats();
   }
   function clearSelection(){
     document.querySelectorAll('#rows input[type="checkbox"]').forEach(cb=>cb.checked=false);
-    $("#chkAll").checked=false; updateStats();
+    $("chkAll").checked=false; updateStats();
   }
 
   function executeSelectedMock(){
@@ -351,48 +396,54 @@
     );
   }
 
-  /* Scan pipeline with overlay + auto-select + auto-exec */
+  let scanning=false;
   async function scan(){
-    showOverlay("Fetching gas …");
-    setStatus("Fetching gas…");
-    await initGas();
-
-    updateOverlay("Querying Dexscreener …");
-    setStatus("Querying Dexscreener…");
-    let pairs=[];
+    if(scanning) return;
+    scanning=true;
     try{
-      const res=await fetchArbitrumPairs();
-      if(!res.length){ setStatus("No pairs from Dexscreener."); hideOverlay(); return; }
-      pairs=res;
-    }catch(e){ setStatus("Dexscreener error: "+(e?.message||e)); hideOverlay(); return; }
+      showOverlay("Fetching gas …");
+      setStatus("Fetching gas…");
+      await initGas();
 
-    updateOverlay(`Processing ${pairs.length} pairs …`);
-    setStatus(`Processing ${pairs.length} pairs…`);
-    const routes=computeBestRoutes(pairs);
-    if(!routes.length){ setStatus("No viable markets after base filtering."); render([]); hideOverlay(); return; }
+      updateOverlay("Querying Dexscreener …");
+      setStatus("Querying Dexscreener…");
+      let pairs=[];
+      try{
+        const res=await fetchArbitrumPairs();
+        if(!Array.isArray(res) || !res.length){ setStatus("No pairs from Dexscreener."); hideOverlay(); return; }
+        pairs=res;
+      }catch(e){ setStatus("Dexscreener error: "+(e?.message||e)); hideOverlay(); return; }
 
-    const scored=scoreAndFilter(routes);
-    render(scored);
-    setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; guard ${liqMultiplier()}×; minLiq ${fmtUSD(minPoolLiq())})`);
+      updateOverlay(`Processing ${pairs.length} pairs …`);
+      setStatus(`Processing ${pairs.length} pairs…`);
+      const routes=computeBestRoutes(pairs);
+      if(!routes.length){ setStatus("No viable markets after base filtering."); render([]); hideOverlay(); return; }
 
-    // Auto-select & auto-exec
-    const autoSel=$("#autoSelect").checked;
-    const autoEx=$("#autoExecute").checked;
-    if(autoSel){ selectAllProfitable(); }
-    hideOverlay(); // show table before potential popup
-    if(autoEx){
-      const anyProf = CURRENT_ROWS.some(r=>r.net>0);
-      if(anyProf){ setTimeout(executeSelectedMock, 250); }
+      const scored=scoreAndFilter(routes);
+      render(scored);
+      setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; guard ${liqMultiplier()}×; minLiq ${fmtUSD(minPoolLiq())})`);
+
+      const autoSel=$("autoSelect").checked;
+      const autoEx=$("autoExecute").checked;
+      if(autoSel){ selectAllProfitable(); }
+      hideOverlay();
+      if(autoEx){
+        const anyProf = CURRENT_ROWS.some(r=>r.net>0);
+        if(anyProf){ setTimeout(executeSelectedMock, 250); }
+      }
+    } finally {
+      scanning=false;
     }
   }
 
   /* Wire UI */
-  on($("#scanBtn"),"click",scan);
-  on($("#lkScan"),"click",(e)=>{e.preventDefault();scan();});
-  on($("#btnSelectProf"),"click",selectAllProfitable);
-  on($("#btnClearSel"),"click",clearSelection);
-  on($("#btnExecute"),"click",executeSelectedMock);
+  on($("scanBtn"),"click",scan);
+  on($("lkScan"),"click",(e)=>{e.preventDefault();scan();});
+  on($("btnSelectProf"),"click",selectAllProfitable);
+  on($("btnClearSel"),"click",clearSelection);
+  on($("btnExecute"),"click",executeSelectedMock);
 
+  // Init gas silently
   (async()=>{ try{ await initGas(); }catch(_){} })();
 })();
 </script>

@@ -1,9 +1,9 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.7.0 — Auto-Rescan</title>
+<title>Crypto Kings Test Bed v9.7.1 — Live Activity + Stop</title>
 <style>
   :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
   *{box-sizing:border-box} html,body{height:100%}
@@ -21,6 +21,8 @@
   .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(124,92,255,.15);min-height:44px}
   .btn.ghost{background:#fff;color:#111;border:1px solid var(--border-strong);box-shadow:none}
   .btn.small{padding:8px 12px;min-height:36px}
+  .btn.danger{background:linear-gradient(135deg,#ef4444,#f59e0b)}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
 
   main .wrap{padding:16px 0 80px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
@@ -34,6 +36,10 @@
 
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
   .stat{font-size:12px;color:#6b7280;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff}
+
+  .statusbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .tinyspinner{border:3px solid rgba(0,0,0,.08);border-top:3px solid var(--brand);border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite}
+  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 
   .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
   table{min-width:980px;width:100%}
@@ -62,26 +68,33 @@
   footer a:hover{text-decoration:underline}
   .copyright{border-top:1px solid var(--border);padding:12px 0;font-size:12px;color:#6b7280;text-align:center}
 
-  /* Full-screen loading overlay */
-  .overlay{position:fixed;inset:0;background:rgba(255,255,255,.9);backdrop-filter:saturate(1.2) blur(2px);display:none;align-items:center;justify-content:center;z-index:100}
-  .overlay.show{display:flex}
-  .ov-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:0 8px 28px rgba(0,0,0,.08);min-width:280px;max-width:90%}
-  .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:28px;height:28px;animation:spin 1s linear infinite;margin-right:10px}
-  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-  .ov-row{display:flex;align-items:center;gap:10px}
-  .ov-status{font-size:14px;color:#374151}
+  /* Activity panel */
+  .activity{margin-top:16px}
+  .log{max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:12px;background:#fff}
+  .log-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .log-item:last-child{border-bottom:0}
+  .log-tag{font-size:11px;padding:2px 6px;border-radius:999px;border:1px solid var(--border-strong);background:#f3f4f6;color:#374151;white-space:nowrap}
+  .log-time{font-size:11px;color:#6b7280;white-space:nowrap}
+  .log-text{font-size:13px;color:#111827;word-break:break-word}
+  .log-good{background:#ecfdf5;border-color:#bbf7d0}
+  .log-warn{background:#fff7ed;border-color:#fed7aa}
+  .log-bad {background:#fef2f2;border-color:#fecaca}
 </style>
 </head>
 <body>
   <div class="topbar" style="padding-top: env(safe-area-inset-top)">
     <div class="container topbar-inner">
       <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-      <span class="chip">v9.7.0</span>
-      <button id="scanBtn" class="btn">Scan</button>
+      <span class="chip">v9.7.1</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button id="scanBtn" class="btn">Scan</button>
+        <button id="stopBtn" class="btn ghost danger" disabled>Stop</button>
+      </div>
     </div>
   </div>
 
   <main class="container wrap">
+    <!-- Controls -->
     <div class="card" style="margin-bottom:14px">
       <div class="row row-5">
         <div>
@@ -107,9 +120,14 @@
           <label><input id="autoExecute" type="checkbox" checked> Auto-execute after scan (mock)</label>
         </div>
       </div>
-      <div class="muted" id="lastScan">Last scan: —</div>
+      <div class="statusbar" style="margin-top:8px">
+        <div id="liveSpinner" class="tinyspinner" style="display:none"></div>
+        <div class="muted" id="status">Ready.</div>
+        <div class="muted" id="lastScan" style="margin-left:auto">Last scan: —</div>
+      </div>
     </div>
 
+    <!-- Gas & Summary -->
     <div class="card">
       <div class="row row-4">
         <div><label>Network</label><input value="Arbitrum" readonly></div>
@@ -117,8 +135,6 @@
         <div><label>Gas Limit</label><input id="gas-limit" type="number" step="1000" value="380000"><div class="help">Two swaps + callback ≈ 350–450k</div></div>
         <div><label>Est. Gas Cost</label><input id="gas-cost" placeholder="—" readonly><div class="help" id="gas-cost-usd">—</div></div>
       </div>
-
-      <div class="row" style="margin-top:6px"><div><span id="status" class="help">Ready.</span></div></div>
 
       <div class="toolbar">
         <span id="statFound" class="stat">Found: 0</span>
@@ -148,27 +164,26 @@
         </table>
       </div>
     </div>
+
+    <!-- Live Activity / Reports -->
+    <div class="card activity">
+      <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+        <h3 style="margin:0;font-size:16px">Live Activity / Reports</h3>
+        <div class="muted">Logs most recent actions, scans, and (mock) executions.</div>
+      </div>
+      <div id="log" class="log" style="margin-top:10px"></div>
+    </div>
   </main>
 
   <footer>
     <div class="container footer-inner">
       <div><div class="logo"><span>CK</span></div><p class="help">Auto-rescans and highlights profitable cross-DEX spreads at your loan size with liquidity guards.</p></div>
-    <div><h4>Quick</h4><ul><li><a href="#" id="lkScan">Scan</a></li></ul></div>
+      <div><h4>Quick</h4><ul><li><a href="#" id="lkScan">Scan</a></li></ul></div>
       <div><h4>Networks</h4><ul><li>Arbitrum (active)</li><li>Others (soon)</li></ul></div>
       <div><h4>Contact</h4><ul><li><a href="mailto:info@example.com">info@example.com</a></li></ul></div>
     </div>
     <div class="copyright">© 2025 Crypto Kings. All rights reserved.</div>
   </footer>
-
-  <!-- Loading overlay -->
-  <div id="overlay" class="overlay">
-    <div class="ov-card">
-      <div class="ov-row">
-        <div class="spinner"></div>
-        <div class="ov-status" id="overlayText">Starting…</div>
-      </div>
-    </div>
-  </div>
 
 <script>
 /* Error banner */
@@ -188,13 +203,35 @@
 </script>
 
 <script>
-/* v9.7.0 — auto-rescan loop */
+/* v9.7.1 — non-blocking UI with Stop + Activity log */
 (function(){
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
   const pct=(a,b)=>((b-a)/Math.max(1e-9,a))*100;
-  const setStatus=msg=>{ const s=$("status"); if(s) s.textContent=msg; };
+
+  const statusEl=$("status"), spinner=$("#liveSpinner");
+  function setStatus(msg, spinning=false){
+    statusEl.textContent = msg;
+    spinner.style.display = spinning ? "inline-block" : "none";
+  }
+
+  /* Activity log */
+  const logWrap=$("#log");
+  function addLog(kind, text, tone=null){
+    const row=document.createElement("div");
+    row.className="log-item";
+    const tag=`<span class="log-tag">${kind}</span>`;
+    const time=`<span class="log-time">${new Date().toLocaleTimeString()}</span>`;
+    row.innerHTML = `${tag} ${time} <div class="log-text">${text}</div>`;
+    if(tone==="good") row.classList.add("log-good");
+    if(tone==="warn") row.classList.add("log-warn");
+    if(tone==="bad")  row.classList.add("log-bad");
+    logWrap.appendChild(row);
+    // keep last 200
+    while(logWrap.children.length>200){ logWrap.removeChild(logWrap.firstChild); }
+    logWrap.scrollTop = logWrap.scrollHeight;
+  }
 
   /* Inputs */
   function loanUSD(){ let v=parseFloat($("loanUsd").value||"0"); if(!isFinite(v)) v=10000; v=Math.max(100,Math.min(1_000_000,v)); $("loanUsd").value=String(v); return v; }
@@ -202,29 +239,19 @@
   function minPoolLiq(){ let v=parseFloat($("minLiq").value||"25000"); if(!isFinite(v)||v<0) v=25000; $("minLiq").value=String(Math.round(v)); return Math.round(v); }
   function rescanEvery(){ let v=parseInt(($("rescanEvery").value||"30"),10); if(!isFinite(v)||v<10) v=30; $("rescanEvery").value=String(v); return v; }
 
-  /* Overlay */
-  const overlay=$("overlay"), overlayText=$("overlayText");
-  function showOverlay(text){ overlayText.textContent=text||"Working…"; overlay.classList.add("show"); }
-  function updateOverlay(text){ overlayText.textContent=text||overlayText.textContent; }
-  function hideOverlay(){ overlay.classList.remove("show"); }
-
-  /* Tunables */
-  const PLATFORM_FEE=0.0009;               // Aave 0.09%
-  const CHAIN="arbitrum";
-  const MAX_ROWS=400;                      // display cap
-
   /* Gas */
   const gas={ gwei:0.20, usdPerNative:0, usd:0 };
-  async function cgETH(){
+  let gasAbort=null;
+  async function cgETH(signal){
     try{
-      const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
+      const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store", signal});
       if(!r.ok) return null; const j=await r.json(); return j&&j.ethereum&&typeof j.ethereum.usd==="number"?j.ethereum.usd:null;
     }catch(_){ return null; }
   }
-  async function ethFeeHistory(){
+  async function ethFeeHistory(signal){
     try{
       const r=await fetch("https://arbitrum-one.publicnode.com",{
-        method:"POST",headers:{"Content-Type":"application/json"},
+        method:"POST",headers:{"Content-Type":"application/json"}, signal,
         body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]})
       });
       if(!r.ok) return null; const j=await r.json(); const bh=j&&j.result;
@@ -238,7 +265,10 @@
     }catch(_){ return null; }
   }
   async function initGas(){
-    const [ethUsd,g]=await Promise.all([cgETH(),ethFeeHistory()]);
+    if(gasAbort) gasAbort.abort();
+    gasAbort = new AbortController();
+    const {signal}=gasAbort;
+    const [ethUsd,g]=await Promise.all([cgETH(signal),ethFeeHistory(signal)]);
     gas.usdPerNative=ethUsd||0; gas.gwei=(typeof g==='number'&&g>0)?g:0.20;
     $("gas-gwei").value=`${gas.gwei.toFixed(2)} Gwei`;
     $("gas-note").textContent=`ETH ≈ ${fmtUSD(gas.usdPerNative)} • ${g?"auto":"fallback"}`;
@@ -253,20 +283,24 @@
   }
   on($("gas-limit"),"input",calcGasUSD); on($("loanUsd"),"change",calcGasUSD);
 
-  /* Dexscreener search */
+  /* Dexscreener search (Arbitrum) */
+  const CHAIN="arbitrum";
   const SEARCH_TERMS=["USDC","USDT","WETH","ETH","ARB","DAI","WBTC","LINK","UNI","AAVE","MKR","OP","CRV","BAL","FRAX","LDO","GMX","RDNT","GNS","MAGIC","PENDLE","RPL","ENS","LUSD","wstETH","weETH","AERO","AERO-USDC","USD+","USDe","sDAI","rsETH","ezETH","swETH","STONE"];
-  async function fetchSearch(term){
+  let scanAbort=null;
+
+  async function fetchSearch(term, signal){
     const url=`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(term)}`;
-    const r=await fetch(url,{cache:"no-store"});
+    const r=await fetch(url,{cache:"no-store", signal});
     if(!r.ok) throw new Error(`Dexscreener HTTP ${r.status}`);
     const j=await r.json(); const arr=Array.isArray(j&&j.pairs?j.pairs:[])?j.pairs:[]; return arr.filter(p=>p.chainId===CHAIN);
   }
-  async function fetchArbitrumPairs(){
+  async function fetchArbitrumPairs(signal){
     let all=[];
     for(const t of SEARCH_TERMS){
-      try{ const got=await fetchSearch(t); if(Array.isArray(got)&&got.length) all=all.concat(got); }catch(_){/*skip*/ }
+      const got=await fetchSearch(t, signal).catch(()=>[]);
+      if(Array.isArray(got)&&got.length) all=all.concat(got);
+      if(signal.aborted) throw new Error("aborted");
     }
-    // dedupe by pairAddress/url
     const seen=new Set(), uniq=[];
     for(const p of all){
       const key=((p&&p.pairAddress)||p&&p.url||"").toLowerCase();
@@ -276,7 +310,6 @@
     return uniq.slice(0,3000);
   }
 
-  /* Best buy/sell per base token */
   function computeBestRoutes(pairs){
     const minLiq = minPoolLiq();
     const valid=pairs.filter(p=>{
@@ -323,18 +356,18 @@
     const selIdx=cbs.map((cb,i)=>cb.checked?i:null).filter(i=>i!==null);
     const selected=selIdx.length;
     const totalNet=selIdx.reduce((s,i)=>s+(CURRENT_ROWS[i]?.net||0),0);
-    $("statFound").textContent=`Found: ${total}`;
-    $("statProf").textContent=`Profitable: ${prof}`;
-    $("statSel").textContent=`Selected: ${selected}`;
-    $("statTotalNet").textContent=`Total Selected Net: ${fmtUSD(totalNet)}`;
-    $("btnSelectProf").disabled=prof===0;
-    $("btnClearSel").disabled=selected===0;
-    $("btnExecute").disabled=selected===0;
+    $("#statFound").textContent=`Found: ${total}`;
+    $("#statProf").textContent=`Profitable: ${prof}`;
+    $("#statSel").textContent=`Selected: ${selected}`;
+    $("#statTotalNet").textContent=`Total Selected Net: ${fmtUSD(totalNet)}`;
+    $("#btnSelectProf").disabled=prof===0;
+    $("#btnClearSel").disabled=selected===0;
+    $("#btnExecute").disabled=selected===0;
   }
 
   function render(rows){
     CURRENT_ROWS=rows;
-    const tb=$("rows"); tb.innerHTML="";
+    const tb=$("#rows"); tb.innerHTML="";
     rows.forEach((r,idx)=>{
       const tr=document.createElement("tr");
       const cls=r.net>0?"pos":(r.net>-3?"meh":"neg");
@@ -351,12 +384,13 @@
       tb.appendChild(tr);
     });
     tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.addEventListener('change',updateStats));
-    const master=$("chkAll");
+    const master=$("#chkAll");
     master.checked=false;
     master.onchange=()=>{ tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.checked=master.checked); updateStats(); };
     updateStats();
   }
 
+  const PLATFORM_FEE=0.0009, MAX_ROWS=400;
   function scoreAndFilter(routes){
     const L=loanUSD(), gasUSD=gas.usd||0, mult=liqMultiplier();
     let filteredByLiq=0;
@@ -370,7 +404,7 @@
       return {...r, rawPct, net, minLiq, liqOK};
     });
     const kept=enriched.filter(r=>r.liqOK).sort((a,b)=>b.net-a.net).slice(0,MAX_ROWS);
-    $("statFiltered").textContent=`Filtered by Liquidity: ${filteredByLiq}`;
+    $("#statFiltered").textContent=`Filtered by Liquidity: ${filteredByLiq}`;
     return kept;
   }
 
@@ -388,87 +422,90 @@
   function executeSelectedMock(){
     const cbs=[...document.querySelectorAll('#rows input[type="checkbox"]')];
     const sel=cbs.map((cb,i)=>cb.checked?CURRENT_ROWS[i]:null).filter(Boolean);
-    if(!sel.length){ alert("Select at least one route."); return; }
+    if(!sel.length){ addLog("EXEC", "No routes selected; skipping.", "warn"); alert("Select at least one route."); return; }
     const L = loanUSD();
     const lines = sel.slice(0,20).map(r =>
       `${r.tokenSym}: BUY ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → SELL ${r.sellDex} @ ${fmtUSD(r.sellPrice)} | Net ${fmtUSD(r.net)} | MinLiq ${fmtUSD(r.minLiq)}`
     );
-    const more = sel.length > 20 ? `\n… and ${sel.length - 20} more` : "";
+    const more = sel.length > 20 ? `; … +${sel.length - 20} more` : "";
     const totalNet = sel.reduce((s,r)=> s + (r.net||0), 0);
     const txid = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
+    addLog("EXEC", `Mock executed ${sel.length} route(s) [Loan ${fmtUSD(L)} | TOTAL NET ${fmtUSD(totalNet)} | TxID ${txid}]`, totalNet>0?"good":"warn");
     alert(
       `(Mock) Execute ${sel.length} route(s)\n` +
-      `Loan: ${fmtUSD(L)}\n\n` +
-      `• ${lines.join('\n• ')}${more}\n\n` +
+      `Loan: ${fmtUSD(L)}\n` +
       `TOTAL NET: ${fmtUSD(totalNet)}\n` +
-      `TxID: ${txid}`
+      `TxID: ${txid}\n\n` +
+      `Details:\n• ${lines.join('\n• ')}${more}`
     );
   }
 
   /* Scan pipeline */
-  let scanning=false;
-  async function scan(showUI=true){
-    if(scanning) return;
+  let scanning=false, countdownTimer=null, countdown=0, lastExecuteAt=0;
+  function updateCountdownUI(){ $("rescanCountdown").textContent = countdown>0 ? (countdown+"s") : "—"; }
+
+  async function scan(showSpinner=true){
+    if(scanning) return false;
     scanning=true;
+    $("stopBtn").disabled=false;
     try{
-      if(showUI) showOverlay("Fetching gas …");
-      setStatus("Fetching gas…");
+      if(showSpinner){ setStatus("Fetching gas…", true); addLog("SCAN","Fetching gas…"); }
       await initGas();
 
-      if(showUI) updateOverlay("Querying Dexscreener …");
-      setStatus("Querying Dexscreener…");
-      let pairs=[];
-      try{
-        const res=await fetchArbitrumPairs();
-        if(!Array.isArray(res) || !res.length){ setStatus("No pairs from Dexscreener."); if(showUI) hideOverlay(); return false; }
-        pairs=res;
-      }catch(e){ setStatus("Dexscreener error: "+(e?.message||e)); if(showUI) hideOverlay(); return false; }
+      if(showSpinner){ setStatus("Querying Dexscreener…", true); addLog("SCAN","Querying Dexscreener…"); }
+      if(scanAbort) scanAbort.abort();
+      scanAbort = new AbortController();
+      const pairs = await fetchArbitrumPairs(scanAbort.signal).catch(e=>{ if(e&&e.message==="aborted") return null; throw e; });
+      if(pairs===null){ setStatus("Scan aborted.", false); addLog("SCAN","Aborted by user.","warn"); return false; }
+      if(!Array.isArray(pairs) || !pairs.length){ setStatus("No pairs from Dexscreener.", false); addLog("SCAN","No pairs from Dexscreener.","bad"); return false; }
 
-      if(showUI) updateOverlay(`Processing ${pairs.length} pairs …`);
-      setStatus(`Processing ${pairs.length} pairs…`);
+      if(showSpinner){ setStatus(`Processing ${pairs.length} pairs…`, true); addLog("SCAN",`Processing ${pairs.length} pairs…`); }
       const routes=computeBestRoutes(pairs);
-      if(!routes.length){ setStatus("No viable markets after base filtering."); render([]); if(showUI) hideOverlay(); return false; }
+      if(!routes.length){ setStatus("No viable markets after base filtering.", false); render([]); addLog("SCAN","No viable markets after base filtering.","warn"); return false; }
 
       const scored=scoreAndFilter(routes);
       render(scored);
-      setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; guard ${liqMultiplier()}×; minLiq ${fmtUSD(minPoolLiq())})`);
+      setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; guard ${liqMultiplier()}×; minLiq ${fmtUSD(minPoolLiq())})`, false);
       $("lastScan").textContent = "Last scan: " + new Date().toLocaleTimeString();
+      addLog("SCAN",`Finished • ${scored.length} routes.`, scored.length?"good":"warn");
 
-      // Auto-select & auto-exec
       const autoSel=$("autoSelect").checked;
       const autoEx=$("autoExecute").checked;
-      if(autoSel){ selectAllProfitable(); }
-      if(showUI) hideOverlay();
-
-      if(autoEx && CURRENT_ROWS.some(r=>r.net>0)){
-        // throttle alerting (avoid spamming every loop)
+      if(autoSel){ selectAllProfitable(); addLog("SELECT","Auto-selected profitable routes."); }
+      if(autoEx && scored.some(r=>r.net>0)){
         const now=Date.now();
-        if(now - lastExecuteAt > 5000){ lastExecuteAt = now; setTimeout(executeSelectedMock, 150); }
+        if(now - lastExecuteAt > 5000){ lastExecuteAt = now; setTimeout(executeSelectedMock, 100); }
       }
       return true;
     } finally {
       scanning=false;
+      $("stopBtn").disabled=true;
+      setStatus("Idle.", false);
     }
   }
 
-  /* Auto-rescan loop */
-  let rescanTimer=null, countdownTimer=null, countdown=0, lastExecuteAt=0;
-  function updateCountdownUI(){ $("rescanCountdown").textContent = countdown>0 ? (countdown+"s") : "—"; }
+  function stopAll(){
+    if(gasAbort) gasAbort.abort();
+    if(scanAbort) scanAbort.abort();
+    stopRescanLoop();
+    $("stopBtn").disabled=true;
+    setStatus("Stopped.", false);
+    addLog("CTRL","Stopped scan and auto-rescan.","warn");
+  }
+
   function startRescanLoop(){
     stopRescanLoop();
     const every = rescanEvery();
-    countdown = every;
-    updateCountdownUI();
+    countdown = every; updateCountdownUI();
     countdownTimer = setInterval(()=>{
       countdown = Math.max(0, countdown-1);
       updateCountdownUI();
       if(countdown===0){
-        // fire scan (silent overlay) and reset countdown
         scan(false).finally(()=>{ countdown = rescanEvery(); updateCountdownUI(); });
       }
     }, 1000);
-    // also kick an immediate scan with overlay to show first results
     scan(true);
+    addLog("CTRL",`Auto-rescan started (every ${every}s).`);
   }
   function stopRescanLoop(){
     if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
@@ -477,17 +514,18 @@
 
   /* Wire UI */
   on($("scanBtn"),"click",()=>scan(true));
+  on($("stopBtn"),"click",stopAll);
   on($("lkScan"),"click",(e)=>{e.preventDefault();scan(true);});
-  on($("btnSelectProf"),"click",selectAllProfitable);
-  on($("btnClearSel"),"click",clearSelection);
+  on($("btnSelectProf"),"click",()=>{selectAllProfitable(); addLog("SELECT","Selected all profitable routes.");});
+  on($("btnClearSel"),"click",()=>{clearSelection(); addLog("SELECT","Cleared selection.");});
   on($("btnExecute"),"click",executeSelectedMock);
 
-  // Auto-rescan toggle / interval handlers
-  on($("autoRescan"),"change",()=>{ $("autoRescan").checked ? startRescanLoop() : stopRescanLoop(); });
+  // Auto-rescan toggle / interval
+  on($("autoRescan"),"change",()=>{ $("autoRescan").checked ? startRescanLoop() : (stopRescanLoop(), addLog("CTRL","Auto-rescan disabled.","warn")); });
   on($("rescanEvery"),"change",()=>{ if($("autoRescan").checked){ startRescanLoop(); } });
 
-  // Init gas silently; start loop if enabled
-  (async()=>{ try{ await initGas(); }catch(_){}; if($("autoRescan").checked){ startRescanLoop(); } })();
+  // Init
+  (async()=>{ try{ await initGas(); }catch(_){/* ignore */} if($("autoRescan").checked){ startRescanLoop(); } })();
 })();
 </script>
 </body>

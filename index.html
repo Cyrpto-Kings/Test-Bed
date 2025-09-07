@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.5.9 — Multi-select + Total Net</title>
+<title>Crypto Kings Test Bed v9.6.0 — Liquidity Guard Controls</title>
 <style>
-  :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
+  :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; }
   *{box-sizing:border-box} html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden}
   .container{max-width:1100px;width:100%;margin:0 auto;padding:0 16px}
@@ -19,17 +19,18 @@
   .chip{display:inline-block;padding:2px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#eef2ff;color:#3b3b6d}
 
   .group{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px 8px}
-  .group input{width:180px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px}
+  .group input{width:160px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px}
   .group input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
+  .group .small{width:120px}
   .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(124,92,255,.15);min-height:44px}
   .btn.ghost{background:#fff;color:#111;border:1px solid var(--border-strong);box-shadow:none}
-  .btn.small{padding:8px 12px;min-height:36px;font-weight:700}
+  .btn.small{padding:8px 12px;min-height:36px}
   .btn:disabled{opacity:.6;cursor:not-allowed}
 
   main .wrap{padding:16px 0 80px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:960px){ .row-4{grid-template-columns:repeat(4,1fr)} }
+  @media (min-width:960px){ .row-4{grid-template-columns:repeat(4,1fr)} .row-5{grid-template-columns:repeat(5,1fr)} }
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input[readonly]{background:#f9fafb;color:#4b5563}
 
@@ -62,19 +63,25 @@
   footer a{color:inherit;text-decoration:none}
   footer a:hover{text-decoration:underline}
   .copyright{border-top:1px solid var(--border);padding:12px 0;font-size:12px;color:#6b7280;text-align:center}
-  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-  .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand);border-radius:50%;width:20px;height:20px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
 </style>
 </head>
 <body>
   <div class="topbar" style="padding-top: env(safe-area-inset-top)">
     <div class="container topbar-inner">
       <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-      <span class="chip">v9.5.9</span>
+      <span class="chip">v9.6.0</span>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <div class="group">
           <label for="loanUsd" class="help">Loan Size (USD)</label>
-          <input id="loanUsd" type="number" min="100" max="500000" step="500" value="100000" inputmode="decimal">
+          <input id="loanUsd" type="number" min="100" max="1000000" step="500" value="10000" inputmode="decimal">
+        </div>
+        <div class="group">
+          <label for="liqMult" class="help">Liquidity Guard (× loan)</label>
+          <input id="liqMult" class="small" type="number" min="1" max="50" step="1" value="10">
+        </div>
+        <div class="group">
+          <label for="minLiq" class="help">Min Pool Liquidity (USD)</label>
+          <input id="minLiq" class="small" type="number" min="0" step="1000" value="25000">
         </div>
         <button id="scanBtn" class="btn">Scan</button>
       </div>
@@ -85,21 +92,9 @@
     <div class="card">
       <div class="row row-4">
         <div><label>Network</label><input value="Arbitrum" readonly></div>
-        <div>
-          <label>Gas (auto)</label>
-          <input id="gas-gwei" placeholder="Auto" readonly>
-          <div class="help" id="gas-note">—</div>
-        </div>
-        <div>
-          <label>Gas Limit</label>
-          <input id="gas-limit" type="number" step="1000" value="380000">
-          <div class="help">Two swaps + callback ≈ 350–450k</div>
-        </div>
-        <div>
-          <label>Est. Gas Cost</label>
-          <input id="gas-cost" placeholder="—" readonly>
-          <div class="help" id="gas-cost-usd">—</div>
-        </div>
+        <div><label>Gas (auto)</label><input id="gas-gwei" placeholder="Auto" readonly><div class="help" id="gas-note">—</div></div>
+        <div><label>Gas Limit</label><input id="gas-limit" type="number" step="1000" value="380000"><div class="help">Two swaps + callback ≈ 350–450k</div></div>
+        <div><label>Est. Gas Cost</label><input id="gas-cost" placeholder="—" readonly><div class="help" id="gas-cost-usd">—</div></div>
       </div>
 
       <div class="row" style="margin-top:6px"><div><span id="status" class="help">Ready.</span></div></div>
@@ -107,6 +102,7 @@
       <div class="toolbar">
         <span id="statFound" class="stat">Found: 0</span>
         <span id="statProf" class="stat">Profitable: 0</span>
+        <span id="statFiltered" class="stat">Filtered by Liquidity: 0</span>
         <span id="statSel" class="stat">Selected: 0</span>
         <span id="statTotalNet" class="stat">Total Selected Net: $0.00</span>
         <button id="btnSelectProf" class="btn small ghost" disabled>Select all profitable</button>
@@ -135,7 +131,7 @@
 
   <footer>
     <div class="container footer-inner">
-      <div><div class="logo"><span>CK</span></div><p class="help">Dexscreener search → best buy/sell per token. Multi-select profitable routes with liquidity gating.</p></div>
+      <div><div class="logo"><span>CK</span></div><p class="help">Dexscreener search → best buy/sell per token. Liquidity guard is adjustable to explore larger loans.</p></div>
       <div><h4>Quick</h4><ul><li><a href="#" id="lkScan">Scan</a></li></ul></div>
       <div><h4>Networks</h4><ul><li>Arbitrum (active)</li><li>Others (soon)</li></ul></div>
       <div><h4>Contact</h4><ul><li><a href="mailto:info@example.com">info@example.com</a></li></ul></div>
@@ -149,7 +145,7 @@
 </script>
 
 <script>
-/* v9.5.9 — Dexscreener search + multi-select + total net */
+/* v9.6.0 — Dexscreener search + liquidity guard controls */
 (function(){
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
@@ -157,12 +153,14 @@
   const pct=(a,b)=>((b-a)/Math.max(1e-9,a))*100;
   const setStatus=msg=>{ const s=$("status"); if(s) s.textContent=msg; };
 
-  /* Tunables */
+  /* Tunables (now from inputs) */
   const PLATFORM_FEE=0.0009;               // Aave 0.09%
   const CHAIN="arbitrum";
-  const MIN_LIQ_USD=25000;                 // basic filter
-  const MAX_ROWS=300;                      // display cap
-  const LIQ_MULTIPLIER=10;                 // require min(buyLiq, sellLiq) >= loanUSD * LIQ_MULTIPLIER
+  const MAX_ROWS=400;                      // display cap
+
+  function loanUSD(){ let v=parseFloat($("loanUsd").value||"0"); if(!isFinite(v)) v=10000; v=Math.max(100,Math.min(1_000_000,v)); $("loanUsd").value=String(v); return v; }
+  function liqMultiplier(){ let v=parseFloat($("liqMult").value||"10"); if(!isFinite(v)||v<1) v=10; $("liqMult").value=String(Math.round(v)); return Math.round(v); }
+  function minPoolLiq(){ let v=parseFloat($("minLiq").value||"25000"); if(!isFinite(v)||v<0) v=25000; $("minLiq").value=String(Math.round(v)); return Math.round(v); }
 
   /* Gas */
   const gas={ gwei:0.20, usdPerNative:0, usd:0 };
@@ -185,10 +183,9 @@
     $("gas-cost-usd").textContent=native?`≈ ${fmtUSD(gas.usd)}`:"—";
   }
   on($("gas-limit"),"input",calcGasUSD); on($("loanUsd"),"change",calcGasUSD);
-  function loanUSD(){ let v=parseFloat($("loanUsd").value||"0"); if(!isFinite(v)) v=100000; v=Math.max(100,Math.min(500000,v)); v=Math.round(v/100)*100; $("loanUsd").value=String(v); return v; }
 
   /* Dexscreener search */
-  const SEARCH_TERMS=["USDC","USDT","WETH","ETH","ARB","DAI","WBTC","LINK","UNI","AAVE","MKR","OP","CRV","BAL","FRAX","LDO","GMX","RDNT","GNS","MAGIC","PENDLE","RPL","ENS","LUSD","wstETH","weETH","AERO"];
+  const SEARCH_TERMS=["USDC","USDT","WETH","ETH","ARB","DAI","WBTC","LINK","UNI","AAVE","MKR","OP","CRV","BAL","FRAX","LDO","GMX","RDNT","GNS","MAGIC","PENDLE","RPL","ENS","LUSD","wstETH","weETH","AERO","AERO-USDC","USD+","USDe","sDAI","rsETH","ezETH","swETH","STONE"];
   async function fetchSearch(term){
     const url=`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(term)}`;
     const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error(`Dexscreener HTTP ${r.status}`);
@@ -197,14 +194,17 @@
   async function fetchArbitrumPairs(){
     let all=[]; for(const t of SEARCH_TERMS){ try{ all=all.concat(await fetchSearch(t)); }catch(_){/*skip*/} }
     const seen=new Set(), uniq=[]; for(const p of all){ const key=(p?.pairAddress||p?.url||"").toLowerCase(); if(!key||seen.has(key)) continue; seen.add(key); uniq.push(p); }
-    return uniq;
+    // sort by liquidity desc and keep lots
+    uniq.sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
+    return uniq.slice(0,3000);
   }
 
-  /* Best buy/sell with liquidity retained */
+  /* Best buy/sell per base token, keeping liquidity info */
   function computeBestRoutes(pairs){
+    const minLiq = minPoolLiq();
     const valid=pairs.filter(p=>{
       const liq=Number(p?.liquidity?.usd||0), price=Number(p?.priceUsd||NaN);
-      return isFinite(liq)&&liq>=MIN_LIQ_USD&&isFinite(price)&&p?.baseToken?.symbol&&p?.quoteToken?.symbol;
+      return isFinite(liq)&&liq>=minLiq&&isFinite(price)&&p?.baseToken?.symbol&&p?.quoteToken?.symbol;
     });
     const byBase=new Map();
     for(const p of valid){ const base=(p?.baseToken?.address||"").toLowerCase(); if(!base) continue; (byBase.get(base)||byBase.set(base,[]).get(base)).push(p); }
@@ -232,7 +232,7 @@
   }
 
   /* State + render */
-  let CURRENT_ROWS=[]; // after scoring
+  let CURRENT_ROWS=[];
   function updateStats(){
     const total=CURRENT_ROWS.length;
     const prof=CURRENT_ROWS.filter(r=>r.net>0).length;
@@ -275,57 +275,54 @@
   }
 
   function scoreAndFilter(routes){
-    const L=loanUSD(), gasUSD=gas.usd||0;
+    const L=loanUSD(), gasUSD=gas.usd||0, mult=liqMultiplier();
+    let filteredByLiq=0;
     const enriched=routes.map(r=>{
       const rawPct=pct(r.buyPrice,r.sellPrice);
       const revenue=(L/r.buyPrice)*r.sellPrice;
       const net = revenue - L - (L*PLATFORM_FEE) - gasUSD;
       const minLiq=Math.min(r.buyLiq||0,r.sellLiq||0);
-      const liqOK = minLiq >= (L*LIQ_MULTIPLIER);
+      const liqOK = minLiq >= (L*mult);
+      if(!liqOK) filteredByLiq++;
       return {...r, rawPct, net, minLiq, liqOK};
     });
-    return enriched
-      .filter(r=>r.liqOK)
-      .sort((a,b)=>b.net-a.net)
-      .slice(0,MAX_ROWS);
+    const kept=enriched.filter(r=>r.liqOK).sort((a,b)=>b.net-a.net).slice(0,MAX_ROWS);
+    $("statFiltered").textContent=`Filtered by Liquidity: ${filteredByLiq}`;
+    return kept;
   }
 
   async function scan(){
     const tb=$("rows"); tb.innerHTML="";
-    setStatus("Fetching gas…");
-    await initGas();
+    setStatus("Fetching gas…"); await initGas();
     setStatus("Querying Dexscreener…");
     let pairs=[];
     try{
-      const res=await (async()=>{ let all=[]; for(const t of SEARCH_TERMS){ try{ all=all.concat(await fetchSearch(t)); }catch(_){ } }
-        all.sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0)); return all.slice(0,2000); })();
+      const res=await fetchArbitrumPairs();
       if(!res.length){ setStatus("No pairs from Dexscreener."); return; }
       pairs=res;
     }catch(e){ setStatus("Dexscreener error: "+(e?.message||e)); return; }
 
     setStatus(`Processing ${pairs.length} pairs…`);
     const routes=computeBestRoutes(pairs);
-    if(!routes.length){ setStatus("No viable markets after filtering."); render([]); return; }
+    if(!routes.length){ setStatus("No viable markets after base filtering."); render([]); return; }
 
     const scored=scoreAndFilter(routes);
     render(scored);
-    setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; liq≥${LIQ_MULTIPLIER}× loan)`);
+    setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; guard ${liqMultiplier()}×; minLiq ${fmtUSD(minPoolLiq())})`);
     $("btnSelectProf").disabled = scored.filter(r=>r.net>0).length===0;
     $("btnClearSel").disabled = true;
     $("btnExecute").disabled = true;
   }
 
   function selectAllProfitable(){
-    const tb=$("rows");
-    const cbs=tb.querySelectorAll('input[type="checkbox"]');
+    const tb=$("rows"); const cbs=tb.querySelectorAll('input[type="checkbox"]');
     CURRENT_ROWS.forEach((r,i)=>{ const cb=cbs[i]; if(!cb) return; cb.checked = r.net>0; });
     updateStats();
   }
   function clearSelection(){
-    const cbs=document.querySelectorAll('#rows input[type="checkbox"]'); cbs.forEach(cb=>cb.checked=false);
+    document.querySelectorAll('#rows input[type="checkbox"]').forEach(cb=>cb.checked=false);
     $("chkAll").checked=false; updateStats();
   }
-
   function executeSelectedMock(){
     const cbs=[...document.querySelectorAll('#rows input[type="checkbox"]')];
     const sel=cbs.map((cb,i)=>cb.checked?CURRENT_ROWS[i]:null).filter(Boolean);

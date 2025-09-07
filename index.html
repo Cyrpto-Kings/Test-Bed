@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.5.8 — Multi-select Profitable Routes</title>
+<title>Crypto Kings Test Bed v9.5.9 — Multi-select + Total Net</title>
 <style>
   :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
   *{box-sizing:border-box} html,body{height:100%}
@@ -70,7 +70,7 @@
   <div class="topbar" style="padding-top: env(safe-area-inset-top)">
     <div class="container topbar-inner">
       <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-      <span class="chip">v9.5.8</span>
+      <span class="chip">v9.5.9</span>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <div class="group">
           <label for="loanUsd" class="help">Loan Size (USD)</label>
@@ -108,6 +108,7 @@
         <span id="statFound" class="stat">Found: 0</span>
         <span id="statProf" class="stat">Profitable: 0</span>
         <span id="statSel" class="stat">Selected: 0</span>
+        <span id="statTotalNet" class="stat">Total Selected Net: $0.00</span>
         <button id="btnSelectProf" class="btn small ghost" disabled>Select all profitable</button>
         <button id="btnClearSel" class="btn small ghost" disabled>Clear selection</button>
         <button id="btnExecute" class="btn small" disabled>Execute selected (mock)</button>
@@ -148,7 +149,7 @@
 </script>
 
 <script>
-/* v9.5.8 — Dexscreener search + multi-select profitable routes */
+/* v9.5.9 — Dexscreener search + multi-select + total net */
 (function(){
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
@@ -195,12 +196,11 @@
   }
   async function fetchArbitrumPairs(){
     let all=[]; for(const t of SEARCH_TERMS){ try{ all=all.concat(await fetchSearch(t)); }catch(_){/*skip*/} }
-    // dedupe
     const seen=new Set(), uniq=[]; for(const p of all){ const key=(p?.pairAddress||p?.url||"").toLowerCase(); if(!key||seen.has(key)) continue; seen.add(key); uniq.push(p); }
     return uniq;
   }
 
-  /* Build best buy/sell with liquidity retained */
+  /* Best buy/sell with liquidity retained */
   function computeBestRoutes(pairs){
     const valid=pairs.filter(p=>{
       const liq=Number(p?.liquidity?.usd||0), price=Number(p?.priceUsd||NaN);
@@ -236,10 +236,14 @@
   function updateStats(){
     const total=CURRENT_ROWS.length;
     const prof=CURRENT_ROWS.filter(r=>r.net>0).length;
-    const selected=[...document.querySelectorAll('tbody input[type="checkbox"]:checked')].length;
+    const cbs=[...document.querySelectorAll('tbody input[type="checkbox"]')];
+    const selIdx=cbs.map((cb,i)=>cb.checked?i:null).filter(i=>i!==null);
+    const selected=selIdx.length;
+    const totalNet=selIdx.reduce((s,i)=>s+(CURRENT_ROWS[i]?.net||0),0);
     $("statFound").textContent=`Found: ${total}`;
     $("statProf").textContent=`Profitable: ${prof}`;
     $("statSel").textContent=`Selected: ${selected}`;
+    $("statTotalNet").textContent=`Total Selected Net: ${fmtUSD(totalNet)}`;
     $("btnSelectProf").disabled=prof===0;
     $("btnClearSel").disabled=selected===0;
     $("btnExecute").disabled=selected===0;
@@ -263,17 +267,10 @@
         <td class="right" data-label="Min Pool Liquidity">${fmtUSD(minPoolLiq)}</td>`;
       tb.appendChild(tr);
     });
-    // Hook checkboxes
-    tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
-      cb.addEventListener('change',updateStats);
-    });
-    // master checkbox
+    tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.addEventListener('change',updateStats));
     const master=$("chkAll");
     master.checked=false;
-    master.onchange=()=>{
-      const cbs=tb.querySelectorAll('input[type="checkbox"]'); cbs.forEach(cb=>cb.checked=master.checked);
-      updateStats();
-    };
+    master.onchange=()=>{ tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.checked=master.checked); updateStats(); };
     updateStats();
   }
 
@@ -287,9 +284,8 @@
       const liqOK = minLiq >= (L*LIQ_MULTIPLIER);
       return {...r, rawPct, net, minLiq, liqOK};
     });
-    // keep only those that pass liquidity gate OR show small negative for awareness
     return enriched
-      .filter(r=>r.liqOK) // strict: only routes that can plausibly absorb the size
+      .filter(r=>r.liqOK)
       .sort((a,b)=>b.net-a.net)
       .slice(0,MAX_ROWS);
   }
@@ -301,12 +297,8 @@
     setStatus("Querying Dexscreener…");
     let pairs=[];
     try{
-      const res=await (async()=>{ // fetch searches sequentially to be gentle
-        let all=[]; for(const t of SEARCH_TERMS){ try{ all=all.concat(await fetchSearch(t)); }catch(_){ } }
-        // keep the most liquid N
-        all.sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0));
-        return all.slice(0,2000);
-      })();
+      const res=await (async()=>{ let all=[]; for(const t of SEARCH_TERMS){ try{ all=all.concat(await fetchSearch(t)); }catch(_){ } }
+        all.sort((a,b)=>(b?.liquidity?.usd||0)-(a?.liquidity?.usd||0)); return all.slice(0,2000); })();
       if(!res.length){ setStatus("No pairs from Dexscreener."); return; }
       pairs=res;
     }catch(e){ setStatus("Dexscreener error: "+(e?.message||e)); return; }
@@ -318,8 +310,6 @@
     const scored=scoreAndFilter(routes);
     render(scored);
     setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; liq≥${LIQ_MULTIPLIER}× loan)`);
-
-    // enable quick select buttons
     $("btnSelectProf").disabled = scored.filter(r=>r.net>0).length===0;
     $("btnClearSel").disabled = true;
     $("btnExecute").disabled = true;
@@ -335,27 +325,34 @@
     const cbs=document.querySelectorAll('#rows input[type="checkbox"]'); cbs.forEach(cb=>cb.checked=false);
     $("chkAll").checked=false; updateStats();
   }
+
   function executeSelectedMock(){
     const cbs=[...document.querySelectorAll('#rows input[type="checkbox"]')];
     const sel=cbs.map((cb,i)=>cb.checked?CURRENT_ROWS[i]:null).filter(Boolean);
     if(!sel.length){ alert("Select at least one route."); return; }
-    const lines=sel.slice(0,20).map(r=>`${r.tokenSym}: BUY ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → SELL ${r.sellDex} @ ${fmtUSD(r.sellPrice)} | Net ${fmtUSD(r.net)} | MinLiq ${fmtUSD(r.minLiq)}`);
-    const txid='0x'+Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
-    alert(`(Mock) Execute ${sel.length} route(s) with loan ${fmtUSD(loanUSD())}\n\n• ${lines.join('\n• ')}\n\nTxID: ${txid}`);
+    const L = loanUSD();
+    const lines = sel.slice(0,20).map(r =>
+      `${r.tokenSym}: BUY ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → SELL ${r.sellDex} @ ${fmtUSD(r.sellPrice)} | Net ${fmtUSD(r.net)} | MinLiq ${fmtUSD(r.minLiq)}`
+    );
+    const more = sel.length > 20 ? `\n… and ${sel.length - 20} more` : "";
+    const totalNet = sel.reduce((s,r)=> s + (r.net||0), 0);
+    const txid = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
+    alert(
+      `(Mock) Execute ${sel.length} route(s)\n` +
+      `Loan: ${fmtUSD(L)}\n\n` +
+      `• ${lines.join('\n• ')}${more}\n\n` +
+      `TOTAL NET: ${fmtUSD(totalNet)}\n` +
+      `TxID: ${txid}`
+    );
   }
 
-  // Wire UI
   on($("scanBtn"),"click",scan);
   on($("lkScan"),"click",(e)=>{e.preventDefault();scan();});
   on($("btnSelectProf"),"click",selectAllProfitable);
   on($("btnClearSel"),"click",clearSelection);
   on($("btnExecute"),"click",executeSelectedMock);
 
-  // enable/disable execute/clear when selection changes (handled in render via updateStats)
-
-  // Init gas display on load
   (async()=>{ try{ await initGas(); }catch(_){} })();
-
 })();
 </script>
 </body>

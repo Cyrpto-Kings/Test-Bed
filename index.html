@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.6.3 — Auto-Select & Auto-Execute</title>
+<title>Crypto Kings Test Bed v9.7.0 — Auto-Rescan</title>
 <style>
   :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
   *{box-sizing:border-box} html,body{height:100%}
@@ -25,11 +25,12 @@
   main .wrap{padding:16px 0 80px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:960px){ .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
+  @media (min-width:960px){ .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} .row-5{grid-template-columns:repeat(5,1fr)} }
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input[readonly]{background:#f9fafb;color:#4b5563}
   .switch{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
   .switch input{transform:scale(1.1)}
+  .muted{color:#64748b;font-size:12px}
 
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
   .stat{font-size:12px;color:#6b7280;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff}
@@ -75,14 +76,14 @@
   <div class="topbar" style="padding-top: env(safe-area-inset-top)">
     <div class="container topbar-inner">
       <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-      <span class="chip">v9.6.3</span>
+      <span class="chip">v9.7.0</span>
       <button id="scanBtn" class="btn">Scan</button>
     </div>
   </div>
 
   <main class="container wrap">
     <div class="card" style="margin-bottom:14px">
-      <div class="row row-4">
+      <div class="row row-5">
         <div>
           <label for="loanUsd">Loan Size (USD)</label>
           <input id="loanUsd" type="number" min="100" max="1000000" step="100" value="10000" inputmode="decimal">
@@ -95,11 +96,18 @@
           <label for="minLiq">Min Pool Liquidity (USD)</label>
           <input id="minLiq" type="number" min="0" step="1000" value="25000">
         </div>
+        <div>
+          <label for="rescanEvery">Auto-Rescan (seconds)</label>
+          <input id="rescanEvery" type="number" min="10" max="600" step="5" value="30">
+          <div class="muted">Next in <span id="rescanCountdown">—</span></div>
+        </div>
         <div class="switch">
+          <label><input id="autoRescan" type="checkbox" checked> Auto-Rescan</label>
           <label><input id="autoSelect" type="checkbox" checked> Auto-select profitable</label>
           <label><input id="autoExecute" type="checkbox" checked> Auto-execute after scan (mock)</label>
         </div>
       </div>
+      <div class="muted" id="lastScan">Last scan: —</div>
     </div>
 
     <div class="card">
@@ -144,8 +152,8 @@
 
   <footer>
     <div class="container footer-inner">
-      <div><div class="logo"><span>CK</span></div><p class="help">Auto-select profitable + optional auto-execute after scan (mock). Liquidity guard prevents unrealistic fills.</p></div>
-      <div><h4>Quick</h4><ul><li><a href="#" id="lkScan">Scan</a></li></ul></div>
+      <div><div class="logo"><span>CK</span></div><p class="help">Auto-rescans and highlights profitable cross-DEX spreads at your loan size with liquidity guards.</p></div>
+    <div><h4>Quick</h4><ul><li><a href="#" id="lkScan">Scan</a></li></ul></div>
       <div><h4>Networks</h4><ul><li>Arbitrum (active)</li><li>Others (soon)</li></ul></div>
       <div><h4>Contact</h4><ul><li><a href="mailto:info@example.com">info@example.com</a></li></ul></div>
     </div>
@@ -180,7 +188,7 @@
 </script>
 
 <script>
-/* v9.6.3 — fixes + robust scan */
+/* v9.7.0 — auto-rescan loop */
 (function(){
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
@@ -192,6 +200,7 @@
   function loanUSD(){ let v=parseFloat($("loanUsd").value||"0"); if(!isFinite(v)) v=10000; v=Math.max(100,Math.min(1_000_000,v)); $("loanUsd").value=String(v); return v; }
   function liqMultiplier(){ let v=parseFloat($("liqMult").value||"10"); if(!isFinite(v)||v<1) v=10; $("liqMult").value=String(Math.round(v)); return Math.round(v); }
   function minPoolLiq(){ let v=parseFloat($("minLiq").value||"25000"); if(!isFinite(v)||v<0) v=25000; $("minLiq").value=String(Math.round(v)); return Math.round(v); }
+  function rescanEvery(){ let v=parseInt(($("rescanEvery").value||"30"),10); if(!isFinite(v)||v<10) v=30; $("rescanEvery").value=String(v); return v; }
 
   /* Overlay */
   const overlay=$("overlay"), overlayText=$("overlayText");
@@ -396,55 +405,89 @@
     );
   }
 
+  /* Scan pipeline */
   let scanning=false;
-  async function scan(){
+  async function scan(showUI=true){
     if(scanning) return;
     scanning=true;
     try{
-      showOverlay("Fetching gas …");
+      if(showUI) showOverlay("Fetching gas …");
       setStatus("Fetching gas…");
       await initGas();
 
-      updateOverlay("Querying Dexscreener …");
+      if(showUI) updateOverlay("Querying Dexscreener …");
       setStatus("Querying Dexscreener…");
       let pairs=[];
       try{
         const res=await fetchArbitrumPairs();
-        if(!Array.isArray(res) || !res.length){ setStatus("No pairs from Dexscreener."); hideOverlay(); return; }
+        if(!Array.isArray(res) || !res.length){ setStatus("No pairs from Dexscreener."); if(showUI) hideOverlay(); return false; }
         pairs=res;
-      }catch(e){ setStatus("Dexscreener error: "+(e?.message||e)); hideOverlay(); return; }
+      }catch(e){ setStatus("Dexscreener error: "+(e?.message||e)); if(showUI) hideOverlay(); return false; }
 
-      updateOverlay(`Processing ${pairs.length} pairs …`);
+      if(showUI) updateOverlay(`Processing ${pairs.length} pairs …`);
       setStatus(`Processing ${pairs.length} pairs…`);
       const routes=computeBestRoutes(pairs);
-      if(!routes.length){ setStatus("No viable markets after base filtering."); render([]); hideOverlay(); return; }
+      if(!routes.length){ setStatus("No viable markets after base filtering."); render([]); if(showUI) hideOverlay(); return false; }
 
       const scored=scoreAndFilter(routes);
       render(scored);
       setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; guard ${liqMultiplier()}×; minLiq ${fmtUSD(minPoolLiq())})`);
+      $("lastScan").textContent = "Last scan: " + new Date().toLocaleTimeString();
 
+      // Auto-select & auto-exec
       const autoSel=$("autoSelect").checked;
       const autoEx=$("autoExecute").checked;
       if(autoSel){ selectAllProfitable(); }
-      hideOverlay();
-      if(autoEx){
-        const anyProf = CURRENT_ROWS.some(r=>r.net>0);
-        if(anyProf){ setTimeout(executeSelectedMock, 250); }
+      if(showUI) hideOverlay();
+
+      if(autoEx && CURRENT_ROWS.some(r=>r.net>0)){
+        // throttle alerting (avoid spamming every loop)
+        const now=Date.now();
+        if(now - lastExecuteAt > 5000){ lastExecuteAt = now; setTimeout(executeSelectedMock, 150); }
       }
+      return true;
     } finally {
       scanning=false;
     }
   }
 
+  /* Auto-rescan loop */
+  let rescanTimer=null, countdownTimer=null, countdown=0, lastExecuteAt=0;
+  function updateCountdownUI(){ $("rescanCountdown").textContent = countdown>0 ? (countdown+"s") : "—"; }
+  function startRescanLoop(){
+    stopRescanLoop();
+    const every = rescanEvery();
+    countdown = every;
+    updateCountdownUI();
+    countdownTimer = setInterval(()=>{
+      countdown = Math.max(0, countdown-1);
+      updateCountdownUI();
+      if(countdown===0){
+        // fire scan (silent overlay) and reset countdown
+        scan(false).finally(()=>{ countdown = rescanEvery(); updateCountdownUI(); });
+      }
+    }, 1000);
+    // also kick an immediate scan with overlay to show first results
+    scan(true);
+  }
+  function stopRescanLoop(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
+    countdown=0; updateCountdownUI();
+  }
+
   /* Wire UI */
-  on($("scanBtn"),"click",scan);
-  on($("lkScan"),"click",(e)=>{e.preventDefault();scan();});
+  on($("scanBtn"),"click",()=>scan(true));
+  on($("lkScan"),"click",(e)=>{e.preventDefault();scan(true);});
   on($("btnSelectProf"),"click",selectAllProfitable);
   on($("btnClearSel"),"click",clearSelection);
   on($("btnExecute"),"click",executeSelectedMock);
 
-  // Init gas silently
-  (async()=>{ try{ await initGas(); }catch(_){} })();
+  // Auto-rescan toggle / interval handlers
+  on($("autoRescan"),"change",()=>{ $("autoRescan").checked ? startRescanLoop() : stopRescanLoop(); });
+  on($("rescanEvery"),"change",()=>{ if($("autoRescan").checked){ startRescanLoop(); } });
+
+  // Init gas silently; start loop if enabled
+  (async()=>{ try{ await initGas(); }catch(_){}; if($("autoRescan").checked){ startRescanLoop(); } })();
 })();
 </script>
 </body>

@@ -3,35 +3,41 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.8.1 — On-chain Quotes</title>
+<title>Crypto Kings TestBed v9.8.2 — On-chain Quotes (Arbitrum)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
-  :root{--bg:#f6f7f9;--surface:#fff;--ink:#111;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb}
-  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+  :root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
   header{background:#111;color:#fff}
-  .bar{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .bar{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
   .brand{display:flex;gap:10px;align-items:center}
   .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
   .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 80px}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 6px 16px rgba(0,0,0,.04)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;font-size:14px}
   button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
   @media (min-width:840px){ .row-3{grid-template-columns:repeat(3,1fr)} }
+  .status{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px;margin-top:10px}
+  .spin{border:3px solid rgba(0,0,0,.08);border-top:3px solid var(--brand);border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite}
+  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
   table{width:100%;border-collapse:collapse;margin-top:14px;background:#fff;border:1px solid var(--border)}
   th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
   th{background:#fafafa}
   .right{text-align:right}
   .ok{color:#10b981}
   .bad{color:#ef4444}
-  #status{margin-top:10px;color:#6b7280;font-size:13px}
+  #log{margin-top:14px;font-size:12px;color:#374151;max-height:200px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
+  .log-warn{color:#b45309}
+  .log-err{color:#b91c1c}
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.1</span></div>
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.2</span></div>
     <div id="walletStatus">Wallet: Not connected</div>
   </div>
 </header>
@@ -40,8 +46,8 @@
   <div class="card">
     <div class="row row-3">
       <div>
-        <label for="loanAmount">Loan Amount (USDC)</label>
-        <input id="loanAmount" type="number" value="10000" min="100" step="100"/>
+        <label for="loan">Loan Amount (USDC)</label>
+        <input id="loan" type="number" value="10000" min="100" step="100"/>
       </div>
       <div>
         <label>Network</label>
@@ -49,7 +55,7 @@
       </div>
       <div style="display:flex;align-items:flex-end;gap:10px">
         <button id="scanBtn">Scan Opportunities</button>
-        <div id="status">Idle.</div>
+        <div class="status"><div id="spinner" class="spin" style="display:none"></div><span id="status">Idle.</span></div>
       </div>
     </div>
   </div>
@@ -69,170 +75,175 @@
       </thead>
       <tbody id="rows"></tbody>
     </table>
+    <div id="log"></div>
   </div>
 </div>
 
 <script>
-(async function(){
+(function(){
   const $=id=>document.getElementById(id);
-  const provider = new ethers.providers.JsonRpcProvider("https://arb1.arbitrum.io/rpc");
+  const log=(msg,cls)=>{ const el=document.createElement('div'); if(cls) el.className=cls; el.textContent=msg; $('log').appendChild(el); $('log').scrollTop=$('log').scrollHeight; };
+  const setStatus=(t,spin)=>{ $('status').textContent=t; $('spinner').style.display=spin?'inline-block':'none'; };
 
-  /* Addresses */
-  const USDC = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // 6 decimals
-  // QuoterV2 (Arbitrum)
-  const UNI_QUOTER = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
-  const UNI_QUOTER_ABI = [
-    "function quoteExactInputSingle((address,address,uint24,address,bool) params, uint256 amountIn) external returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate)"
+  /* -------- Provider with fallbacks -------- */
+  const RPCS=[
+    "https://arbitrum-one.publicnode.com",
+    "https://arb1.arbitrum.io/rpc",
+    "https://1rpc.io/arb",
+    "https://arbitrum.llamarpc.com",
+    "https://arb-mainnet.g.alchemy.com/v2/demo", // may rate-limit
+    "https://arbitrum.blockpi.network/v1/rpc/public",
+    "https://arb-mainnet-public.unifra.io"
   ];
-  // Sushi & Camelot routers (v2 style)
-  const V2_ROUTER_ABI = [
-    "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)"
-  ];
-  const SUSHI_ROUTER   = "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
-  const CAMELOT_ROUTER = "0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
+  let provider=null;
+  async function initProvider(){
+    for(const url of RPCS){
+      try{
+        const p=new ethers.providers.StaticJsonRpcProvider(url);
+        await Promise.race([p.getBlockNumber(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),4000))]);
+        provider=p; log(`RPC OK: ${url}`);
+        return;
+      }catch(e){ log(`RPC failed: ${url} — ${e.message}`,'log-warn'); }
+    }
+    throw new Error("All RPCs failed (CORS or rate-limits).");
+  }
 
-  // ERC20 metadata ABI
-  const ERC20_ABI = [
-    "function decimals() view returns (uint8)",
-    "function symbol() view returns (string)"
-  ];
+  /* -------- Addresses & ABIs -------- */
+  const USDC="0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // 6 decimals
+  // Uniswap v3 QuoterV2 (Arbitrum)
+  const UNI_QV2="0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
+  const QV2_ABI=[ "function quoteExactInputSingle(tuple(address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut,uint160,uint32,uint256)" ];
+  // Sushi & Camelot (v2 routers)
+  const V2_ROUTER_ABI=[ "function getAmountsOut(uint amountIn,address[] calldata path) external view returns (uint[] memory amounts)" ];
+  const SUSHI="0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
+  const CAMELOT="0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
+  const ERC20_ABI=[ "function decimals() view returns (uint8)", "function symbol() view returns (string)" ];
 
-  const uniQuoter = new ethers.Contract(UNI_QUOTER, UNI_QUOTER_ABI, provider);
-  const sushi     = new ethers.Contract(SUSHI_ROUTER, V2_ROUTER_ABI, provider);
-  const camelot   = new ethers.Contract(CAMELOT_ROUTER, V2_ROUTER_ABI, provider);
-
-  // Liquid tokens (expand easily)
-  const TOKENS = {
+  // Liquid sample set (expand once rows appear)
+  const TOKENS={
     WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-    ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",
+    ARB :"0x912CE59144191C1204E64559FE8253a0e49E6548",
     USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-    DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
-    GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a",
-    MAGIC:"0x539bde0d7dbd336b79148aa742883198bbf60342",
+    DAI :"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+    GMX :"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a",
     RDNT:"0x3082cc23568ea640225c2467653db90e9250aaa0",
-    LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4"
+    LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
+    AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196"
   };
 
-  /* Helpers */
-  const decCache=new Map(), symCache=new Map();
-  async function tokenDecimals(addr){
+  const decCache=new Map();
+  async function decimals(addr){
     if(decCache.has(addr)) return decCache.get(addr);
-    const c=new ethers.Contract(addr, ERC20_ABI, provider);
-    const d=await c.decimals(); decCache.set(addr, d); return d;
-  }
-  async function tokenSymbol(addr, fallback){
-    if(symCache.has(addr)) return symCache.get(addr);
-    try{ const c=new ethers.Contract(addr, ERC20_ABI, provider); const s=await c.symbol(); symCache.set(addr,s); return s; }
-    catch(_){ return fallback || addr.substring(0,6); }
+    const d=await new ethers.Contract(addr,ERC20_ABI,provider).decimals();
+    decCache.set(addr,d); return d;
   }
 
-  async function uniBuyOut(token, amountInUSDC){
-    // Try typical fee tiers 500, 3000, 10000 and take the best
-    const tiers=[500,3000,10000];
+  function fmt(n,dp=6){ return Number(n).toLocaleString(undefined,{maximumFractionDigits:dp}); }
+
+  async function uniBuy(token, amountIn6){
+    const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider);
+    const fees=[500,3000,10000];
     let best=null;
-    for(const fee of tiers){
+    for(const fee of fees){
       try{
-        const params={tokenIn:USDC, tokenOut:token, fee, recipient:USDC, // recipient ignored in quoter
-                      sqrtPriceLimitX96:0, // not used in V2 struct but harmless
-                      // the struct field order is: tokenIn, tokenOut, fee, recipient, bool (zeroForOne) in some builds; here we pass as named
-        };
-        const [amountOut] = await uniQuoter.callStatic.quoteExactInputSingle(params, amountInUSDC);
-        if(!best || amountOut.gt(best.amount)){ best={amount:amountOut, fee}; }
+        const params=[USDC, token, fee, amountIn6, 0];
+        const [amtOut]=await q.callStatic.quoteExactInputSingle(params);
+        if(!best || amtOut.gt(best.amt)) best={amt:amtOut, fee};
       }catch(_){}
     }
-    return best ? { amount: best.amount, fee: best.fee } : null;
+    return best?.amt || null;
   }
-  async function uniSellOut(token, tokenAmount){
-    const tiers=[500,3000,10000];
+  async function uniSell(token, amountToken){
+    const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider);
+    const fees=[500,3000,10000];
     let best=null;
-    for(const fee of tiers){
+    for(const fee of fees){
       try{
-        const params={tokenIn:token, tokenOut:USDC, fee, recipient:token, sqrtPriceLimitX96:0};
-        const [amountOut] = await uniQuoter.callStatic.quoteExactInputSingle(params, tokenAmount);
-        if(!best || amountOut.gt(best.amount)){ best={amount:amountOut, fee}; }
+        const params=[token, USDC, fee, amountToken, 0];
+        const [amtOut]=await q.callStatic.quoteExactInputSingle(params);
+        if(!best || amtOut.gt(best.amt)) best={amt:amtOut, fee};
       }catch(_){}
     }
-    return best ? { amount: best.amount, fee: best.fee } : null;
+    return best?.amt || null;
   }
-  async function v2BuyOut(router, token, amountInUSDC){
+  async function v2Buy(routerAddr, token, amountIn6){
     try{
-      const r = await router.getAmountsOut(amountInUSDC, [USDC, token]);
-      return r[1]; // token amount
+      const r=await new ethers.Contract(routerAddr,V2_ROUTER_ABI,provider).getAmountsOut(amountIn6,[USDC,token]);
+      return r[1];
     }catch(_){ return null; }
   }
-  async function v2SellOut(router, token, tokenAmount){
+  async function v2Sell(routerAddr, token, amountToken){
     try{
-      const r = await router.getAmountsOut(tokenAmount, [token, USDC]);
-      return r[1]; // usdc back
+      const r=await new ethers.Contract(routerAddr,V2_ROUTER_ABI,provider).getAmountsOut(amountToken,[token,USDC]);
+      return r[1];
     }catch(_){ return null; }
   }
 
   async function scan(){
-    const usd=parseFloat($("#loanAmount").value||"0");
-    if(!(usd>0)) return alert("Enter loan amount");
-    const inUSDC = ethers.utils.parseUnits(String(usd),6);
+    const loan=parseFloat($('loan').value||'0');
+    if(!(loan>0)) return alert('Enter loan amount');
+    const amtIn6=ethers.utils.parseUnits(String(loan),6);
 
-    $("#rows").innerHTML="";
-    $("#status").textContent="Scanning (on-chain)…";
+    $('rows').innerHTML='';
+    $('log').innerHTML='';
+    setStatus('Connecting RPC…',true);
+    if(!provider){ try{ await initProvider(); }catch(e){ setStatus('RPC error. See log.',false); log(e.message,'log-err'); return; } }
 
-    for(const [sym, addr] of Object.entries(TOKENS)){
-      $("#status").textContent=`${sym}: quoting…`;
+    setStatus('Quoting on-chain…',true);
 
-      // BUY: USDC -> TOKEN on every DEX
-      const [uniBuy, sushiBuy, camelBuy] = await Promise.all([
-        uniBuyOut(addr, inUSDC),
-        v2BuyOut(sushi, addr, inUSDC),
-        v2BuyOut(camelot, addr, inUSDC)
-      ]);
+    const DEXES=[
+      {name:'Uniswap V3', buy:(t)=>uniBuy(t,amtIn6), sell:(tAmt,t)=>uniSell(t,tAmt)},
+      {name:'SushiSwap',  buy:(t)=>v2Buy(SUSHI,t,amtIn6), sell:(tAmt,t)=>v2Sell(SUSHI,t,tAmt)},
+      {name:'Camelot',    buy:(t)=>v2Buy(CAMELOT,t,amtIn6), sell:(tAmt,t)=>v2Sell(CAMELOT,t,tAmt)}
+    ];
 
-      const buys = [];
-      if(uniBuy) buys.push({dex:"Uniswap V3", tokenOut:uniBuy.amount, sell:amt=>uniSellOut(addr, amt)});
-      if(sushiBuy) buys.push({dex:"SushiSwap",  tokenOut:sushiBuy,    sell:amt=>v2SellOut(sushi, addr, amt)});
-      if(camelBuy) buys.push({dex:"Camelot",    tokenOut:camelBuy,    sell:amt=>v2SellOut(camelot, addr, amt)});
+    for(const [sym,addr] of Object.entries(TOKENS)){
+      setStatus(`Quoting ${sym}…`,true);
 
-      if(buys.length<1) continue;
+      // Gather buy quotes per DEX
+      const buys = await Promise.all(DEXES.map(async d=>({dex:d.name, out:await d.buy(addr)})));
+      const usableBuys = buys.filter(b=>b.out && b.out.gt(0));
+      if(!usableBuys.length){ log(`No buy quotes for ${sym}`,'log-warn'); continue; }
 
-      // For each buy DEX, try selling on each DEX with the SAME token amount
-      let bestRoute=null;
-      for(const b of buys){
-        for(const s of buys){
+      // For each buy, try selling on each DEX with same token amount
+      let best=null;
+      for(const b of usableBuys){
+        for(const d of DEXES){
           try{
-            const outUSDC = await s.sell(b.tokenOut);
-            if(!outUSDC) continue;
-            const out = Number(ethers.utils.formatUnits(outUSDC,6));
-            const net = out - usd; // USDC back - USDC in (gas/flash fee not yet included)
-            if(!bestRoute || net > bestRoute.net){
-              bestRoute = {tokenAddr:addr, sym, buyDex:b.dex, sellDex:s.dex,
-                           tokenOut:b.tokenOut, usdcBack:outUSDC, net};
+            const back = await d.sell(b.out, addr);
+            if(!back || back.lte(0)) continue;
+            const usdcBack = Number(ethers.utils.formatUnits(back,6));
+            const net = usdcBack - loan;
+            if(!best || net > best.net){
+              best={ buyDex:b.dex, sellDex:d.name, tokenOut:b.out, usdcBack:back, net };
             }
           }catch(_){}
         }
       }
+      if(!best){ log(`No cross-DEX route for ${sym}`,'log-warn'); continue; }
 
-      if(bestRoute){
-        const tDec = await tokenDecimals(addr).catch(()=>18);
-        const tokenOutDisp = Number(ethers.utils.formatUnits(bestRoute.tokenOut, tDec));
-        const usdcBackDisp = Number(ethers.utils.formatUnits(bestRoute.usdcBack, 6));
-        const spreadPct = ((usdcBackDisp - usd)/usd)*100;
+      const tDec = await decimals(addr).catch(()=>18);
+      const tokenOutDisp = Number(ethers.utils.formatUnits(best.tokenOut,tDec));
+      const usdcBackDisp = Number(ethers.utils.formatUnits(best.usdcBack,6));
+      const spreadPct = ((usdcBackDisp - loan)/loan)*100;
 
-        const tr=document.createElement("tr");
-        tr.innerHTML = `
-          <td>${sym}</td>
-          <td>${bestRoute.buyDex}</td>
-          <td class="right">${tokenOutDisp.toLocaleString(undefined,{maximumFractionDigits:6})}</td>
-          <td>${bestRoute.sellDex}</td>
-          <td class="right">${usdcBackDisp.toLocaleString(undefined,{maximumFractionDigits:2})}</td>
-          <td class="right">${spreadPct.toFixed(2)}%</td>
-          <td class="right ${bestRoute.net>0?'ok':'bad'}">${bestRoute.net.toFixed(2)}</td>
-        `;
-        $("#rows").appendChild(tr);
-      }
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${sym}</td>
+        <td>${best.buyDex}</td>
+        <td class="right">${fmt(tokenOutDisp,6)}</td>
+        <td>${best.sellDex}</td>
+        <td class="right">${fmt(usdcBackDisp,2)}</td>
+        <td class="right">${spreadPct.toFixed(2)}%</td>
+        <td class="right ${best.net>0?'ok':'bad'}">${best.net.toFixed(2)}</td>
+      `;
+      $('rows').appendChild(tr);
     }
 
-    $("#status").textContent="Scan complete.";
+    setStatus('Scan complete.',false);
   }
 
-  $("#scanBtn").addEventListener("click", scan);
+  $('scanBtn').addEventListener('click',scan);
 })();
 </script>
 </body>

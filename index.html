@@ -1,586 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.7.3 — Slippage • Stable • Freshness • Score</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Crypto Kings TestBed v9.8.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
-  :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
-  *{box-sizing:border-box} html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden}
-  .container{max-width:1100px;width:100%;margin:0 auto;padding:0 16px}
-  main{flex:1}
-  .topbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--border)}
-  .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;flex-wrap:wrap}
-  .home-link{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
-  .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(29,155,240,.18)}
-  .logo span{font-size:14px;font-weight:900;color:white}
-  .brand{font-weight:800;letter-spacing:.3px;white-space:nowrap}
-  .chip{display:inline-block;padding:2px 8px;border:1px solid var(--border-strong);border-radius:999px;font-size:12px;background:#eef2ff;color:#3b3b6d}
-
-  .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(124,92,255,.15);min-height:44px}
-  .btn.ghost{background:#fff;color:#111;border:1px solid var(--border-strong);box-shadow:none}
-  .btn.small{padding:8px 12px;min-height:36px}
-  .btn.danger{background:linear-gradient(135deg,#ef4444,#f59e0b)}
-  .btn:disabled{opacity:.6;cursor:not-allowed}
-
-  main .wrap{padding:16px 0 80px}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
-  .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:960px){ .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} .row-5{grid-template-columns:repeat(5,1fr)} }
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input[readonly]{background:#f9fafb;color:#4b5563}
-  .switch{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-  .switch input{transform:scale(1.1)}
-  .muted{color:#64748b;font-size:12px}
-
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
-  .stat{font-size:12px;color:#6b7280;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff}
-
-  .statusbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .tinyspinner{border:3px solid rgba(0,0,0,.08);border-top:3px solid var(--brand);border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite}
-  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-
-  .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:1080px;width:100%}
-  .table{border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
-  .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
-  .table th{color:#374151;font-weight:700;background:#f9fafb}
-  .table tr:nth-child(even){background:#fafafa}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7f9;color:#111}
+  header{background:#111;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+  h1{font-size:18px;margin:0}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px}
+  .controls{background:#fff;border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:20px}
+  label{font-size:13px;color:#555;display:block;margin-top:8px}
+  input{padding:8px;border:1px solid #ccc;border-radius:8px;width:100%;font-size:14px}
+  button{margin-top:12px;padding:10px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c5cff,#1d9bf0);color:#fff;font-weight:600;cursor:pointer}
+  table{width:100%;border-collapse:collapse;margin-top:20px;background:#fff}
+  th,td{padding:8px 10px;border-bottom:1px solid #eee;font-size:13px;text-align:left}
+  th{background:#fafafa;font-weight:600}
   .right{text-align:right}
-  .pos{background:#ecfdf5} .neg{background:#fef2f2} .meh{background:#f9fafb}
-
-  @media (max-width:560px){
-    table{min-width:0}
-    .table thead{display:none}
-    .table tr{display:grid;grid-template-columns:1fr;gap:6px;background:#fff;border:1px solid var(--border);border-radius:12px;margin:10px 0;padding:10px 10px}
-    .table td{display:flex;justify-content:space-between;align-items:center;gap:10px;white-space:normal;border:0;padding:6px 0}
-    .table td::before{content:attr(data-label);font-size:12px;color:#6b7280;margin-right:10px;flex:0 0 auto}
-    .right{text-align:right}
-  }
-
-  footer{background:#fff;border-top:1px solid var(--border);margin-top:40px}
-  .footer-inner{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding:30px 0}
-  footer h4{margin:0 0 8px;font-size:14px;color:#374151}
-  footer ul{list-style:none;margin:0;padding:0;font-size:13px;color:#4b5563}
-  footer li{margin:4px 0}
-  footer a{color:inherit;text-decoration:none}
-  footer a:hover{text-decoration:underline}
-  .copyright{border-top:1px solid var(--border);padding:12px 0;font-size:12px;color:#6b7280;text-align:center}
-
-  .activity{margin-top:16px}
-  .log{max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:12px;background:#fff}
-  .log-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--border)}
-  .log-item:last-child{border-bottom:0}
-  .log-tag{font-size:11px;padding:2px 6px;border-radius:999px;border:1px solid var(--border-strong);background:#f3f4f6;color:#374151;white-space:nowrap}
-  .log-time{font-size:11px;color:#6b7280;white-space:nowrap}
-  .log-text{font-size:13px;color:#111827;word-break:break-word}
-  .log-good{background:#ecfdf5;border-color:#bbf7d0}
-  .log-warn{background:#fff7ed;border-color:#fed7aa}
-  .log-bad {background:#fef2f2;border-color:#fecaca}
+  .ok{color:#10b981}
+  .bad{color:#ef4444}
+  #status{margin-top:12px;font-size:13px;color:#555}
+  #log{margin-top:20px;padding:10px;font-size:12px;max-height:200px;overflow:auto;background:#fff;border:1px solid #ddd;border-radius:8px}
 </style>
 </head>
 <body>
-  <div class="topbar" style="padding-top: env(safe-area-inset-top)">
-    <div class="container topbar-inner">
-      <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-      <span class="chip">v9.7.3</span>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button id="scanBtn" class="btn">Scan</button>
-        <button id="stopBtn" class="btn ghost danger" disabled>Stop</button>
-      </div>
-    </div>
+<header>
+  <h1>Crypto Kings v9.8.0 — Arbitrum</h1>
+  <div id="walletStatus">Wallet: Not connected</div>
+</header>
+<div class="wrap">
+  <div class="controls">
+    <label for="loanAmount">Loan Amount (USDC)</label>
+    <input id="loanAmount" type="number" value="10000" min="100" step="100"/>
+    <button id="scanBtn">Scan Opportunities</button>
+    <div id="status"></div>
   </div>
-
-  <main class="container wrap">
-    <!-- Controls -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="row row-5">
-        <div>
-          <label for="loanUsd">Loan Size (USD)</label>
-          <input id="loanUsd" type="number" min="100" max="1000000" step="100" value="10000" inputmode="decimal">
-        </div>
-        <div>
-          <label for="liqMult">Liquidity Guard (× loan)</label>
-          <input id="liqMult" type="number" min="1" max="50" step="1" value="10">
-        </div>
-        <div>
-          <label for="minLiq">Min Pool Liquidity (USD)</label>
-          <input id="minLiq" type="number" min="0" step="1000" value="25000">
-        </div>
-        <div>
-          <label for="rescanEvery">Auto-Rescan (seconds)</label>
-          <input id="rescanEvery" type="number" min="10" max="600" step="5" value="30">
-          <div class="muted">Next in <span id="rescanCountdown">—</span></div>
-        </div>
-        <div class="switch">
-          <label><input id="autoRescan" type="checkbox" checked> Auto-Rescan</label>
-          <label><input id="autoSelect" type="checkbox" checked> Auto-select profitable</label>
-          <label><input id="autoExecute" type="checkbox" checked> Auto-execute after scan (mock)</label>
-        </div>
-      </div>
-      <div class="row row-4" style="margin-top:8px">
-        <div class="switch"><label><input id="preferStable" type="checkbox" checked> Prefer stable quotes (USDC/USDT/DAI)</label></div>
-        <div>
-          <label for="freshCut">Freshness cutoff (seconds)</label>
-          <input id="freshCut" type="number" min="10" step="10" value="90">
-          <div class="muted"><label><input id="requireFresh" type="checkbox"> Require freshness (drop older)</label></div>
-        </div>
-        <div>
-          <label>Slippage model</label>
-          <div class="muted">impact = min(2%, 0.5 × loan / minLiq)</div>
-        </div>
-        <div>
-          <label>Notes</label>
-          <div class="muted">Net uses adjusted prices + Aave 0.09% + gas.</div>
-        </div>
-      </div>
-
-      <div class="statusbar" style="margin-top:8px">
-        <div id="liveSpinner" class="tinyspinner" style="display:none"></div>
-        <div class="muted" id="status">Ready.</div>
-        <div class="muted" id="lastScan" style="margin-left:auto">Last scan: —</div>
-      </div>
-    </div>
-
-    <!-- Gas & Summary -->
-    <div class="card">
-      <div class="row row-4">
-        <div><label>Network</label><input value="Arbitrum" readonly></div>
-        <div><label>Gas (auto)</label><input id="gas-gwei" placeholder="Auto" readonly><div class="help" id="gas-note">—</div></div>
-        <div><label>Gas Limit</label><input id="gas-limit" type="number" step="1000" value="380000"><div class="help">Two swaps + callback ≈ 350–450k</div></div>
-        <div><label>Est. Gas Cost</label><input id="gas-cost" placeholder="—" readonly><div class="help" id="gas-cost-usd">—</div></div>
-      </div>
-
-      <div class="toolbar">
-        <span id="statFound" class="stat">Found: 0</span>
-        <span id="statProf" class="stat">Profitable: 0</span>
-        <span id="statFiltered" class="stat">Filtered by Liquidity: 0</span>
-        <span id="statSel" class="stat">Selected: 0</span>
-        <span id="statTotalNet" class="stat">Total Selected Net: $0.00</span>
-        <button id="btnSelectProf" class="btn small ghost" disabled>Select all profitable</button>
-        <button id="btnClearSel" class="btn small ghost" disabled>Clear selection</button>
-        <button id="btnExecute" class="btn small" disabled>Execute selected (mock)</button>
-      </div>
-
-      <div class="table-wrap">
-        <table class="table" id="oppsTable">
-          <thead>
-            <tr>
-              <th><input type="checkbox" id="chkAll" /></th>
-              <th>Token</th>
-              <th>Best Buy</th>
-              <th>Best Sell</th>
-              <th class="right">Raw %</th>
-              <th class="right">Slip %</th>
-              <th class="right">Adj %</th>
-              <th class="right">Net (Aave+gas)</th>
-              <th class="right">Cred</th>
-              <th class="right">Min Pool Liquidity</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Live Activity / Reports -->
-    <div class="card activity">
-      <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
-        <h3 style="margin:0;font-size:16px">Live Activity / Reports</h3>
-        <div class="muted">Logs most recent actions, scans, and (mock) executions.</div>
-      </div>
-      <div id="log" class="log" style="margin-top:10px"></div>
-    </div>
-  </main>
-
-  <footer>
-    <div class="container footer-inner">
-      <div><div class="logo"><span>CK</span></div><p class="help">Conservative net P/L with slippage, gas, and platform fee. Prefer stable quotes and filter by freshness for realism.</p></div>
-      <div><h4>Quick</h4><ul><li><a href="#" id="lkScan">Scan</a></li></ul></div>
-      <div><h4>Networks</h4><ul><li>Arbitrum (active)</li><li>Others (soon)</li></ul></div>
-      <div><h4>Contact</h4><ul><li><a href="mailto:info@example.com">info@example.com</a></li></ul></div>
-    </div>
-    <div class="copyright">© 2025 Crypto Kings. All rights reserved.</div>
-  </footer>
+  <div id="resultsWrap">
+    <table id="results">
+      <thead>
+        <tr>
+          <th>Token</th>
+          <th>Buy DEX</th>
+          <th class="right">Buy Out</th>
+          <th>Sell DEX</th>
+          <th class="right">Sell Out</th>
+          <th class="right">Spread %</th>
+          <th class="right">Net P/L (USDC)</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div id="log"></div>
+</div>
 
 <script>
-/* Error banner */
-(function(){
-  const show=(m,s,l,c,e)=>{
-    try{
-      const details=(e&&e.stack)?e.stack:([m,s,l?l+':'+c:''].filter(Boolean).join(' | '));
-      const b=document.createElement('div'); b.style.margin='12px auto'; b.style.maxWidth='1100px';
-      b.innerHTML='<div style="background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d;padding:10px 12px;border-radius:10px"><strong>App notice</strong><pre style="white-space:pre-wrap;margin:6px 0 0;font-size:12px;color:#7f1d1d">'+details+'</pre></div>';
-      document.body.prepend(b);
-    }catch(_){}
-    return false;
-  };
-  window.onerror=show;
-  window.onunhandledrejection=e=>show('Unhandled promise rejection','','','',e&&(e.reason||e));
-})();
-</script>
-
-<script>
-/* v9.7.3 */
-document.addEventListener("DOMContentLoaded", () => {
+(async function(){
   const $=id=>document.getElementById(id);
-  const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
-  const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
-  const pct=(a,b)=>((b-a)/Math.max(1e-9,a))*100;
-  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const provider = new ethers.providers.JsonRpcProvider("https://arb1.arbitrum.io/rpc");
+  const USDC = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 
-  const statusEl=$("status"), spinner=$("liveSpinner"), logWrap=$("log");
-  function setStatus(msg, spinning=false){ if(statusEl) statusEl.textContent=msg; if(spinner) spinner.style.display=spinning?"inline-block":"none"; }
-  function addLog(kind, text, tone=null){
-    if(!logWrap) return;
-    const row=document.createElement("div"); row.className="log-item";
-    row.innerHTML = `<span class="log-tag">${kind}</span> <span class="log-time">${new Date().toLocaleTimeString()}</span> <div class="log-text">${text}</div>`;
-    if(tone==="good") row.classList.add("log-good"); if(tone==="warn") row.classList.add("log-warn"); if(tone==="bad") row.classList.add("log-bad");
-    logWrap.appendChild(row); while(logWrap.children.length>200){ logWrap.removeChild(logWrap.firstChild); } logWrap.scrollTop=logWrap.scrollHeight;
+  // Some token list (expandable; top liquid)
+  const TOKENS = {
+    WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",
+    USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+    DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+    GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a",
+    MAGIC:"0x539bde0d7dbd336b79148aa742883198bbf60342",
+    GNS:"0x18c11fd286c5ec11c3b683caa813b77f5163a122",
+    RDNT:"0x3082cc23568ea640225c2467653db90e9250aaa0"
+  };
+
+  // Uniswap v3 quoter (Arbitrum)
+  const UNI_QUOTER = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6";
+  const quoterAbi = ["function quoteExactInputSingle(address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96) external returns (uint256 amountOut)"];
+  const uniQuoter = new ethers.Contract(UNI_QUOTER, quoterAbi, provider);
+
+  // SushiSwap router
+  const SUSHI_ROUTER = "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
+  const routerAbi = ["function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)"];
+  const sushiRouter = new ethers.Contract(SUSHI_ROUTER, routerAbi, provider);
+
+  // Camelot router
+  const CAMELOT_ROUTER = "0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
+  const camelotRouter = new ethers.Contract(CAMELOT_ROUTER, routerAbi, provider);
+
+  async function uniQuote(tokenAddr, amountIn){
+    try{
+      const out = await uniQuoter.callStatic.quoteExactInputSingle(USDC, tokenAddr, 500, amountIn, 0);
+      const back = await uniQuoter.callStatic.quoteExactInputSingle(tokenAddr, USDC, 500, out, 0);
+      return {buyOut:out, sellOut:back};
+    }catch(e){return null;}
+  }
+  async function routerQuote(router, tokenAddr, amountIn){
+    try{
+      const buyPath=[USDC,tokenAddr];
+      const sellPath=[tokenAddr,USDC];
+      const out = await router.getAmountsOut(amountIn, buyPath);
+      const back= await router.getAmountsOut(out[1], sellPath);
+      return {buyOut:out[1], sellOut:back[1]};
+    }catch(e){return null;}
   }
 
-  /* Inputs */
-  function loanUSD(){ let v=parseFloat($("loanUsd")?.value||"0"); if(!isFinite(v)) v=10000; v=clamp(v,100,1_000_000); if($("loanUsd")) $("loanUsd").value=String(v); return v; }
-  function liqMultiplier(){ let v=parseFloat($("liqMult")?.value||"10"); if(!isFinite(v)||v<1) v=10; v=Math.round(v); if($("liqMult")) $("liqMult").value=String(v); return v; }
-  function minPoolLiq(){ let v=parseFloat($("minLiq")?.value||"25000"); if(!isFinite(v)||v<0) v=25000; v=Math.round(v); if($("minLiq")) $("minLiq").value=String(v); return v; }
-  function rescanEvery(){ let v=parseInt(($("rescanEvery")?.value||"30"),10); if(!isFinite(v)||v<10) v=30; if($("rescanEvery")) $("rescanEvery").value=String(v); return v; }
-  const preferStable=()=> !!$("preferStable")?.checked;
-  const freshCut=()=> parseInt($("freshCut")?.value||"90",10);
-  const requireFresh=()=> !!$("requireFresh")?.checked;
-
-  /* Gas */
-  const gas={ gwei:0.20, usdPerNative:0, usd:0 };
-  let gasAbort=null;
-  async function cgETH(signal){
-    try{
-      const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store", signal});
-      if(!r.ok) return null; const j=await r.json(); return j?.ethereum?.usd ?? null;
-    }catch(_){ return null; }
-  }
-  async function ethFeeHistory(signal){
-    try{
-      const r=await fetch("https://arbitrum-one.publicnode.com",{
-        method:"POST",headers:{"Content-Type":"application/json"}, signal,
-        body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]})
+  async function scan(){
+    const amt=parseFloat($("loanAmount").value||"0");
+    if(!(amt>0)){ alert("Enter loan amount"); return; }
+    const amountIn=ethers.utils.parseUnits(String(amt),6); // USDC has 6 decimals
+    $("status").textContent="Scanning tokens… this may take a minute";
+    $("rows").innerHTML="";
+    let logs=[];
+    for(const [sym,addr] of Object.entries(TOKENS)){
+      $("status").textContent=`Scanning ${sym}…`;
+      const uni=await uniQuote(addr, amountIn);
+      const sushi=await routerQuote(sushiRouter, addr, amountIn);
+      const camel=await routerQuote(camelotRouter, addr, amountIn);
+      const dexes={};
+      if(uni) dexes.Uniswap=uni;
+      if(sushi) dexes.Sushi=sushi;
+      if(camel) dexes.Camelot=camel;
+      const entries=Object.entries(dexes);
+      if(entries.length<2) continue;
+      // find best buy (max tokenOut) and best sell (max USDC back)
+      let best=null;
+      entries.forEach(([dex,q])=>{
+        const spread=(Number(q.sellOut)-amt*1e6)/(amt*1e6);
+        if(!best || spread>best.spread){
+          best={buyDex:dex,sellDex:dex,spread,net:Number(q.sellOut)/1e6-amt};
+        }
       });
-      if(!r.ok) return null; const j=await r.json(); const bh=j?.result;
-      if(!bh?.baseFeePerGas||!bh?.reward) return null;
-      const baseWei=parseInt(bh.baseFeePerGas.at(-1)||"0x0",16);
-      const tipWei=parseInt((bh.reward.at(-1)||[])[1]||"0x0",16);
-      return baseWei/1e9 + tipWei/1e9;
-    }catch(_){ return null; }
-  }
-  function calcGasUSD(){
-    const gl=parseFloat($("gas-limit")?.value||"0");
-    const native=(gas.gwei>0&&gl>0)?(gas.gwei*gl)/1e9:0;
-    gas.usd=native*(gas.usdPerNative||0);
-    if($("gas-cost")) $("gas-cost").value=native?`${native.toFixed(6)} ETH`:"";
-    if($("gas-cost-usd")) $("gas-cost-usd").textContent=native?`≈ ${fmtUSD(gas.usd)}`:"—";
-  }
-  async function initGas(){
-    if(gasAbort) gasAbort.abort();
-    gasAbort=new AbortController();
-    const {signal}=gasAbort;
-    const [ethUsd,g]=await Promise.all([cgETH(signal),ethFeeHistory(signal)]);
-    gas.usdPerNative=ethUsd||0; gas.gwei=(typeof g==='number'&&g>0)?g:0.20;
-    if($("gas-gwei")) $("gas-gwei").value=`${gas.gwei.toFixed(2)} Gwei`;
-    if($("gas-note")) $("gas-note").textContent=`ETH ≈ ${fmtUSD(gas.usdPerNative)} • ${g?"auto":"fallback"}`;
-    calcGasUSD();
-  }
-  on($("gas-limit"),"input",calcGasUSD); on($("loanUsd"),"change",calcGasUSD);
-
-  /* Dexscreener (Arbitrum) */
-  const CHAIN="arbitrum";
-  const STABLE = new Set(["USDC","USDT","DAI"]);
-  const SEARCH_TERMS=["USDC","USDT","WETH","ETH","ARB","DAI","WBTC","LINK","UNI","AAVE","MKR","OP","CRV","BAL","FRAX","LDO","GMX","RDNT","GNS","MAGIC","PENDLE","RPL","ENS","LUSD","wstETH","weETH","AERO","AERO-USDC","USD+","USDe","sDAI","rsETH","ezETH","swETH","STONE"];
-  let scanAbort=null;
-
-  async function fetchSearch(term, signal){
-    const url=`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(term)}`;
-    const r=await fetch(url,{cache:"no-store", signal});
-    if(!r.ok) throw new Error(`Dexscreener HTTP ${r.status}`);
-    const j=await r.json();
-    const arr=Array.isArray(j?.pairs)?j.pairs:[];
-    return arr.filter(p=>p.chainId===CHAIN);
-  }
-  async function fetchArbitrumPairs(signal){
-    let all=[];
-    for(const t of SEARCH_TERMS){
-      const got=await fetchSearch(t, signal).catch(()=>[]);
-      if(got?.length) all=all.concat(got);
-      if(signal.aborted) throw new Error("aborted");
-    }
-    const seen=new Set(), uniq=[];
-    for(const p of all){
-      const key = (p?.pairAddress || p?.url || "").toLowerCase();
-      if(!key||seen.has(key)) continue; seen.add(key); uniq.push(p);
-    }
-    // Freshness
-    const cutoffSec = freshCut();
-    const mustFresh = requireFresh();
-    const nowMs = Date.now();
-    const filtered = uniq.filter(p=>{
-      const ageOk = (typeof p?.updatedAt === "number")
-        ? ((nowMs - (p.updatedAt*1000)) <= cutoffSec*1000)
-        : !mustFresh; // if unknown freshness, keep unless requireFresh
-      return ageOk;
-    });
-    // Sort by liquidity desc
-    filtered.sort((a,b)=>((b?.liquidity?.usd||0)-(a?.liquidity?.usd||0)));
-    return filtered.slice(0,3000);
-  }
-
-  function pickBest(list, mode){
-    // mode: "min" (buy) or "max" (sell), prefer stable quotes if toggle is on
-    if(!list.length) return null;
-    const wantStable = preferStable();
-    const stableList = wantStable ? list.filter(p=> STABLE.has((p?.quoteToken?.symbol||"").toUpperCase()) ) : [];
-    const pool = (wantStable && stableList.length) ? stableList : list;
-    if(mode==="min"){
-      return pool.reduce((best,p)=> (Number(p.priceUsd)<Number(best.priceUsd)?p:best), pool[0]);
-    } else {
-      return pool.reduce((best,p)=> (Number(p.priceUsd)>Number(best.priceUsd)?p:best), pool[0]);
-    }
-  }
-
-  function computeBestRoutes(pairs){
-    const minLiq = minPoolLiq();
-    const valid=pairs.filter(p=>{
-      const liq=Number(p?.liquidity?.usd||0), price=Number(p?.priceUsd||NaN);
-      return isFinite(liq)&&liq>=minLiq&&isFinite(price)&&p?.baseToken?.symbol&&p?.quoteToken?.symbol;
-    });
-    const byBase=new Map();
-    for(const p of valid){
-      const base=(p?.baseToken?.address||"").toLowerCase(); if(!base) continue;
-      (byBase.get(base) || byBase.set(base,[]).get(base)).push(p);
-    }
-    const out=[];
-    for(const [base, list] of byBase.entries()){
-      const buy = pickBest(list, "min");
-      const sell = pickBest(list, "max");
-      if(!buy||!sell) continue;
-      const minP=Number(buy.priceUsd), maxP=Number(sell.priceUsd);
-      if(!isFinite(minP)||!isFinite(maxP)||maxP<=0||minP<=0) continue;
-      out.push({
-        tokenAddr:base,
-        tokenSym:buy.baseToken?.symbol || sell.baseToken?.symbol || base.slice(0,6),
-        buyDex:(buy.dexId||"").toUpperCase(),
-        buyPair:`${buy.baseToken?.symbol}/${buy.quoteToken?.symbol}`,
-        buyPrice:minP,
-        buyUrl:buy.url,
-        buyLiq:Number(buy?.liquidity?.usd||0),
-        buyStable: STABLE.has((buy?.quoteToken?.symbol||"").toUpperCase()),
-        sellDex:(sell.dexId||"").toUpperCase(),
-        sellPair:`${sell.baseToken?.symbol}/${sell.quoteToken?.symbol}`,
-        sellPrice:maxP,
-        sellUrl:sell.url,
-        sellLiq:Number(sell?.liquidity?.usd||0),
-        sellStable: STABLE.has((sell?.quoteToken?.symbol||"").toUpperCase()),
-        updatedAt: Math.max(buy?.updatedAt||0, sell?.updatedAt||0)
+      // Actually compare across DEXes: buy lowest cost, sell highest return
+      let maxSell=-Infinity, minBuy=Infinity, buyDex=null, sellDex=null;
+      entries.forEach(([dex,q])=>{
+        if(q.buyOut && Number(q.buyOut)<minBuy){minBuy=Number(q.buyOut);buyDex=dex;}
+        if(q.sellOut && Number(q.sellOut)>maxSell){maxSell=Number(q.sellOut);sellDex=dex;}
       });
-    }
-    return out;
-  }
-
-  /* State + render */
-  let CURRENT_ROWS=[];
-  function updateStats(){
-    const total=CURRENT_ROWS.length;
-    const prof=CURRENT_ROWS.filter(r=>r.net>0).length;
-    const cbs=[...document.querySelectorAll('tbody input[type="checkbox"]')];
-    const selIdx=cbs.map((cb,i)=>cb.checked?i:null).filter(i=>i!==null);
-    const selected=selIdx.length;
-    const totalNet=selIdx.reduce((s,i)=>s+(CURRENT_ROWS[i]?.net||0),0);
-    if($("statFound")) $("statFound").textContent=`Found: ${total}`;
-    if($("statProf")) $("statProf").textContent=`Profitable: ${prof}`;
-    if($("statSel")) $("statSel").textContent=`Selected: ${selected}`;
-    if($("statTotalNet")) $("statTotalNet").textContent=`Total Selected Net: ${fmtUSD(totalNet)}`;
-    if($("btnSelectProf")) $("btnSelectProf").disabled=prof===0;
-    if($("btnClearSel")) $("btnClearSel").disabled=selected===0;
-    if($("btnExecute")) $("btnExecute").disabled=selected===0;
-  }
-
-  function render(rows){
-    CURRENT_ROWS=rows;
-    const tb=$("rows"); if(!tb) return;
-    tb.innerHTML="";
-    rows.forEach((r,idx)=>{
-      const tr=document.createElement("tr");
-      const cls=r.net>0?"pos":(r.net>-3?"meh":"neg");
-      tr.className=cls;
-      const minPoolLiq=Math.min(r.buyLiq||0,r.sellLiq||0);
-      const age = r.updatedAt ? Math.round((Date.now()/1000 - r.updatedAt))+"s" : "—";
-      tr.innerHTML=`
-        <td data-label="Select"><input type="checkbox" data-idx="${idx}"></td>
-        <td data-label="Token"><code title="${r.tokenAddr}">${r.tokenSym}</code><div class="help">Age ${age}</div></td>
-        <td data-label="Best Buy"><a href="${r.buyUrl}" target="_blank" rel="noopener">${r.buyDex}</a><div class="help">${r.buyPair} @ ${fmtUSD(r.buyPrice)} • liq ${fmtUSD(r.buyLiq||0)} ${r.buyStable?'• stable':''}</div></td>
-        <td data-label="Best Sell"><a href="${r.sellUrl}" target="_blank" rel="noopener">${r.sellDex}</a><div class="help">${r.sellPair} @ ${fmtUSD(r.sellPrice)} • liq ${fmtUSD(r.sellLiq||0)} ${r.sellStable?'• stable':''}</div></td>
-        <td class="right" data-label="Raw %">${r.rawPct.toFixed(2)}%</td>
-        <td class="right" data-label="Slip %">${(r.slipPct*100).toFixed(2)}%</td>
-        <td class="right" data-label="Adj %">${r.adjPct.toFixed(2)}%</td>
-        <td class="right" data-label="Net">${fmtUSD(r.net)}</td>
-        <td class="right" data-label="Cred">${r.cred}</td>
-        <td class="right" data-label="Min Pool Liquidity">${fmtUSD(minPoolLiq)}</td>`;
-      tb.appendChild(tr);
-    });
-    tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.addEventListener('change',updateStats));
-    const master=$("chkAll");
-    if(master){
-      master.checked=false;
-      master.onchange=()=>{ tb.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.checked=master.checked); updateStats(); };
-    }
-    updateStats();
-  }
-
-  const PLATFORM_FEE=0.0009, MAX_ROWS=400, SLIP_CAP=0.02; // 2%
-  function credibility(r, loan, guard){
-    const minLiq=Math.min(r.buyLiq||0,r.sellLiq||0);
-    const liqHead = clamp(minLiq/(loan*guard*2), 0, 1); // full score when >= 2× guard
-    const stable = (r.buyStable && r.sellStable) ? 1 : ((r.buyStable||r.sellStable)?0.6:0.3);
-    const fresh  = r.updatedAt ? clamp(1 - (Math.max(0,(Date.now()/1000 - r.updatedAt))/freshCut()), 0, 1) : (requireFresh()?0:0.7);
-    const spread = clamp(r.rawPct/1.0, 0, 1); // full weight at 1%+
-    const score = Math.round(100*(0.4*liqHead + 0.3*fresh + 0.2*stable + 0.1*spread));
-    return score;
-  }
-  function scoreAndFilter(routes){
-    const L=loanUSD(), gasUSD=gas.usd||0, mult=liqMultiplier();
-    let filteredByLiq=0;
-    const enriched=routes.map(r=>{
-      const rawPct=pct(r.buyPrice,r.sellPrice);
-      const minLiq=Math.min(r.buyLiq||0,r.sellLiq||0);
-      const slipPct = (minLiq>0) ? Math.min(SLIP_CAP, 0.5 * (L / minLiq)) : SLIP_CAP;
-      const adjBuy = r.buyPrice * (1 + slipPct);
-      const adjSell= r.sellPrice * (1 - slipPct);
-      const adjPct = pct(adjBuy, adjSell);
-      const revenue=(L/adjBuy)*adjSell;
-      const net = revenue - L - (L*PLATFORM_FEE) - gasUSD;
-      const liqOK = minLiq >= (L*mult);
-      if(!liqOK) filteredByLiq++;
-      const cred = credibility(r, L, mult);
-      return {...r, rawPct, slipPct, adjPct, net, minLiq, liqOK, cred};
-    });
-    const kept=enriched.filter(r=>r.liqOK).sort((a,b)=> b.cred - a.cred || b.net - a.net ).slice(0,MAX_ROWS);
-    if($("statFiltered")) $("statFiltered").textContent=`Filtered by Liquidity: ${filteredByLiq}`;
-    return kept;
-  }
-
-  function selectAllProfitable(){
-    const tb=$("rows"); if(!tb) return;
-    const cbs=tb.querySelectorAll('input[type="checkbox"]');
-    CURRENT_ROWS.forEach((r,i)=>{ const cb=cbs[i]; if(!cb) return; cb.checked = r.net>0; });
-    updateStats();
-  }
-  function clearSelection(){
-    document.querySelectorAll('#rows input[type="checkbox"]').forEach(cb=>cb.checked=false);
-    if($("chkAll")) $("chkAll").checked=false; updateStats();
-  }
-  function executeSelectedMock(){
-    const cbs=[...document.querySelectorAll('#rows input[type="checkbox"]')];
-    const sel=cbs.map((cb,i)=>cb.checked?CURRENT_ROWS[i]:null).filter(Boolean);
-    if(!sel.length){ addLog("EXEC", "No routes selected; skipping.", "warn"); alert("Select at least one route."); return; }
-    const L = loanUSD();
-    const lines = sel.slice(0,20).map(r =>
-      `${r.tokenSym}: BUY ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → SELL ${r.sellDex} @ ${fmtUSD(r.sellPrice)} | slip ${(r.slipPct*100).toFixed(2)}% | Net ${fmtUSD(r.net)} | Cred ${r.cred}`
-    );
-    const more = sel.length > 20 ? `; … +${sel.length - 20} more` : "";
-    const totalNet = sel.reduce((s,r)=> s + (r.net||0), 0);
-    const txid = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
-    addLog("EXEC", `Mock executed ${sel.length} route(s) [Loan ${fmtUSD(L)} | TOTAL NET ${fmtUSD(totalNet)} | TxID ${txid}]`, totalNet>0?"good":"warn");
-    alert(
-      `(Mock) Execute ${sel.length} route(s)\n` +
-      `Loan: ${fmtUSD(L)}\n` +
-      `TOTAL NET: ${fmtUSD(totalNet)}\n` +
-      `TxID: ${txid}\n\n` +
-      `Details:\n• ${lines.join('\n• ')}${more}`
-    );
-  }
-
-  /* Scan pipeline */
-  let scanning=false, countdownTimer=null, countdown=0, lastExecuteAt=0;
-  function updateCountdownUI(){ if($("rescanCountdown")) $("rescanCountdown").textContent = countdown>0 ? (countdown+"s") : "—"; }
-
-  async function scan(showSpinner=true){
-    if(scanning) return false;
-    scanning=true;
-    if($("stopBtn")) $("stopBtn").disabled=false;
-    try{
-      if(showSpinner){ setStatus("Fetching gas…", true); addLog("SCAN","Fetching gas…"); }
-      await initGas();
-
-      if(showSpinner){ setStatus("Querying Dexscreener…", true); addLog("SCAN",`Querying Dexscreener (stable=${preferStable()} • fresh≤${freshCut()}s • require=${requireFresh()})…`); }
-      if(scanAbort) scanAbort.abort();
-      scanAbort = new AbortController();
-      const pairs = await fetchArbitrumPairs(scanAbort.signal).catch(e=>{ if(e&&e.message==="aborted") return null; throw e; });
-      if(pairs===null){ setStatus("Scan aborted.", false); addLog("SCAN","Aborted by user.","warn"); return false; }
-      if(!Array.isArray(pairs) || !pairs.length){ setStatus("No pairs from Dexscreener.", false); addLog("SCAN","No pairs from Dexscreener.","bad"); return false; }
-
-      if(showSpinner){ setStatus(`Processing ${pairs.length} pairs…`, true); addLog("SCAN",`Processing ${pairs.length} pairs…`); }
-      const routes=computeBestRoutes(pairs);
-      if(!routes.length){ setStatus("No viable markets after base filtering.", false); render([]); addLog("SCAN","No viable markets after base filtering.","warn"); return false; }
-
-      const scored=scoreAndFilter(routes);
-      render(scored);
-      setStatus(`Done • ${scored.length} routes (loan ${fmtUSD(loanUSD())}; guard ${liqMultiplier()}×; minLiq ${fmtUSD(minPoolLiq())})`, false);
-      if($("lastScan")) $("lastScan").textContent = "Last scan: " + new Date().toLocaleTimeString();
-      addLog("SCAN",`Finished • ${scored.length} routes.`, scored.length?"good":"warn");
-
-      const autoSel=$("autoSelect")?.checked, autoEx=$("autoExecute")?.checked;
-      if(autoSel){ selectAllProfitable(); addLog("SELECT","Auto-selected profitable routes."); }
-      if(autoEx && scored.some(r=>r.net>0)){
-        const now=Date.now();
-        if(now - lastExecuteAt > 5000){ lastExecuteAt = now; setTimeout(executeSelectedMock, 100); }
+      if(maxSell>0 && minBuy<Infinity){
+        const spread=(maxSell-minBuy)/minBuy;
+        const net=(maxSell/1e6)-amt; // USDC decimals
+        if(net>0){
+          const tr=document.createElement("tr");
+          tr.innerHTML=`<td>${sym}</td>
+            <td>${buyDex}</td><td class="right">${(minBuy/1e18).toFixed(6)}</td>
+            <td>${sellDex}</td><td class="right">${(maxSell/1e6).toFixed(2)}</td>
+            <td class="right">${(spread*100).toFixed(2)}%</td>
+            <td class="right ${net>0?'ok':'bad'}">${net.toFixed(2)}</td>`;
+          $("rows").appendChild(tr);
+        }
       }
-      return true;
-    } finally {
-      scanning=false;
-      if($("stopBtn")) $("stopBtn").disabled=true;
-      setStatus("Idle.", false);
     }
+    $("status").textContent="Scan complete";
   }
-
-  function stopAll(){
-    if(gasAbort) gasAbort.abort();
-    if(scanAbort) scanAbort.abort();
-    stopRescanLoop();
-    if($("stopBtn")) $("stopBtn").disabled=true;
-    setStatus("Stopped.", false);
-    addLog("CTRL","Stopped scan and auto-rescan.","warn");
-  }
-
-  function startRescanLoop(){
-    stopRescanLoop();
-    const every = rescanEvery();
-    countdown = every; updateCountdownUI();
-    countdownTimer = setInterval(()=>{
-      countdown = Math.max(0, countdown-1);
-      updateCountdownUI();
-      if(countdown===0){
-        scan(false).finally(()=>{ countdown = rescanEvery(); updateCountdownUI(); });
-      }
-    }, 1000);
-    scan(true);
-    addLog("CTRL",`Auto-rescan started (every ${every}s).`);
-  }
-  function stopRescanLoop(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdown=0; updateCountdownUI(); }
-
-  /* Wire UI */
-  on($("scanBtn"),"click",()=>scan(true));
-  on($("stopBtn"),"click",stopAll);
-  on($("lkScan"),"click",(e)=>{e.preventDefault();scan(true);});
-  on($("btnSelectProf"),"click",()=>{selectAllProfitable(); addLog("SELECT","Selected all profitable routes.");});
-  on($("btnClearSel"),"click",()=>{clearSelection(); addLog("SELECT","Cleared selection.");});
-  on($("btnExecute"),"click",executeSelectedMock);
-  on($("preferStable"),"change",()=>scan(false));
-  on($("freshCut"),"change",()=>scan(false));
-  on($("requireFresh"),"change",()=>scan(false));
-
-  on($("autoRescan"),"change",()=>{ $("autoRescan").checked ? startRescanLoop() : (stopRescanLoop(), addLog("CTRL","Auto-rescan disabled.","warn")); });
-  on($("rescanEvery"),"change",()=>{ if($("autoRescan")?.checked){ startRescanLoop(); } });
-
-  // Init
-  (async()=>{ try{ await initGas(); }catch(_){/* ignore */} if($("autoRescan")?.checked){ startRescanLoop(); } })();
-});
+  $("scanBtn").addEventListener("click",scan);
+})();
 </script>
 </body>
 </html>

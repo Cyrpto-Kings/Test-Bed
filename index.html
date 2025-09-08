@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.8.5 — Arbitrum (on-chain, USDC/USDCe aware)</title>
+<title>Crypto Kings TestBed v9.8.6 — Arbitrum (adaptive size, USDC/USDCe aware)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
   :root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb}
@@ -33,7 +33,7 @@
   .muted{color:var(--muted)}
   details{margin-top:12px}
   details > summary{cursor:pointer;color:#374151}
-  #log{margin-top:10px;font-size:12px;color:#374151;max-height:220px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
+  #log{margin-top:10px;font-size:12px;color:#374151;max-height:240px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
   .log-warn{color:#b45309}
   .log-err{color:#b91c1c}
   .pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
@@ -44,7 +44,7 @@
 <body>
 <header>
   <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.5</span></div>
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.6</span></div>
     <div id="walletStatus">Wallet: Not connected</div>
   </div>
 </header>
@@ -77,7 +77,7 @@
       </div>
     </div>
     <div class="muted" style="margin-top:6px">
-      Net P/L subtracts <strong>0.09%</strong> flash fee & estimated <strong>gas</strong>. Quotes are on-chain at your loan size.
+      Net P/L subtracts <strong>0.09%</strong> flash fee & estimated <strong>gas</strong>. Quotes are on-chain at the size that clears liquidity.
       <span class="pill" id="rpcPill">RPC: —</span>
       <span class="pill" id="gasPill">Gas: —</span>
     </div>
@@ -102,6 +102,7 @@
           <th class="right">USDC Back</th>
           <th class="right">Spread %</th>
           <th class="right">Net P/L (USDC)</th>
+          <th class="right">Size Used (USDC)</th>
         </tr>
       </thead>
       <tbody id="rows"></tbody>
@@ -147,23 +148,21 @@
 
   /* -------- Addresses & ABIs -------- */
   const USDC ="0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // 6
-  const USDCe="0xff970a61a04b1ca14834a43f5de4533ebddb5cc8"; // 6 (bridged)
+  const USDCe="0xff970a61a04b1ca14834a43f5de4533ebddb5cc8"; // 6
   const WETH ="0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
   const FLASH_FEE = 0.0009;   // 0.09%
   const GAS_LIMIT = 380000;   // 2 swaps + callback
 
-  // Uni v3 QuoterV2 (we will use quoteExactInput with a packed path)
+  // Uni v3 QuoterV2
   const UNI_QV2="0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
   const QV2_ABI=[ "function quoteExactInput(bytes path,uint256 amountIn) external returns (uint256 amountOut,uint160,uint32,uint256)" ];
-
-  // Sushi & Camelot (v2 routers)
+  // v2 routers
   const V2_ROUTER_ABI=[ "function getAmountsOut(uint amountIn,address[] calldata path) external view returns (uint[] memory amounts)" ];
   const SUSHI  ="0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
   const CAMELOT="0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
-
   const ERC20_ABI=[ "function decimals() view returns (uint8)" ];
 
-  // Liquid token set (trimmed for stability; extend later)
+  // Tokens (liquid subset)
   const TOKENS={
     WETH:WETH, ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",
     USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9", DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
@@ -179,9 +178,9 @@
     decCache.set(addr,d); return d;
   }
 
-  /* -------- Uniswap v3 helpers (path) -------- */
+  /* -------- Uniswap v3 helpers -------- */
   const FEES=[500,3000,10000];
-  function packPath(hops){ // hops: [addr, fee, addr, fee, addr, ...]
+  function packPath(hops){
     const types=[], values=[];
     for(let i=0;i<hops.length;i++){
       if(i%2===0){ types.push('address'); values.push(hops[i]); }
@@ -217,7 +216,7 @@
     return best;
   }
 
-  /* -------- V2 helpers -------- */
+  /* -------- v2 helper -------- */
   async function v2Out(router, path, amountIn){
     try{
       const r=await new ethers.Contract(router,V2_ROUTER_ABI,provider).getAmountsOut(amountIn,path);
@@ -229,12 +228,12 @@
   const DEXES=[
     {
       name:'Uniswap V3',
-      buy: async (t,amt6)=>{ // USDC -> token (direct or USDCe hop)
+      buy: async (t,amt6)=>{
         const direct = await uniBestDirect(USDC,t,amt6);
         const viaE   = await uniBestTwoHop(USDC,USDCe,t,amt6);
         return bestBig(direct, viaE);
       },
-      sell: async (t,tokenAmt)=>{ // token -> USDC (direct or via USDCe)
+      sell: async (t,tokenAmt)=>{
         const direct = await uniBestDirect(t,USDC,tokenAmt);
         const viaE   = await uniBestTwoHop(t,USDCe,USDC,tokenAmt);
         return bestBig(direct, viaE);
@@ -269,10 +268,10 @@
   ];
   function bestBig(a,b){ if(a && b) return a.gt(b)?a:b; return a||b||null; }
 
-  /* -------- Gas & FX (ETH→USDC) -------- */
+  /* -------- Gas & FX -------- */
   let lastGasUSDC = 0;
   async function refreshGas(){
-    const gp = await provider.getGasPrice(); // wei
+    const gp = await provider.getGasPrice();
     const oneEth = ethers.utils.parseEther("1");
     const usdcForEth = await uniBestDirect(WETH, USDC, oneEth);
     const ethToUsdc = usdcForEth ? Number(ethers.utils.formatUnits(usdcForEth,6)) : 0;
@@ -283,17 +282,53 @@
     return gasUSDC;
   }
 
-  /* -------- Scan loop -------- */
+  /* -------- Adaptive size -------- */
+  const SIZE_STEPS=[1.0, 0.5, 0.25, 0.10, 0.05];      // % of requested loan
+  const THIN_GUARD=0.6;                               // require >= 60% back to accept size
+
+  /* -------- Scan -------- */
   let timer=null;
   function sumSelected(){
     let s=0; document.querySelectorAll('.routeCheck:checked').forEach(cb=>{ s+=Number(cb.dataset.net||0); });
     $('totalNet').textContent = (s>=0?'+':'') + '$' + fmt(s,2);
   }
 
+  async function quoteBestForSize(tokenAddr, sym, amountUSDC){
+    const amtIn6 = ethers.utils.parseUnits(String(amountUSDC),6);
+    // BUY quotes
+    const buys=[];
+    for(const d of DEXES){
+      const out = await d.buy(tokenAddr, amtIn6);
+      if(out && out.gt(0)) buys.push({dex:d, name:d.name, tokenOut:out});
+    }
+    if(!buys.length){ log(`${sym}: no BUY at size ${amountUSDC}`,'log-warn'); return null; }
+
+    let best=null;
+    for(const b of buys){
+      for(const d of DEXES){
+        if(d.name===b.name) continue; // cross-DEX only
+        const back = await d.sell(tokenAddr, b.tokenOut);
+        if(!back || back.lte(0)) continue;
+        const usdcBack = Number(ethers.utils.formatUnits(back,6));
+        if(usdcBack < THIN_GUARD * amountUSDC){
+          log(`${sym}: ${b.name}→${d.name} thin at size ${amountUSDC.toFixed(0)} (back ${usdcBack.toFixed(2)})`,'log-warn');
+          continue;
+        }
+        const grossNet = usdcBack - amountUSDC;
+        const flashFee = amountUSDC * 0.0009;
+        const gas = lastGasUSDC; // approx constant per route
+        const net = grossNet - flashFee - gas;
+        if(!best || net > best.net){
+          best={buyDex:b.name,sellDex:d.name,tokenOut:b.tokenOut,usdcBack:back,net,grossNet,flashFee,gas, size:amountUSDC};
+        }
+      }
+    }
+    return best;
+  }
+
   async function scan(){
     const loan=parseFloat($('loan').value||'0');
     if(!(loan>0)) return alert('Enter loan amount');
-    const amtIn6=ethers.utils.parseUnits(String(loan),6);
 
     $('rows').innerHTML='';
     $('log').innerHTML='';
@@ -304,54 +339,28 @@
     await refreshGas().catch(e=>log('Gas fetch failed: '+e.message,'log-warn'));
 
     setStatus('Quoting on-chain…',true);
-    log(`Loan: ${loan.toLocaleString()} USDC | RPC ${rpcHost}`);
+    log(`Loan request: ${loan.toLocaleString()} USDC | RPC ${rpcHost}`);
 
     for(const [sym,addr] of Object.entries(TOKENS)){
       setStatus(`Quoting ${sym}…`,true);
 
-      // BUY quotes per DEX
-      const buys=[];
-      for(const d of DEXES){
-        const out = await d.buy(addr, amtIn6);
-        if(out && out.gt(0)){
-          // Guard: tokenOut must represent at least 60% of what Uni would give via direct (if available)
-          buys.push({dex:d, name:d.name, tokenOut:out});
-        }
-      }
-      if(!buys.length){ log(`No BUY quotes for ${sym}`,'log-warn'); continue; }
-
       let best=null;
-      for(const b of buys){
-        for(const d of DEXES){
-          if(d.name===b.name) continue; // cross-DEX only
-          try{
-            const back = await d.sell(addr, b.tokenOut);
-            if(!back || back.lte(0)) continue;
-
-            const usdcBack = Number(ethers.utils.formatUnits(back,6));
-            // Guard: sanity — must be >= 60% of input to avoid thin-pool traps
-            if(usdcBack < 0.6 * loan){ log(`${sym}: ${b.name}→${d.name} ignored (thin: ${usdcBack.toFixed(2)} back)`, 'log-warn'); continue; }
-
-            const grossNet = usdcBack - loan;
-            const flashFee = loan * 0.0009;
-            const gas = lastGasUSDC || 0;
-            const net = grossNet - flashFee - gas;
-
-            if(!best || net > best.net){
-              best={ token: sym, buyDex:b.name, sellDex:d.name, tokenOut:b.tokenOut, usdcBack:back,
-                     grossNet, flashFee, gas, net };
-            }
-          }catch(e){
-            log(`${sym}: ${b.name}→${d.name} error ${e.message}`,'log-warn');
-          }
+      for(const step of SIZE_STEPS){
+        const size = loan * step;
+        const cand = await quoteBestForSize(addr, sym, size);
+        if(cand){
+          best = (!best || cand.net > best.net) ? cand : best;
+          // if this size worked and net is positive, stop early
+          if(cand.net > 0) break;
         }
       }
-      if(!best){ log(`No cross-DEX route for ${sym}`,'log-warn'); continue; }
+
+      if(!best){ log(`No cross-DEX route for ${sym} at any size`, 'log-warn'); continue; }
 
       const tDec = await decimals(addr).catch(()=>18);
       const tokenOutDisp = Number(ethers.utils.formatUnits(best.tokenOut,tDec));
       const usdcBackDisp = Number(ethers.utils.formatUnits(best.usdcBack,6));
-      const spreadPct = ((usdcBackDisp - loan)/loan)*100;
+      const spreadPct = ((usdcBackDisp - best.size)/best.size)*100;
 
       const tr=document.createElement('tr');
       tr.innerHTML = `
@@ -363,6 +372,7 @@
         <td class="right">${fmt(usdcBackDisp,2)}</td>
         <td class="right">${spreadPct.toFixed(2)}%</td>
         <td class="right ${best.net>0?'ok':'bad'}">${best.net.toFixed(2)}</td>
+        <td class="right">${fmt(best.size,0)}</td>
       `;
       $('rows').appendChild(tr);
     }

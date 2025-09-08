@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.9.0 — Auto-select & Auto-execute (mock)</title>
+<title>Crypto Kings TestBed v9.9.1 — Robust BUY routes (Arbitrum)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
   :root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444}
@@ -38,7 +38,6 @@
   .log-warn{color:#b45309}
   .log-err{color:#b91c1c}
   .hint{color:var(--muted);font-size:12px}
-  /* overlay */
   .overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:center;justify-content:center;z-index:50}
   .panel{width:min(680px,92vw);background:#111827;color:#e5e7eb;border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
   .rowmini{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin:8px 0;border-bottom:1px dashed rgba(255,255,255,.12);padding-bottom:8px}
@@ -48,7 +47,7 @@
 <body>
 <header>
   <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.0</span></div>
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.1</span></div>
     <div id="walletStatus">Wallet: Not connected</div>
   </div>
 </header>
@@ -76,8 +75,8 @@
       <div>
         <label for="fast">Fast Mode</label>
         <select id="fast">
-          <option value="1" selected>On (direct pools)</option>
-          <option value="0">Off (include two-hop)</option>
+          <option value="1" selected>On (direct+common mids)</option>
+          <option value="0">Deep (more mids)</option>
         </select>
       </div>
       <div>
@@ -152,14 +151,12 @@
   const log=(m,c)=>{const d=document.createElement('div'); if(c) d.className=c; d.textContent=m; $('log').appendChild(d); $('log').scrollTop=$('log').scrollHeight;};
   const setStatus=(t,spin)=>{$('status').textContent=t; $('spinner').style.display=spin?'inline-block':'none';};
   const fmt=(n,dp=2)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:dp});
-  const saveCache=(data)=>localStorage.setItem('ck-cache-v990', JSON.stringify({ts:Date.now(), data}));
-  const loadCache=()=>{try{return JSON.parse(localStorage.getItem('ck-cache-v990')||'{}')}catch{return {}}};
+  const saveCache=(data)=>localStorage.setItem('ck-cache-v991', JSON.stringify({ts:Date.now(), data}));
+  const loadCache=()=>{try{return JSON.parse(localStorage.getItem('ck-cache-v991')||'{}')}catch{return {}}};
 
-  /* Health */
   let hCalls=0,hTimeouts=0,hStart=0;
   const healthTick=()=>{ const secs=Math.max(1,Math.floor((Date.now()-hStart)/1000)); $('healthPill').textContent=`Health: ${(hCalls/secs).toFixed(1)}/s • ${hTimeouts} timeouts`; };
 
-  /* RPC rotation */
   const RPCS=[
     "https://arbitrum-one.publicnode.com",
     "https://arb1.arbitrum.io/rpc",
@@ -172,7 +169,7 @@
   async function useRpc(i){
     const url=RPCS[i%RPCS.length];
     const p=new ethers.providers.StaticJsonRpcProvider(url);
-    await Promise.race([p.getBlockNumber(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),3000))]);
+    await Promise.race([p.getBlockNumber(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),3500))]);
     provider=p; rpcIdx=i; rpcHost=new URL(url).host;
     $('rpcPill').textContent='RPC: '+rpcHost; $('rpcPill').style.borderColor='#d1fae5';
   }
@@ -186,6 +183,7 @@
   const USDC ="0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
   const USDCe="0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
   const WETH ="0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
+  const USDT ="0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9";
   const FLASH_FEE=0.0009, GAS_LIMIT=380000;
 
   const UNI_QV2="0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
@@ -195,7 +193,7 @@
   const ERC20_ABI=[ "function decimals() view returns (uint8)" ];
 
   const TOKENS={
-    WETH:WETH, USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+    WETH:WETH, USDT:USDT,
     DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",
     WBTC:"0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f", LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
     GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a", AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
@@ -210,18 +208,35 @@
   function withTimeout(p,ms){ hCalls++; return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>{hTimeouts++; rej(new Error('timeout'))},ms))]); }
   async function uniExactIn(path, amt, ms){ try{ const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider); const [out]=await withTimeout(q.callStatic.quoteExactInput(path,amt), ms); return out; }catch{return null;} }
   async function uniBestDirect(a,b,amt,ms){ let best=null; for(const f of FEES){ const p=packPath([a,f,b]); const out=await uniExactIn(p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
-  async function uniBestTwoHop(a,mid,b,amt,ms){ let best=null; for(const f1 of [500,3000]) for(const f2 of [500,3000]){ const p=packPath([a,f1,mid,f2,b]); const out=await uniExactIn(p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
+  async function uniBestViaMids(a,mids,b,amt,ms){ let best=null; for(const mid of mids){ for(const f1 of [500,3000]) for(const f2 of [500,3000]){ const p=packPath([a,f1,mid,f2,b]); const out=await uniExactIn(p,amt,ms); if(out && (!best || out.gt(best))) best=out; } } return best; }
   async function v2Out(router,path,amt,ms){ try{ const r=await withTimeout(new ethers.Contract(router,V2_ABI,provider).getAmountsOut(amt,path),ms); return r[r.length-1]; }catch{return null;} }
+  async function v2Best(router,paths,amt,ms){ let best=null; for(const p of paths){ const out=await v2Out(router,p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
   function bestBig(a,b){ if(a && b) return a.gt(b)?a:b; return a||b||null; }
 
   function dexes(fast){
+    const midsFast=[WETH,USDT], midsDeep=[WETH,USDT,USDCe];
+    const mids = fast?midsFast:midsDeep;
     return [
-      { name:'Uniswap V3', buy: async(t,a)=>bestBig(await uniBestDirect(USDC,t,a, fast?1200:2500), fast?null:await uniBestTwoHop(USDC,USDCe,t,a,2500)),
-                            sell:async(t,a)=>bestBig(await uniBestDirect(t,USDC,a, fast?1200:2500), fast?null:await uniBestTwoHop(t,USDCe,USDC,a,2500)) },
-      { name:'SushiSwap',  buy: async(t,a)=>bestBig(await v2Out(SUSHI,[USDC,t],a, fast?1200:2500), fast?null:await v2Out(SUSHI,[USDC,USDCe,t],a,2500)),
-                            sell:async(t,a)=>bestBig(await v2Out(SUSHI,[t,USDC],a, fast?1200:2500), fast?null:await v2Out(SUSHI,[t,USDCe,USDC],a,2500)) },
-      { name:'Camelot',    buy: async(t,a)=>bestBig(await v2Out(CAMELOT,[USDC,t],a, fast?1200:2500), fast?null:await v2Out(CAMELOT,[USDC,USDCe,t],a,2500)),
-                            sell:async(t,a)=>bestBig(await v2Out(CAMELOT,[t,USDC],a, fast?1200:2500), fast?null:await v2Out(CAMELOT,[t,USDCe,USDC],a,2500)) },
+      { name:'Uniswap V3',
+        buy: async(t,a)=>bestBig(
+                bestBig(await uniBestDirect(USDC,t,a, fast?1400:2600),
+                        await uniBestDirect(USDCe,t,a, fast?1400:2600)),
+                await uniBestViaMids(USDC, mids, t, a, 2600)
+              ),
+        sell:async(t,a)=>bestBig(
+                bestBig(await uniBestDirect(t,USDC,a, fast?1400:2600),
+                        await uniBestDirect(t,USDCe,a, fast?1400:2600)),
+                await uniBestViaMids(t, mids, USDC, a, 2600)
+              )
+      },
+      { name:'SushiSwap',
+        buy: async(t,a)=>await v2Best(SUSHI, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDCe,WETH,t],[USDC,USDT,t],[USDCe,USDT,t]], a, fast?1400:2600),
+        sell:async(t,a)=>await v2Best(SUSHI, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,WETH,USDCe],[t,USDT,USDC],[t,USDT,USDCe]], a, fast?1400:2600)
+      },
+      { name:'Camelot',
+        buy: async(t,a)=>await v2Best(CAMELOT, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDCe,WETH,t],[USDC,USDT,t],[USDCe,USDT,t]], a, fast?1400:2600),
+        sell:async(t,a)=>await v2Best(CAMELOT, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,WETH,USDCe],[t,USDT,USDC],[t,USDT,USDCe]], a, fast?1400:2600)
+      },
     ];
   }
 
@@ -229,30 +244,28 @@
   let lastGasUSDC=0;
   async function refreshGas(){
     const gp=await provider.getGasPrice();
-    const usdcForEth=await uniBestDirect(WETH,USDC, ethers.utils.parseEther("1"), 1500);
+    const usdcForEth=await uniBestDirect(WETH,USDC, ethers.utils.parseEther("1"), 1800);
     const ethToUsdc=usdcForEth?Number(ethers.utils.formatUnits(usdcForEth,6)):0;
     const gasETH=Number(ethers.utils.formatEther(gp.mul(GAS_LIMIT)));
     lastGasUSDC=ethToUsdc?gasETH*ethToUsdc:0;
     $('gasPill').textContent=`Gas: ${fmt(lastGasUSDC,2)} USDC (gp ${fmt(Number(ethers.utils.formatUnits(gp,'gwei')),1)} gwei, limit ${GAS_LIMIT.toLocaleString()})`;
   }
 
-  /* Policy: adaptive sizes & guard */
-  const SIZE_SEQUENCE=[10000,7500,5000,2500,1000]; // in USDC
-  const THIN_GUARD=0.5;
+  /* Policy */
+  const SIZE_SEQUENCE=[10000,7500,5000,2500,1000];
+  const THIN_GUARD=0.4;
   const MAX_CONC=8;
 
   async function quoteBestForSize(tokenAddr, sym, sizeUSDC, fast){
     const dxs=dexes(fast);
     const amtIn6=ethers.utils.parseUnits(String(sizeUSDC),6);
-    const buyPromises=dxs.map(async d=>({ d, out: await d.buy(tokenAddr, amtIn6) }));
-    const buyRes=(await Promise.all(buyPromises)).filter(x=>x.out && x.out.gt(0));
+
+    const buyRes=(await Promise.all(dxs.map(async d=>({ d, out: await d.buy(tokenAddr, amtIn6) })))).filter(x=>x.out && x.out.gt(0));
     if(!buyRes.length){ return { skip:`no BUY @ ${sizeUSDC}` }; }
 
     let best=null;
     for(const b of buyRes){
-      const sells=await Promise.all(
-        dxs.filter(dx=>dx.name!==b.d.name).map(async dx=>({ name:dx.name, back: await dx.sell(tokenAddr, b.out)}))
-      );
+      const sells=await Promise.all(dxs.filter(dx=>dx.name!==b.d.name).map(async dx=>({ name:dx.name, back: await dx.sell(tokenAddr, b.out)})));
       for(const s of sells){
         if(!s.back || !s.back.gt(0)) continue;
         const usdcBack=Number(ethers.utils.formatUnits(s.back,6));
@@ -267,7 +280,7 @@
   async function scanToken(sym, addr, loan, threshold, fast){
     let best=null, reason='no route';
     for(const size of SIZE_SEQUENCE){
-      if(size>loan) continue; // don't exceed user loan cap
+      if(size>loan) continue;
       const cand=await quoteBestForSize(addr, sym, size, fast);
       if(cand && !cand.skip){
         best=(best && best.net>cand.net)?best:cand;
@@ -361,12 +374,11 @@
     for(const cb of picks){
       const sym=cb.dataset.sym, buy=cb.dataset.b, sell=cb.dataset.s, size=Number(cb.dataset.size), net=Number(cb.dataset.net);
       total += net;
-      const a=statusLine(`${sym} • taking flash-loan ${fmt(size,0)} USDC`);
-      await delay(500); a.querySelector('div:last-child').innerHTML='<span class="ok">OK</span>';
-      const b=statusLine(`→ Buy on ${buy}`); await delay(600); b.querySelector('div:last-child').innerHTML='<span class="ok">OK</span>';
-      const c=statusLine(`→ Sell on ${sell}`); await delay(600); c.querySelector('div:last-child').innerHTML='<span class="ok">OK</span>';
-      const d=statusLine(`→ Repay loan + fee (0.09%)`); await delay(400); d.querySelector('div:last-child').innerHTML='<span class="ok">OK</span>';
-      const e=statusLine(`→ Profit sent: ${net>=0?'+':''}$${net.toFixed(2)}`, net>=0); await delay(200);
+      const a=statusLine(`${sym} • taking flash-loan ${fmt(size,0)} USDC`); await delay(400); a.lastChild.innerHTML='<span class="ok">OK</span>';
+      const b=statusLine(`→ Buy on ${buy}`); await delay(500); b.lastChild.innerHTML='<span class="ok">OK</span>';
+      const c=statusLine(`→ Sell on ${sell}`); await delay(500); c.lastChild.innerHTML='<span class="ok">OK</span>';
+      const d=statusLine(`→ Repay loan + fee (0.09%)`); await delay(300); d.lastChild.innerHTML='<span class="ok">OK</span>';
+      const e=statusLine(`→ Profit sent: ${net>=0?'+':''}$${net.toFixed(2)}`, net>=0); await delay(150);
     }
     statusLine(`TOTAL: ${total>=0?'+':''}$${total.toFixed(2)}`, total>=0);
   }
@@ -382,12 +394,10 @@
     const threshold=parseFloat($('threshold').value||'0');
     const good=rows.filter(r=>!r.error).sort((a,b)=>b.net-a.net);
     saveCache({ rows:good, meta:{ loan:$('loan').value, threshold, ts:Date.now(), rpc:rpcHost, gas:lastGasUSDC } });
-    // auto-select profitable
     document.querySelectorAll('.routeCheck').forEach(cb=>{
       cb.checked = Number(cb.dataset.net||0) >= Math.max(0,threshold);
     });
     sumSelected();
-    // auto-execute
     if($('autoExec').value==='1'){ executeSelectedMock(); }
     const secs=parseInt($('interval').value,10);
     if(secs>0){ timer=setInterval(()=>$('scanBtn').click(), secs*1000); }
@@ -410,7 +420,7 @@
         setStatus('Showing cached… rescanning.',true);
       } else { $('cachePill').textContent='Cache: empty'; setStatus('Ready. Tap Scan.',false); }
     }catch{}
-    setTimeout(()=>{ $('scanBtn').click(); }, 250);
+    setTimeout(()=>{ $('scanBtn').click(); }, 300);
   });
 })();
 </script>

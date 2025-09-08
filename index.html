@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Crypto Kings Test Bed v9.7.2 — Live Activity + Stop</title>
+<title>Crypto Kings Test Bed v9.7.3 — Slippage • Stable • Freshness • Score</title>
 <style>
   :root{ --bg:#f6f7f9; --surface:#fff; --ink:#111827; --muted:#6b7280; --brand:#7c5cff; --brand2:#1d9bf0; --ring:rgba(124,92,255,.35); --border:#e5e7eb; --border-strong:#d1d5db; --ok:#10b981; --bad:#ef4444; }
   *{box-sizing:border-box} html,body{height:100%}
@@ -42,7 +42,7 @@
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 
   .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:980px;width:100%}
+  table{min-width:1080px;width:100%}
   .table{border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
   .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
   .table th{color:#374151;font-weight:700;background:#f9fafb}
@@ -68,7 +68,6 @@
   footer a:hover{text-decoration:underline}
   .copyright{border-top:1px solid var(--border);padding:12px 0;font-size:12px;color:#6b7280;text-align:center}
 
-  /* Activity panel */
   .activity{margin-top:16px}
   .log{max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:12px;background:#fff}
   .log-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--border)}
@@ -85,7 +84,7 @@
   <div class="topbar" style="padding-top: env(safe-area-inset-top)">
     <div class="container topbar-inner">
       <a class="home-link" href="/"><div class="logo"><span>CK</span></div><div class="brand">Crypto Kings</div></a>
-      <span class="chip">v9.7.2</span>
+      <span class="chip">v9.7.3</span>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button id="scanBtn" class="btn">Scan</button>
         <button id="stopBtn" class="btn ghost danger" disabled>Stop</button>
@@ -120,6 +119,23 @@
           <label><input id="autoExecute" type="checkbox" checked> Auto-execute after scan (mock)</label>
         </div>
       </div>
+      <div class="row row-4" style="margin-top:8px">
+        <div class="switch"><label><input id="preferStable" type="checkbox" checked> Prefer stable quotes (USDC/USDT/DAI)</label></div>
+        <div>
+          <label for="freshCut">Freshness cutoff (seconds)</label>
+          <input id="freshCut" type="number" min="10" step="10" value="90">
+          <div class="muted"><label><input id="requireFresh" type="checkbox"> Require freshness (drop older)</label></div>
+        </div>
+        <div>
+          <label>Slippage model</label>
+          <div class="muted">impact = min(2%, 0.5 × loan / minLiq)</div>
+        </div>
+        <div>
+          <label>Notes</label>
+          <div class="muted">Net uses adjusted prices + Aave 0.09% + gas.</div>
+        </div>
+      </div>
+
       <div class="statusbar" style="margin-top:8px">
         <div id="liveSpinner" class="tinyspinner" style="display:none"></div>
         <div class="muted" id="status">Ready.</div>
@@ -155,8 +171,11 @@
               <th>Token</th>
               <th>Best Buy</th>
               <th>Best Sell</th>
-              <th class="right">Raw Spread %</th>
+              <th class="right">Raw %</th>
+              <th class="right">Slip %</th>
+              <th class="right">Adj %</th>
               <th class="right">Net (Aave+gas)</th>
+              <th class="right">Cred</th>
               <th class="right">Min Pool Liquidity</th>
             </tr>
           </thead>
@@ -177,7 +196,7 @@
 
   <footer>
     <div class="container footer-inner">
-      <div><div class="logo"><span>CK</span></div><p class="help">Auto-rescans and highlights profitable cross-DEX spreads at your loan size with liquidity guards.</p></div>
+      <div><div class="logo"><span>CK</span></div><p class="help">Conservative net P/L with slippage, gas, and platform fee. Prefer stable quotes and filter by freshness for realism.</p></div>
       <div><h4>Quick</h4><ul><li><a href="#" id="lkScan">Scan</a></li></ul></div>
       <div><h4>Networks</h4><ul><li>Arbitrum (active)</li><li>Others (soon)</li></ul></div>
       <div><h4>Contact</h4><ul><li><a href="mailto:info@example.com">info@example.com</a></li></ul></div>
@@ -203,38 +222,32 @@
 </script>
 
 <script>
-/* v9.7.2 — guards + DOMContentLoaded */
+/* v9.7.3 */
 document.addEventListener("DOMContentLoaded", () => {
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>{ if(el) el.addEventListener(ev,fn); };
   const fmtUSD=v=>isFinite(v)?`$${Number(v).toLocaleString(undefined,{maximumFractionDigits:6})}`:"—";
   const pct=(a,b)=>((b-a)/Math.max(1e-9,a))*100;
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 
   const statusEl=$("status"), spinner=$("liveSpinner"), logWrap=$("log");
-  function setStatus(msg, spinning=false){
-    if(statusEl) statusEl.textContent = msg;
-    if(spinner) spinner.style.display = spinning ? "inline-block" : "none";
-  }
+  function setStatus(msg, spinning=false){ if(statusEl) statusEl.textContent=msg; if(spinner) spinner.style.display=spinning?"inline-block":"none"; }
   function addLog(kind, text, tone=null){
     if(!logWrap) return;
-    const row=document.createElement("div");
-    row.className="log-item";
-    const tag=`<span class="log-tag">${kind}</span>`;
-    const time=`<span class="log-time">${new Date().toLocaleTimeString()}</span>`;
-    row.innerHTML = `${tag} ${time} <div class="log-text">${text}</div>`;
-    if(tone==="good") row.classList.add("log-good");
-    if(tone==="warn") row.classList.add("log-warn");
-    if(tone==="bad")  row.classList.add("log-bad");
-    logWrap.appendChild(row);
-    while(logWrap.children.length>200){ logWrap.removeChild(logWrap.firstChild); }
-    logWrap.scrollTop = logWrap.scrollHeight;
+    const row=document.createElement("div"); row.className="log-item";
+    row.innerHTML = `<span class="log-tag">${kind}</span> <span class="log-time">${new Date().toLocaleTimeString()}</span> <div class="log-text">${text}</div>`;
+    if(tone==="good") row.classList.add("log-good"); if(tone==="warn") row.classList.add("log-warn"); if(tone==="bad") row.classList.add("log-bad");
+    logWrap.appendChild(row); while(logWrap.children.length>200){ logWrap.removeChild(logWrap.firstChild); } logWrap.scrollTop=logWrap.scrollHeight;
   }
 
   /* Inputs */
-  function loanUSD(){ let v=parseFloat($("loanUsd")?.value||"0"); if(!isFinite(v)) v=10000; v=Math.max(100,Math.min(1_000_000,v)); if($("loanUsd")) $("loanUsd").value=String(v); return v; }
-  function liqMultiplier(){ let v=parseFloat($("liqMult")?.value||"10"); if(!isFinite(v)||v<1) v=10; if($("liqMult")) $("liqMult").value=String(Math.round(v)); return Math.round(v); }
-  function minPoolLiq(){ let v=parseFloat($("minLiq")?.value||"25000"); if(!isFinite(v)||v<0) v=25000; if($("minLiq")) $("minLiq").value=String(Math.round(v)); return Math.round(v); }
+  function loanUSD(){ let v=parseFloat($("loanUsd")?.value||"0"); if(!isFinite(v)) v=10000; v=clamp(v,100,1_000_000); if($("loanUsd")) $("loanUsd").value=String(v); return v; }
+  function liqMultiplier(){ let v=parseFloat($("liqMult")?.value||"10"); if(!isFinite(v)||v<1) v=10; v=Math.round(v); if($("liqMult")) $("liqMult").value=String(v); return v; }
+  function minPoolLiq(){ let v=parseFloat($("minLiq")?.value||"25000"); if(!isFinite(v)||v<0) v=25000; v=Math.round(v); if($("minLiq")) $("minLiq").value=String(v); return v; }
   function rescanEvery(){ let v=parseInt(($("rescanEvery")?.value||"30"),10); if(!isFinite(v)||v<10) v=30; if($("rescanEvery")) $("rescanEvery").value=String(v); return v; }
+  const preferStable=()=> !!$("preferStable")?.checked;
+  const freshCut=()=> parseInt($("freshCut")?.value||"90",10);
+  const requireFresh=()=> !!$("requireFresh")?.checked;
 
   /* Gas */
   const gas={ gwei:0.20, usdPerNative:0, usd:0 };
@@ -242,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function cgETH(signal){
     try{
       const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store", signal});
-      if(!r.ok) return null; const j=await r.json(); return j&&j.ethereum&&typeof j.ethereum.usd==="number"?j.ethereum.usd:null;
+      if(!r.ok) return null; const j=await r.json(); return j?.ethereum?.usd ?? null;
     }catch(_){ return null; }
   }
   async function ethFeeHistory(signal){
@@ -251,14 +264,11 @@ document.addEventListener("DOMContentLoaded", () => {
         method:"POST",headers:{"Content-Type":"application/json"}, signal,
         body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]})
       });
-      if(!r.ok) return null; const j=await r.json(); const bh=j&&j.result;
-      if(!bh||!Array.isArray(bh.baseFeePerGas)||!Array.isArray(bh.reward)) return null;
-      const lastBaseHex = bh.baseFeePerGas[bh.baseFeePerGas.length-1];
-      const baseWei = parseInt(lastBaseHex||"0x0",16);
-      const rewardsLast = bh.reward[bh.reward.length-1] || [];
-      const medianTipWei = parseInt((rewardsLast[1]||"0x0"),16);
-      const baseGwei = baseWei/1e9, tipGwei=medianTipWei/1e9;
-      return baseGwei + tipGwei;
+      if(!r.ok) return null; const j=await r.json(); const bh=j?.result;
+      if(!bh?.baseFeePerGas||!bh?.reward) return null;
+      const baseWei=parseInt(bh.baseFeePerGas.at(-1)||"0x0",16);
+      const tipWei=parseInt((bh.reward.at(-1)||[])[1]||"0x0",16);
+      return baseWei/1e9 + tipWei/1e9;
     }catch(_){ return null; }
   }
   function calcGasUSD(){
@@ -270,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   async function initGas(){
     if(gasAbort) gasAbort.abort();
-    gasAbort = new AbortController();
+    gasAbort=new AbortController();
     const {signal}=gasAbort;
     const [ethUsd,g]=await Promise.all([cgETH(signal),ethFeeHistory(signal)]);
     gas.usdPerNative=ethUsd||0; gas.gwei=(typeof g==='number'&&g>0)?g:0.20;
@@ -282,6 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* Dexscreener (Arbitrum) */
   const CHAIN="arbitrum";
+  const STABLE = new Set(["USDC","USDT","DAI"]);
   const SEARCH_TERMS=["USDC","USDT","WETH","ETH","ARB","DAI","WBTC","LINK","UNI","AAVE","MKR","OP","CRV","BAL","FRAX","LDO","GMX","RDNT","GNS","MAGIC","PENDLE","RPL","ENS","LUSD","wstETH","weETH","AERO","AERO-USDC","USD+","USDe","sDAI","rsETH","ezETH","swETH","STONE"];
   let scanAbort=null;
 
@@ -289,22 +300,48 @@ document.addEventListener("DOMContentLoaded", () => {
     const url=`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(term)}`;
     const r=await fetch(url,{cache:"no-store", signal});
     if(!r.ok) throw new Error(`Dexscreener HTTP ${r.status}`);
-    const j=await r.json(); const arr=Array.isArray(j&&j.pairs?j.pairs:[])?j.pairs:[]; return arr.filter(p=>p.chainId===CHAIN);
+    const j=await r.json();
+    const arr=Array.isArray(j?.pairs)?j.pairs:[];
+    return arr.filter(p=>p.chainId===CHAIN);
   }
   async function fetchArbitrumPairs(signal){
     let all=[];
     for(const t of SEARCH_TERMS){
       const got=await fetchSearch(t, signal).catch(()=>[]);
-      if(Array.isArray(got)&&got.length) all=all.concat(got);
+      if(got?.length) all=all.concat(got);
       if(signal.aborted) throw new Error("aborted");
     }
     const seen=new Set(), uniq=[];
     for(const p of all){
-      const key=((p&&p.pairAddress)||p&&p.url||"").toLowerCase();
+      const key = (p?.pairAddress || p?.url || "").toLowerCase();
       if(!key||seen.has(key)) continue; seen.add(key); uniq.push(p);
     }
-    uniq.sort((a,b)=>((b?.liquidity?.usd||0)-(a?.liquidity?.usd||0)));
-    return uniq.slice(0,3000);
+    // Freshness
+    const cutoffSec = freshCut();
+    const mustFresh = requireFresh();
+    const nowMs = Date.now();
+    const filtered = uniq.filter(p=>{
+      const ageOk = (typeof p?.updatedAt === "number")
+        ? ((nowMs - (p.updatedAt*1000)) <= cutoffSec*1000)
+        : !mustFresh; // if unknown freshness, keep unless requireFresh
+      return ageOk;
+    });
+    // Sort by liquidity desc
+    filtered.sort((a,b)=>((b?.liquidity?.usd||0)-(a?.liquidity?.usd||0)));
+    return filtered.slice(0,3000);
+  }
+
+  function pickBest(list, mode){
+    // mode: "min" (buy) or "max" (sell), prefer stable quotes if toggle is on
+    if(!list.length) return null;
+    const wantStable = preferStable();
+    const stableList = wantStable ? list.filter(p=> STABLE.has((p?.quoteToken?.symbol||"").toUpperCase()) ) : [];
+    const pool = (wantStable && stableList.length) ? stableList : list;
+    if(mode==="min"){
+      return pool.reduce((best,p)=> (Number(p.priceUsd)<Number(best.priceUsd)?p:best), pool[0]);
+    } else {
+      return pool.reduce((best,p)=> (Number(p.priceUsd)>Number(best.priceUsd)?p:best), pool[0]);
+    }
   }
 
   function computeBestRoutes(pairs){
@@ -316,16 +353,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const byBase=new Map();
     for(const p of valid){
       const base=(p?.baseToken?.address||"").toLowerCase(); if(!base) continue;
-      const list=byBase.get(base); if(list) list.push(p); else byBase.set(base,[p]);
+      (byBase.get(base) || byBase.set(base,[]).get(base)).push(p);
     }
     const out=[];
     for(const [base, list] of byBase.entries()){
-      let buy=null,sell=null,minP=Infinity,maxP=-Infinity;
-      for(const px of list){
-        const pr=Number(px.priceUsd); if(!isFinite(pr)) continue;
-        if(pr<minP){minP=pr; buy=px;} if(pr>maxP){maxP=pr; sell=px;}
-      }
-      if(!buy||!sell||!isFinite(minP)||!isFinite(maxP)||maxP<=0||minP<=0) continue;
+      const buy = pickBest(list, "min");
+      const sell = pickBest(list, "max");
+      if(!buy||!sell) continue;
+      const minP=Number(buy.priceUsd), maxP=Number(sell.priceUsd);
+      if(!isFinite(minP)||!isFinite(maxP)||maxP<=0||minP<=0) continue;
       out.push({
         tokenAddr:base,
         tokenSym:buy.baseToken?.symbol || sell.baseToken?.symbol || base.slice(0,6),
@@ -334,11 +370,14 @@ document.addEventListener("DOMContentLoaded", () => {
         buyPrice:minP,
         buyUrl:buy.url,
         buyLiq:Number(buy?.liquidity?.usd||0),
+        buyStable: STABLE.has((buy?.quoteToken?.symbol||"").toUpperCase()),
         sellDex:(sell.dexId||"").toUpperCase(),
         sellPair:`${sell.baseToken?.symbol}/${sell.quoteToken?.symbol}`,
         sellPrice:maxP,
         sellUrl:sell.url,
-        sellLiq:Number(sell?.liquidity?.usd||0)
+        sellLiq:Number(sell?.liquidity?.usd||0),
+        sellStable: STABLE.has((sell?.quoteToken?.symbol||"").toUpperCase()),
+        updatedAt: Math.max(buy?.updatedAt||0, sell?.updatedAt||0)
       });
     }
     return out;
@@ -371,13 +410,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const cls=r.net>0?"pos":(r.net>-3?"meh":"neg");
       tr.className=cls;
       const minPoolLiq=Math.min(r.buyLiq||0,r.sellLiq||0);
+      const age = r.updatedAt ? Math.round((Date.now()/1000 - r.updatedAt))+"s" : "—";
       tr.innerHTML=`
         <td data-label="Select"><input type="checkbox" data-idx="${idx}"></td>
-        <td data-label="Token"><code title="${r.tokenAddr}">${r.tokenSym}</code></td>
-        <td data-label="Best Buy"><a href="${r.buyUrl}" target="_blank" rel="noopener">${r.buyDex}</a><div class="help">${r.buyPair} @ ${fmtUSD(r.buyPrice)} • liq ${fmtUSD(r.buyLiq||0)}</div></td>
-        <td data-label="Best Sell"><a href="${r.sellUrl}" target="_blank" rel="noopener">${r.sellDex}</a><div class="help">${r.sellPair} @ ${fmtUSD(r.sellPrice)} • liq ${fmtUSD(r.sellLiq||0)}</div></td>
-        <td class="right" data-label="Raw Spread">${r.rawPct.toFixed(2)}%</td>
+        <td data-label="Token"><code title="${r.tokenAddr}">${r.tokenSym}</code><div class="help">Age ${age}</div></td>
+        <td data-label="Best Buy"><a href="${r.buyUrl}" target="_blank" rel="noopener">${r.buyDex}</a><div class="help">${r.buyPair} @ ${fmtUSD(r.buyPrice)} • liq ${fmtUSD(r.buyLiq||0)} ${r.buyStable?'• stable':''}</div></td>
+        <td data-label="Best Sell"><a href="${r.sellUrl}" target="_blank" rel="noopener">${r.sellDex}</a><div class="help">${r.sellPair} @ ${fmtUSD(r.sellPrice)} • liq ${fmtUSD(r.sellLiq||0)} ${r.sellStable?'• stable':''}</div></td>
+        <td class="right" data-label="Raw %">${r.rawPct.toFixed(2)}%</td>
+        <td class="right" data-label="Slip %">${(r.slipPct*100).toFixed(2)}%</td>
+        <td class="right" data-label="Adj %">${r.adjPct.toFixed(2)}%</td>
         <td class="right" data-label="Net">${fmtUSD(r.net)}</td>
+        <td class="right" data-label="Cred">${r.cred}</td>
         <td class="right" data-label="Min Pool Liquidity">${fmtUSD(minPoolLiq)}</td>`;
       tb.appendChild(tr);
     });
@@ -390,20 +433,34 @@ document.addEventListener("DOMContentLoaded", () => {
     updateStats();
   }
 
-  const PLATFORM_FEE=0.0009, MAX_ROWS=400;
+  const PLATFORM_FEE=0.0009, MAX_ROWS=400, SLIP_CAP=0.02; // 2%
+  function credibility(r, loan, guard){
+    const minLiq=Math.min(r.buyLiq||0,r.sellLiq||0);
+    const liqHead = clamp(minLiq/(loan*guard*2), 0, 1); // full score when >= 2× guard
+    const stable = (r.buyStable && r.sellStable) ? 1 : ((r.buyStable||r.sellStable)?0.6:0.3);
+    const fresh  = r.updatedAt ? clamp(1 - (Math.max(0,(Date.now()/1000 - r.updatedAt))/freshCut()), 0, 1) : (requireFresh()?0:0.7);
+    const spread = clamp(r.rawPct/1.0, 0, 1); // full weight at 1%+
+    const score = Math.round(100*(0.4*liqHead + 0.3*fresh + 0.2*stable + 0.1*spread));
+    return score;
+  }
   function scoreAndFilter(routes){
     const L=loanUSD(), gasUSD=gas.usd||0, mult=liqMultiplier();
     let filteredByLiq=0;
     const enriched=routes.map(r=>{
       const rawPct=pct(r.buyPrice,r.sellPrice);
-      const revenue=(L/r.buyPrice)*r.sellPrice;
-      const net = revenue - L - (L*PLATFORM_FEE) - gasUSD;
       const minLiq=Math.min(r.buyLiq||0,r.sellLiq||0);
+      const slipPct = (minLiq>0) ? Math.min(SLIP_CAP, 0.5 * (L / minLiq)) : SLIP_CAP;
+      const adjBuy = r.buyPrice * (1 + slipPct);
+      const adjSell= r.sellPrice * (1 - slipPct);
+      const adjPct = pct(adjBuy, adjSell);
+      const revenue=(L/adjBuy)*adjSell;
+      const net = revenue - L - (L*PLATFORM_FEE) - gasUSD;
       const liqOK = minLiq >= (L*mult);
       if(!liqOK) filteredByLiq++;
-      return {...r, rawPct, net, minLiq, liqOK};
+      const cred = credibility(r, L, mult);
+      return {...r, rawPct, slipPct, adjPct, net, minLiq, liqOK, cred};
     });
-    const kept=enriched.filter(r=>r.liqOK).sort((a,b)=>b.net-a.net).slice(0,MAX_ROWS);
+    const kept=enriched.filter(r=>r.liqOK).sort((a,b)=> b.cred - a.cred || b.net - a.net ).slice(0,MAX_ROWS);
     if($("statFiltered")) $("statFiltered").textContent=`Filtered by Liquidity: ${filteredByLiq}`;
     return kept;
   }
@@ -418,14 +475,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('#rows input[type="checkbox"]').forEach(cb=>cb.checked=false);
     if($("chkAll")) $("chkAll").checked=false; updateStats();
   }
-
   function executeSelectedMock(){
     const cbs=[...document.querySelectorAll('#rows input[type="checkbox"]')];
     const sel=cbs.map((cb,i)=>cb.checked?CURRENT_ROWS[i]:null).filter(Boolean);
     if(!sel.length){ addLog("EXEC", "No routes selected; skipping.", "warn"); alert("Select at least one route."); return; }
     const L = loanUSD();
     const lines = sel.slice(0,20).map(r =>
-      `${r.tokenSym}: BUY ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → SELL ${r.sellDex} @ ${fmtUSD(r.sellPrice)} | Net ${fmtUSD(r.net)} | MinLiq ${fmtUSD(r.minLiq)}`
+      `${r.tokenSym}: BUY ${r.buyDex} @ ${fmtUSD(r.buyPrice)} → SELL ${r.sellDex} @ ${fmtUSD(r.sellPrice)} | slip ${(r.slipPct*100).toFixed(2)}% | Net ${fmtUSD(r.net)} | Cred ${r.cred}`
     );
     const more = sel.length > 20 ? `; … +${sel.length - 20} more` : "";
     const totalNet = sel.reduce((s,r)=> s + (r.net||0), 0);
@@ -452,7 +508,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if(showSpinner){ setStatus("Fetching gas…", true); addLog("SCAN","Fetching gas…"); }
       await initGas();
 
-      if(showSpinner){ setStatus("Querying Dexscreener…", true); addLog("SCAN","Querying Dexscreener…"); }
+      if(showSpinner){ setStatus("Querying Dexscreener…", true); addLog("SCAN",`Querying Dexscreener (stable=${preferStable()} • fresh≤${freshCut()}s • require=${requireFresh()})…`); }
       if(scanAbort) scanAbort.abort();
       scanAbort = new AbortController();
       const pairs = await fetchArbitrumPairs(scanAbort.signal).catch(e=>{ if(e&&e.message==="aborted") return null; throw e; });
@@ -469,8 +525,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if($("lastScan")) $("lastScan").textContent = "Last scan: " + new Date().toLocaleTimeString();
       addLog("SCAN",`Finished • ${scored.length} routes.`, scored.length?"good":"warn");
 
-      const autoSel=$("autoSelect")?.checked;
-      const autoEx=$("autoExecute")?.checked;
+      const autoSel=$("autoSelect")?.checked, autoEx=$("autoExecute")?.checked;
       if(autoSel){ selectAllProfitable(); addLog("SELECT","Auto-selected profitable routes."); }
       if(autoEx && scored.some(r=>r.net>0)){
         const now=Date.now();
@@ -507,10 +562,7 @@ document.addEventListener("DOMContentLoaded", () => {
     scan(true);
     addLog("CTRL",`Auto-rescan started (every ${every}s).`);
   }
-  function stopRescanLoop(){
-    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
-    countdown=0; updateCountdownUI();
-  }
+  function stopRescanLoop(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdown=0; updateCountdownUI(); }
 
   /* Wire UI */
   on($("scanBtn"),"click",()=>scan(true));
@@ -519,8 +571,10 @@ document.addEventListener("DOMContentLoaded", () => {
   on($("btnSelectProf"),"click",()=>{selectAllProfitable(); addLog("SELECT","Selected all profitable routes.");});
   on($("btnClearSel"),"click",()=>{clearSelection(); addLog("SELECT","Cleared selection.");});
   on($("btnExecute"),"click",executeSelectedMock);
+  on($("preferStable"),"change",()=>scan(false));
+  on($("freshCut"),"change",()=>scan(false));
+  on($("requireFresh"),"change",()=>scan(false));
 
-  // Auto-rescan toggle / interval
   on($("autoRescan"),"change",()=>{ $("autoRescan").checked ? startRescanLoop() : (stopRescanLoop(), addLog("CTRL","Auto-rescan disabled.","warn")); });
   on($("rescanEvery"),"change",()=>{ if($("autoRescan")?.checked){ startRescanLoop(); } });
 

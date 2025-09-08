@@ -3,48 +3,66 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.8.0</title>
+<title>Crypto Kings TestBed v9.8.1 — On-chain Quotes</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
-  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7f9;color:#111}
-  header{background:#111;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
-  h1{font-size:18px;margin:0}
-  .wrap{max-width:1000px;margin:0 auto;padding:20px}
-  .controls{background:#fff;border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:20px}
-  label{font-size:13px;color:#555;display:block;margin-top:8px}
-  input{padding:8px;border:1px solid #ccc;border-radius:8px;width:100%;font-size:14px}
-  button{margin-top:12px;padding:10px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c5cff,#1d9bf0);color:#fff;font-weight:600;cursor:pointer}
-  table{width:100%;border-collapse:collapse;margin-top:20px;background:#fff}
-  th,td{padding:8px 10px;border-bottom:1px solid #eee;font-size:13px;text-align:left}
-  th{background:#fafafa;font-weight:600}
+  :root{--bg:#f6f7f9;--surface:#fff;--ink:#111;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:#111;color:#fff}
+  .bar{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .brand{display:flex;gap:10px;align-items:center}
+  .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 80px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  input{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;font-size:14px}
+  button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .row{display:grid;grid-template-columns:1fr;gap:12px}
+  @media (min-width:840px){ .row-3{grid-template-columns:repeat(3,1fr)} }
+  table{width:100%;border-collapse:collapse;margin-top:14px;background:#fff;border:1px solid var(--border)}
+  th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
+  th{background:#fafafa}
   .right{text-align:right}
   .ok{color:#10b981}
   .bad{color:#ef4444}
-  #status{margin-top:12px;font-size:13px;color:#555}
-  #log{margin-top:20px;padding:10px;font-size:12px;max-height:200px;overflow:auto;background:#fff;border:1px solid #ddd;border-radius:8px}
+  #status{margin-top:10px;color:#6b7280;font-size:13px}
 </style>
 </head>
 <body>
 <header>
-  <h1>Crypto Kings v9.8.0 — Arbitrum</h1>
-  <div id="walletStatus">Wallet: Not connected</div>
-</header>
-<div class="wrap">
-  <div class="controls">
-    <label for="loanAmount">Loan Amount (USDC)</label>
-    <input id="loanAmount" type="number" value="10000" min="100" step="100"/>
-    <button id="scanBtn">Scan Opportunities</button>
-    <div id="status"></div>
+  <div class="bar">
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.1</span></div>
+    <div id="walletStatus">Wallet: Not connected</div>
   </div>
-  <div id="resultsWrap">
-    <table id="results">
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <div class="row row-3">
+      <div>
+        <label for="loanAmount">Loan Amount (USDC)</label>
+        <input id="loanAmount" type="number" value="10000" min="100" step="100"/>
+      </div>
+      <div>
+        <label>Network</label>
+        <input value="Arbitrum One" readonly/>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:10px">
+        <button id="scanBtn">Scan Opportunities</button>
+        <div id="status">Idle.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <table>
       <thead>
         <tr>
           <th>Token</th>
           <th>Buy DEX</th>
-          <th class="right">Buy Out</th>
+          <th class="right">Token Out</th>
           <th>Sell DEX</th>
-          <th class="right">Sell Out</th>
+          <th class="right">USDC Back</th>
           <th class="right">Spread %</th>
           <th class="right">Net P/L (USDC)</th>
         </tr>
@@ -52,16 +70,38 @@
       <tbody id="rows"></tbody>
     </table>
   </div>
-  <div id="log"></div>
 </div>
 
 <script>
 (async function(){
   const $=id=>document.getElementById(id);
   const provider = new ethers.providers.JsonRpcProvider("https://arb1.arbitrum.io/rpc");
-  const USDC = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 
-  // Some token list (expandable; top liquid)
+  /* Addresses */
+  const USDC = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // 6 decimals
+  // QuoterV2 (Arbitrum)
+  const UNI_QUOTER = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
+  const UNI_QUOTER_ABI = [
+    "function quoteExactInputSingle((address,address,uint24,address,bool) params, uint256 amountIn) external returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate)"
+  ];
+  // Sushi & Camelot routers (v2 style)
+  const V2_ROUTER_ABI = [
+    "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)"
+  ];
+  const SUSHI_ROUTER   = "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
+  const CAMELOT_ROUTER = "0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
+
+  // ERC20 metadata ABI
+  const ERC20_ABI = [
+    "function decimals() view returns (uint8)",
+    "function symbol() view returns (string)"
+  ];
+
+  const uniQuoter = new ethers.Contract(UNI_QUOTER, UNI_QUOTER_ABI, provider);
+  const sushi     = new ethers.Contract(SUSHI_ROUTER, V2_ROUTER_ABI, provider);
+  const camelot   = new ethers.Contract(CAMELOT_ROUTER, V2_ROUTER_ABI, provider);
+
+  // Liquid tokens (expand easily)
   const TOKENS = {
     WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
     ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",
@@ -69,90 +109,130 @@
     DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
     GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a",
     MAGIC:"0x539bde0d7dbd336b79148aa742883198bbf60342",
-    GNS:"0x18c11fd286c5ec11c3b683caa813b77f5163a122",
-    RDNT:"0x3082cc23568ea640225c2467653db90e9250aaa0"
+    RDNT:"0x3082cc23568ea640225c2467653db90e9250aaa0",
+    LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4"
   };
 
-  // Uniswap v3 quoter (Arbitrum)
-  const UNI_QUOTER = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6";
-  const quoterAbi = ["function quoteExactInputSingle(address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96) external returns (uint256 amountOut)"];
-  const uniQuoter = new ethers.Contract(UNI_QUOTER, quoterAbi, provider);
-
-  // SushiSwap router
-  const SUSHI_ROUTER = "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
-  const routerAbi = ["function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)"];
-  const sushiRouter = new ethers.Contract(SUSHI_ROUTER, routerAbi, provider);
-
-  // Camelot router
-  const CAMELOT_ROUTER = "0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
-  const camelotRouter = new ethers.Contract(CAMELOT_ROUTER, routerAbi, provider);
-
-  async function uniQuote(tokenAddr, amountIn){
-    try{
-      const out = await uniQuoter.callStatic.quoteExactInputSingle(USDC, tokenAddr, 500, amountIn, 0);
-      const back = await uniQuoter.callStatic.quoteExactInputSingle(tokenAddr, USDC, 500, out, 0);
-      return {buyOut:out, sellOut:back};
-    }catch(e){return null;}
+  /* Helpers */
+  const decCache=new Map(), symCache=new Map();
+  async function tokenDecimals(addr){
+    if(decCache.has(addr)) return decCache.get(addr);
+    const c=new ethers.Contract(addr, ERC20_ABI, provider);
+    const d=await c.decimals(); decCache.set(addr, d); return d;
   }
-  async function routerQuote(router, tokenAddr, amountIn){
+  async function tokenSymbol(addr, fallback){
+    if(symCache.has(addr)) return symCache.get(addr);
+    try{ const c=new ethers.Contract(addr, ERC20_ABI, provider); const s=await c.symbol(); symCache.set(addr,s); return s; }
+    catch(_){ return fallback || addr.substring(0,6); }
+  }
+
+  async function uniBuyOut(token, amountInUSDC){
+    // Try typical fee tiers 500, 3000, 10000 and take the best
+    const tiers=[500,3000,10000];
+    let best=null;
+    for(const fee of tiers){
+      try{
+        const params={tokenIn:USDC, tokenOut:token, fee, recipient:USDC, // recipient ignored in quoter
+                      sqrtPriceLimitX96:0, // not used in V2 struct but harmless
+                      // the struct field order is: tokenIn, tokenOut, fee, recipient, bool (zeroForOne) in some builds; here we pass as named
+        };
+        const [amountOut] = await uniQuoter.callStatic.quoteExactInputSingle(params, amountInUSDC);
+        if(!best || amountOut.gt(best.amount)){ best={amount:amountOut, fee}; }
+      }catch(_){}
+    }
+    return best ? { amount: best.amount, fee: best.fee } : null;
+  }
+  async function uniSellOut(token, tokenAmount){
+    const tiers=[500,3000,10000];
+    let best=null;
+    for(const fee of tiers){
+      try{
+        const params={tokenIn:token, tokenOut:USDC, fee, recipient:token, sqrtPriceLimitX96:0};
+        const [amountOut] = await uniQuoter.callStatic.quoteExactInputSingle(params, tokenAmount);
+        if(!best || amountOut.gt(best.amount)){ best={amount:amountOut, fee}; }
+      }catch(_){}
+    }
+    return best ? { amount: best.amount, fee: best.fee } : null;
+  }
+  async function v2BuyOut(router, token, amountInUSDC){
     try{
-      const buyPath=[USDC,tokenAddr];
-      const sellPath=[tokenAddr,USDC];
-      const out = await router.getAmountsOut(amountIn, buyPath);
-      const back= await router.getAmountsOut(out[1], sellPath);
-      return {buyOut:out[1], sellOut:back[1]};
-    }catch(e){return null;}
+      const r = await router.getAmountsOut(amountInUSDC, [USDC, token]);
+      return r[1]; // token amount
+    }catch(_){ return null; }
+  }
+  async function v2SellOut(router, token, tokenAmount){
+    try{
+      const r = await router.getAmountsOut(tokenAmount, [token, USDC]);
+      return r[1]; // usdc back
+    }catch(_){ return null; }
   }
 
   async function scan(){
-    const amt=parseFloat($("loanAmount").value||"0");
-    if(!(amt>0)){ alert("Enter loan amount"); return; }
-    const amountIn=ethers.utils.parseUnits(String(amt),6); // USDC has 6 decimals
-    $("status").textContent="Scanning tokens… this may take a minute";
-    $("rows").innerHTML="";
-    let logs=[];
-    for(const [sym,addr] of Object.entries(TOKENS)){
-      $("status").textContent=`Scanning ${sym}…`;
-      const uni=await uniQuote(addr, amountIn);
-      const sushi=await routerQuote(sushiRouter, addr, amountIn);
-      const camel=await routerQuote(camelotRouter, addr, amountIn);
-      const dexes={};
-      if(uni) dexes.Uniswap=uni;
-      if(sushi) dexes.Sushi=sushi;
-      if(camel) dexes.Camelot=camel;
-      const entries=Object.entries(dexes);
-      if(entries.length<2) continue;
-      // find best buy (max tokenOut) and best sell (max USDC back)
-      let best=null;
-      entries.forEach(([dex,q])=>{
-        const spread=(Number(q.sellOut)-amt*1e6)/(amt*1e6);
-        if(!best || spread>best.spread){
-          best={buyDex:dex,sellDex:dex,spread,net:Number(q.sellOut)/1e6-amt};
-        }
-      });
-      // Actually compare across DEXes: buy lowest cost, sell highest return
-      let maxSell=-Infinity, minBuy=Infinity, buyDex=null, sellDex=null;
-      entries.forEach(([dex,q])=>{
-        if(q.buyOut && Number(q.buyOut)<minBuy){minBuy=Number(q.buyOut);buyDex=dex;}
-        if(q.sellOut && Number(q.sellOut)>maxSell){maxSell=Number(q.sellOut);sellDex=dex;}
-      });
-      if(maxSell>0 && minBuy<Infinity){
-        const spread=(maxSell-minBuy)/minBuy;
-        const net=(maxSell/1e6)-amt; // USDC decimals
-        if(net>0){
-          const tr=document.createElement("tr");
-          tr.innerHTML=`<td>${sym}</td>
-            <td>${buyDex}</td><td class="right">${(minBuy/1e18).toFixed(6)}</td>
-            <td>${sellDex}</td><td class="right">${(maxSell/1e6).toFixed(2)}</td>
-            <td class="right">${(spread*100).toFixed(2)}%</td>
-            <td class="right ${net>0?'ok':'bad'}">${net.toFixed(2)}</td>`;
-          $("rows").appendChild(tr);
+    const usd=parseFloat($("#loanAmount").value||"0");
+    if(!(usd>0)) return alert("Enter loan amount");
+    const inUSDC = ethers.utils.parseUnits(String(usd),6);
+
+    $("#rows").innerHTML="";
+    $("#status").textContent="Scanning (on-chain)…";
+
+    for(const [sym, addr] of Object.entries(TOKENS)){
+      $("#status").textContent=`${sym}: quoting…`;
+
+      // BUY: USDC -> TOKEN on every DEX
+      const [uniBuy, sushiBuy, camelBuy] = await Promise.all([
+        uniBuyOut(addr, inUSDC),
+        v2BuyOut(sushi, addr, inUSDC),
+        v2BuyOut(camelot, addr, inUSDC)
+      ]);
+
+      const buys = [];
+      if(uniBuy) buys.push({dex:"Uniswap V3", tokenOut:uniBuy.amount, sell:amt=>uniSellOut(addr, amt)});
+      if(sushiBuy) buys.push({dex:"SushiSwap",  tokenOut:sushiBuy,    sell:amt=>v2SellOut(sushi, addr, amt)});
+      if(camelBuy) buys.push({dex:"Camelot",    tokenOut:camelBuy,    sell:amt=>v2SellOut(camelot, addr, amt)});
+
+      if(buys.length<1) continue;
+
+      // For each buy DEX, try selling on each DEX with the SAME token amount
+      let bestRoute=null;
+      for(const b of buys){
+        for(const s of buys){
+          try{
+            const outUSDC = await s.sell(b.tokenOut);
+            if(!outUSDC) continue;
+            const out = Number(ethers.utils.formatUnits(outUSDC,6));
+            const net = out - usd; // USDC back - USDC in (gas/flash fee not yet included)
+            if(!bestRoute || net > bestRoute.net){
+              bestRoute = {tokenAddr:addr, sym, buyDex:b.dex, sellDex:s.dex,
+                           tokenOut:b.tokenOut, usdcBack:outUSDC, net};
+            }
+          }catch(_){}
         }
       }
+
+      if(bestRoute){
+        const tDec = await tokenDecimals(addr).catch(()=>18);
+        const tokenOutDisp = Number(ethers.utils.formatUnits(bestRoute.tokenOut, tDec));
+        const usdcBackDisp = Number(ethers.utils.formatUnits(bestRoute.usdcBack, 6));
+        const spreadPct = ((usdcBackDisp - usd)/usd)*100;
+
+        const tr=document.createElement("tr");
+        tr.innerHTML = `
+          <td>${sym}</td>
+          <td>${bestRoute.buyDex}</td>
+          <td class="right">${tokenOutDisp.toLocaleString(undefined,{maximumFractionDigits:6})}</td>
+          <td>${bestRoute.sellDex}</td>
+          <td class="right">${usdcBackDisp.toLocaleString(undefined,{maximumFractionDigits:2})}</td>
+          <td class="right">${spreadPct.toFixed(2)}%</td>
+          <td class="right ${bestRoute.net>0?'ok':'bad'}">${bestRoute.net.toFixed(2)}</td>
+        `;
+        $("#rows").appendChild(tr);
+      }
     }
-    $("status").textContent="Scan complete";
+
+    $("#status").textContent="Scan complete.";
   }
-  $("scanBtn").addEventListener("click",scan);
+
+  $("#scanBtn").addEventListener("click", scan);
 })();
 </script>
 </body>

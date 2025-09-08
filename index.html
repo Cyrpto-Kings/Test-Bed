@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.8.7 — Arbitrum (fast, mobile, cached)</title>
+<title>Crypto Kings TestBed v9.8.9 — Arbitrum (10k, fast, streaming)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
   :root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444}
@@ -16,7 +16,7 @@
   .wrap{max-width:1200px;margin:0 auto;padding:18px 12px 90px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 6px 16px rgba(0,0,0,.04)}
   .row{display:grid;grid-template-columns:1fr;gap:10px}
-  @media (min-width:760px){ .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)}}
+  @media (min-width:760px){ .row-5{grid-template-columns:repeat(5,1fr)}}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px}
   button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
@@ -27,6 +27,7 @@
   .pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
   .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
   .totals{font-weight:700}
+  .table-wrap{overflow-x:auto;border-radius:12px}
   table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
   th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
   th{background:#fafafa;position:sticky;top:0}
@@ -37,33 +38,29 @@
   .log-warn{color:#b45309}
   .log-err{color:#b91c1c}
   .hint{color:var(--muted);font-size:12px}
-  .nowrap{white-space:nowrap}
-  /* Mobile table scroll */
-  .table-wrap{overflow-x:auto;border-radius:12px}
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.7</span></div>
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.9</span></div>
     <div id="walletStatus">Wallet: Not connected</div>
   </div>
 </header>
 
 <div class="wrap">
-  <!-- Controls -->
   <div class="card">
-    <div class="row row-4">
+    <div class="row row-5">
       <div>
         <label for="loan">Loan Amount (USDC)</label>
-        <input id="loan" type="number" value="10000" min="100" step="100"/>
+        <input id="loan" type="number" value="10000" min="10000" step="1000"/>
       </div>
       <div>
-        <label for="threshold">Min Profit to show / auto-select (USDC)</label>
-        <input id="threshold" type="number" value="10" min="0" step="1"/>
+        <label for="threshold">Min Profit to show (USDC)</label>
+        <input id="threshold" type="number" value="0" min="0" step="1"/>
       </div>
       <div>
-        <label for="interval">Auto-rescan interval</label>
+        <label for="interval">Auto-rescan</label>
         <select id="interval">
           <option value="0" selected>Off</option>
           <option value="15">15s</option>
@@ -71,28 +68,37 @@
           <option value="60">60s</option>
         </select>
       </div>
+      <div>
+        <label for="fast">Fast Mode</label>
+        <select id="fast">
+          <option value="1" selected>On (direct pools only)</option>
+          <option value="0">Off (include two-hop)</option>
+        </select>
+      </div>
       <div style="display:flex;align-items:flex-end;gap:8px">
         <button id="scanBtn">Scan</button>
         <button id="stopBtn" class="ghost">Stop</button>
-        <div class="status"><div id="spinner" class="spin" style="display:none"></div><span id="status">Idle.</span></div>
+        <div class="status">
+          <div id="spinner" class="spin" style="display:none"></div>
+          <span id="status">Idle.</span>
+        </div>
       </div>
     </div>
     <div class="hint" style="margin-top:6px">
-      Net P/L = (USDC back − size) − 0.09% flash fee − est. gas. Quotes are on-chain at a size that clears liquidity.
+      Net P/L = (USDC back − size) − 0.09% flash fee − est. gas.
       <span class="pill" id="rpcPill">RPC: —</span>
       <span class="pill" id="gasPill">Gas: —</span>
       <span class="pill" id="cachePill">Cache: —</span>
+      <span class="pill" id="healthPill">Health: —</span>
     </div>
   </div>
 
-  <!-- Results -->
   <div class="card" style="margin-top:12px">
     <div class="controls">
       <button id="selectProfitable" class="ghost">Select all ≥ threshold</button>
-      <button id="clearSelection" class="ghost">Clear selection</button>
+      <button id="clearSelection" class="ghost">Clear</button>
       <div class="totals">Selected total: <span id="totalNet">$0.00</span></div>
     </div>
-
     <div class="table-wrap">
       <table>
         <thead>
@@ -125,10 +131,14 @@
   const log=(m,c)=>{const d=document.createElement('div'); if(c) d.className=c; d.textContent=m; $('log').appendChild(d); $('log').scrollTop=$('log').scrollHeight;};
   const setStatus=(t,spin)=>{$('status').textContent=t; $('spinner').style.display=spin?'inline-block':'none';};
   const fmt=(n,dp=2)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:dp});
-  const saveCache=(data)=>{ localStorage.setItem('ck-cache-v987', JSON.stringify({ts:Date.now(), data})); };
-  const loadCache=()=>{ try{ const j=JSON.parse(localStorage.getItem('ck-cache-v987')||'{}'); return j; }catch{ return {}; } };
+  const saveCache=(data)=>localStorage.setItem('ck-cache-v989', JSON.stringify({ts:Date.now(), data}));
+  const loadCache=()=>{try{return JSON.parse(localStorage.getItem('ck-cache-v989')||'{}')}catch{return {}}};
 
-  /* ---- Provider ---- */
+  /* Health metrics */
+  let hCalls=0, hTimeouts=0, hStart=0;
+  const healthTick=()=>{ const secs=Math.max(1,Math.floor((Date.now()-hStart)/1000)); const cps=(hCalls/secs).toFixed(1); $('healthPill').textContent=`Health: ${cps}/s • ${hTimeouts} timeouts`; };
+
+  /* Provider with rotation */
   const RPCS=[
     "https://arbitrum-one.publicnode.com",
     "https://arb1.arbitrum.io/rpc",
@@ -137,19 +147,23 @@
     "https://arbitrum.blockpi.network/v1/rpc/public",
     "https://arb-mainnet-public.unifra.io"
   ];
-  let provider=null, rpcHost="—";
+  let provider=null, rpcIdx=0, rpcHost="—";
+  async function useRpc(i){
+    const url=RPCS[i%RPCS.length];
+    const p=new ethers.providers.StaticJsonRpcProvider(url);
+    await Promise.race([p.getBlockNumber(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),3000))]);
+    provider=p; rpcIdx=i; rpcHost=new URL(url).host;
+    $('rpcPill').textContent='RPC: '+rpcHost; $('rpcPill').style.borderColor='#d1fae5';
+  }
   async function initProvider(){
-    for(const url of RPCS){
-      try{
-        const p=new ethers.providers.StaticJsonRpcProvider(url);
-        await Promise.race([p.getBlockNumber(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),3500))]);
-        provider=p; rpcHost=new URL(url).host; $('rpcPill').textContent='RPC: '+rpcHost; $('rpcPill').style.borderColor='#d1fae5'; return;
-      }catch(e){ log(`RPC failed: ${url} — ${e.message}`,'log-warn'); }
+    for(let i=0;i<RPCS.length;i++){
+      try{ await useRpc(i); return; }catch(e){ log(`RPC failed: ${RPCS[i]} — ${e.message}`,'log-warn'); }
     }
     throw new Error('All RPCs failed');
   }
+  async function rotateRpc(){ try{ await useRpc(rpcIdx+1); log('Rotated RPC → '+rpcHost); }catch(e){ log('RPC rotate failed: '+e.message,'log-warn'); } }
 
-  /* ---- Addresses & ABIs ---- */
+  /* Addresses & ABIs */
   const USDC ="0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
   const USDCe="0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
   const WETH ="0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
@@ -162,84 +176,88 @@
   const ERC20_ABI=[ "function decimals() view returns (uint8)" ];
 
   const TOKENS={
-    WETH:WETH, ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",
-    USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9", DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
-    GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a", RDNT:"0x3082cc23568ea640225c2467653db90e9250aaa0",
-    LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4", AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
-    WBTC:"0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f", PENDLE:"0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8",
+    WETH:WETH, USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+    DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",
+    WBTC:"0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f", LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
+    GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a", AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
+    RDNT:"0x3082cc23568ea640225c2467653db90e9250aaa0", PENDLE:"0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8",
   };
   const decCache=new Map();
   async function decimals(addr){ if(decCache.has(addr)) return decCache.get(addr); const d=await new ethers.Contract(addr,ERC20_ABI,provider).decimals(); decCache.set(addr,d); return d; }
 
-  /* ---- Uni v3 helpers ---- */
+  /* Helpers */
   const FEES=[500,3000,10000];
   function packPath(hops){ const types=[],values=[]; for(let i=0;i<hops.length;i++){ if(i%2===0){types.push('address');values.push(hops[i]);} else {types.push('uint24');values.push(hops[i]);} } return ethers.utils.solidityPack(types,values); }
-  async function uniExactIn(path, amount){ try{ const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider); const [out]=await q.callStatic.quoteExactInput(path,amount); return out;}catch{return null;} }
-  async function uniBestDirect(a,b,amt){ let best=null; for(const f of FEES){ const p=packPath([a,f,b]); const out=await uniExactIn(p,amt); if(out && (!best || out.gt(best))) best=out; } return best; }
-  async function uniBestTwoHop(a,mid,b,amt){ let best=null; for(const f1 of [500,3000]) for(const f2 of [500,3000]){ const p=packPath([a,f1,mid,f2,b]); const out=await uniExactIn(p,amt); if(out && (!best || out.gt(best))) best=out; } return best; }
-  async function v2Out(router, path, amt){ try{ const r=await new ethers.Contract(router,V2_ABI,provider).getAmountsOut(amt,path); return r[r.length-1]; }catch{return null;} }
+  function withTimeout(p,ms){ hCalls++; return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>{hTimeouts++; rej(new Error('timeout'))},ms))]); }
+  async function uniExactIn(path, amt, ms){ try{ const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider); const [out]=await withTimeout(q.callStatic.quoteExactInput(path,amt), ms); return out; }catch{return null;} }
+  async function uniBestDirect(a,b,amt,ms){ let best=null; for(const f of FEES){ const p=packPath([a,f,b]); const out=await uniExactIn(p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
+  async function uniBestTwoHop(a,mid,b,amt,ms){ let best=null; for(const f1 of [500,3000]) for(const f2 of [500,3000]){ const p=packPath([a,f1,mid,f2,b]); const out=await uniExactIn(p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
+  async function v2Out(router,path,amt,ms){ try{ const r=await withTimeout(new ethers.Contract(router,V2_ABI,provider).getAmountsOut(amt,path),ms); return r[r.length-1]; }catch{return null;} }
   function bestBig(a,b){ if(a && b) return a.gt(b)?a:b; return a||b||null; }
 
-  const DEXES=[
-    { name:'Uniswap V3', buy: async(t,a)=>bestBig(await uniBestDirect(USDC,t,a), await uniBestTwoHop(USDC,USDCe,t,a)),
-                        sell:async(t,a)=>bestBig(await uniBestDirect(t,USDC,a), await uniBestTwoHop(t,USDCe,USDC,a)) },
-    { name:'SushiSwap',  buy: async(t,a)=>bestBig(await v2Out(SUSHI,[USDC,t],a), await v2Out(SUSHI,[USDC,USDCe,t],a)),
-                        sell:async(t,a)=>bestBig(await v2Out(SUSHI,[t,USDC],a), await v2Out(SUSHI,[t,USDCe,USDC],a)) },
-    { name:'Camelot',    buy: async(t,a)=>bestBig(await v2Out(CAMELOT,[USDC,t],a), await v2Out(CAMELOT,[USDC,USDCe,t],a)),
-                        sell:async(t,a)=>bestBig(await v2Out(CAMELOT,[t,USDC],a), await v2Out(CAMELOT,[t,USDCe,USDC],a)) },
-  ];
+  function dexes(fast){
+    return [
+      { name:'Uniswap V3', buy: async(t,a)=>bestBig(await uniBestDirect(USDC,t,a, fast?1200:2500), fast?null:await uniBestTwoHop(USDC,USDCe,t,a,2500)),
+                            sell:async(t,a)=>bestBig(await uniBestDirect(t,USDC,a, fast?1200:2500), fast?null:await uniBestTwoHop(t,USDCe,USDC,a,2500)) },
+      { name:'SushiSwap',  buy: async(t,a)=>bestBig(await v2Out(SUSHI,[USDC,t],a, fast?1200:2500), fast?null:await v2Out(SUSHI,[USDC,USDCe,t],a,2500)),
+                            sell:async(t,a)=>bestBig(await v2Out(SUSHI,[t,USDC],a, fast?1200:2500), fast?null:await v2Out(SUSHI,[t,USDCe,USDC],a,2500)) },
+      { name:'Camelot',    buy: async(t,a)=>bestBig(await v2Out(CAMELOT,[USDC,t],a, fast?1200:2500), fast?null:await v2Out(CAMELOT,[USDC,USDCe,t],a,2500)),
+                            sell:async(t,a)=>bestBig(await v2Out(CAMELOT,[t,USDC],a, fast?1200:2500), fast?null:await v2Out(CAMELOT,[t,USDCe,USDC],a,2500)) },
+    ];
+  }
 
-  /* ---- Gas & FX ---- */
+  /* Gas & FX */
   let lastGasUSDC=0;
   async function refreshGas(){
     const gp=await provider.getGasPrice();
-    const usdcForEth=await uniBestDirect(WETH,USDC, ethers.utils.parseEther("1"));
+    const usdcForEth=await uniBestDirect(WETH,USDC, ethers.utils.parseEther("1"), 1500);
     const ethToUsdc=usdcForEth?Number(ethers.utils.formatUnits(usdcForEth,6)):0;
     const gasETH=Number(ethers.utils.formatEther(gp.mul(GAS_LIMIT)));
     lastGasUSDC=ethToUsdc?gasETH*ethToUsdc:0;
     $('gasPill').textContent=`Gas: ${fmt(lastGasUSDC,2)} USDC (gp ${fmt(Number(ethers.utils.formatUnits(gp,'gwei')),1)} gwei, limit ${GAS_LIMIT.toLocaleString()})`;
   }
 
-  /* ---- Adaptive size + parallelization ---- */
-  const SIZE_STEPS=[1.0,0.5,0.25,0.10,0.05];
+  /* Size policy: EXACT 10k (no adaptive) */
+  const SIZE_STEPS=[1.0];       // <<< force your loan size only
   const THIN_GUARD=0.6;
-  const MAX_CONC=4; // tokens processed in parallel
+  const MAX_CONC=8;             // higher concurrency
 
-  async function quoteBestForSize(tokenAddr, sym, sizeUSDC){
+  async function quoteBestForSize(tokenAddr, sym, sizeUSDC, fast){
+    const dxs=dexes(fast);
     const amtIn6=ethers.utils.parseUnits(String(sizeUSDC),6);
-    // buys in parallel
-    const buyPromises=DEXES.map(async d=>({ d, out: await d.buy(tokenAddr, amtIn6) }));
+    const buyPromises=dxs.map(async d=>({ d, out: await d.buy(tokenAddr, amtIn6) }));
     const buyRes=(await Promise.all(buyPromises)).filter(x=>x.out && x.out.gt(0));
-    if(!buyRes.length){ log(`${sym}: no BUY @ ${sizeUSDC}`,'log-warn'); return null; }
+    if(!buyRes.length){ return { skip:`no BUY @ ${sizeUSDC}` }; }
 
-    // for each buy, try all sells in parallel
     let best=null;
     for(const b of buyRes){
-      const sellPromises=DEXES.filter(dx=>dx.name!==b.d.name)
-        .map(async dx=>({ name:dx.name, back: await dx.sell(tokenAddr, b.out)}));
-      const sells=(await Promise.all(sellPromises)).filter(x=>x.back && x.back.gt(0));
+      const sells=await Promise.all(
+        dxs.filter(dx=>dx.name!==b.d.name).map(async dx=>({ name:dx.name, back: await dx.sell(tokenAddr, b.out)}))
+      );
       for(const s of sells){
+        if(!s.back || !s.back.gt(0)) continue;
         const usdcBack=Number(ethers.utils.formatUnits(s.back,6));
-        if(usdcBack < THIN_GUARD*sizeUSDC){ log(`${sym}: ${b.d.name}→${s.name} thin @ ${sizeUSDC} (back ${usdcBack.toFixed(2)})`,'log-warn'); continue; }
-        const grossNet=usdcBack-sizeUSDC, fee=sizeUSDC*FLASH_FEE, gas=lastGasUSDC, net=grossNet-fee-gas;
-        if(!best || net>best.net){ best={ buyDex:b.d.name, sellDex:s.name, tokenOut:b.out, usdcBack:s.back, size:sizeUSDC, net, grossNet, fee, gas }; }
+        if(usdcBack < THIN_GUARD*sizeUSDC) continue;
+        const gross=usdcBack-sizeUSDC, fee=sizeUSDC*FLASH_FEE, gas=lastGasUSDC, net=gross-fee-gas;
+        if(!best || net>best.net){ best={ buyDex:b.d.name, sellDex:s.name, tokenOut:b.out, usdcBack:s.back, size:sizeUSDC, net }; }
       }
     }
-    return best;
+    return best || { skip:`thin @ ${sizeUSDC}` };
   }
 
-  async function scanToken(sym, addr, loan, threshold){
-    setStatus(`Quoting ${sym}…`,true);
-    let best=null;
+  async function scanToken(sym, addr, loan, threshold, fast){
+    let best=null, reason='no route';
     for(const step of SIZE_STEPS){
       const size=loan*step;
-      const cand=await quoteBestForSize(addr, sym, size);
-      if(cand){
+      const cand=await quoteBestForSize(addr, sym, size, fast);
+      if(cand && !cand.skip){
         best=(best && best.net>cand.net)?best:cand;
-        if(cand.net>=threshold) break; // early win
+        if(cand.net>=threshold) break;
+      } else {
+        reason=cand?.skip || reason;
       }
     }
-    if(!best){ log(`No cross-DEX route for ${sym}`,'log-warn'); return null; }
+    if(!best) return { sym, error:reason };
     const tDec=await decimals(addr).catch(()=>18);
     return {
       sym,
@@ -253,105 +271,101 @@
     };
   }
 
-  function renderRows(rows, threshold){
-    const tb=$('rows'); tb.innerHTML='';
-    rows.forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td><input type="checkbox" class="routeCheck" data-net="${r.net.toFixed(6)}" ${r.net>=threshold?'checked':''}/></td>
-        <td>${r.sym}</td>
-        <td>${r.buyDex}</td>
-        <td class="right">${fmt(r.tokenOut,6)}</td>
-        <td>${r.sellDex}</td>
-        <td class="right">${fmt(r.usdcBack,2)}</td>
-        <td class="right">${r.spreadPct.toFixed(2)}%</td>
-        <td class="right ${r.net>0?'ok':'bad'}">${r.net.toFixed(2)}</td>
-        <td class="right">${fmt(r.size,0)}</td>
-      `;
-      tb.appendChild(tr);
-    });
-    document.querySelectorAll('.routeCheck').forEach(cb=>cb.addEventListener('change',sumSelected));
+  function renderRow(r, threshold){
+    const tb=$('rows');
+    const tr=document.createElement('tr');
+    if(r.error){
+      tr.innerHTML=`<td></td><td>${r.sym}</td><td colspan="7" class="hint">Skipped: ${r.error}</td>`;
+      tb.appendChild(tr); return;
+    }
+    tr.innerHTML=`
+      <td><input type="checkbox" class="routeCheck" data-net="${r.net.toFixed(6)}" ${r.net>=threshold?'checked':''}/></td>
+      <td>${r.sym}</td>
+      <td>${r.buyDex}</td>
+      <td class="right">${fmt(r.tokenOut,6)}</td>
+      <td>${r.sellDex}</td>
+      <td class="right">${fmt(r.usdcBack,2)}</td>
+      <td class="right">${r.spreadPct.toFixed(2)}%</td>
+      <td class="right ${r.net>0?'ok':'bad'}">${r.net.toFixed(2)}</td>
+      <td class="right">${fmt(r.size,0)}</td>`;
+    tb.appendChild(tr);
+    tr.querySelector('.routeCheck')?.addEventListener('change',sumSelected);
     sumSelected();
   }
+  function renderRows(rows, threshold){ $('rows').innerHTML=''; rows.forEach(r=>renderRow(r,threshold)); }
+  function sumSelected(){ let s=0; document.querySelectorAll('.routeCheck:checked').forEach(cb=>s+=Number(cb.dataset.net||0)); $('totalNet').textContent=(s>=0?'+':'')+'$'+fmt(s,2); }
 
-  function sumSelected(){
-    let s=0; document.querySelectorAll('.routeCheck:checked').forEach(cb=> s+=Number(cb.dataset.net||0));
-    $('totalNet').textContent=(s>=0?'+':'')+'$'+fmt(s,2);
-  }
-
-  async function refreshGasSafe(){ try{ await refreshGas(); }catch(e){ log('Gas fetch failed: '+e.message,'log-warn'); } }
-
-  /* ---- Concurrency runner for tokens ---- */
-  async function scanAll(){
+  async function scanAllStream(){
     const loan=parseFloat($('loan').value||'0');
     const threshold=parseFloat($('threshold').value||'0');
+    const fast = $('fast').value==='1';
     if(!(loan>0)) return alert('Enter loan amount');
 
-    $('log').innerHTML='';
+    $('rows').innerHTML=''; $('log').innerHTML='';
+    hCalls=0; hTimeouts=0; hStart=Date.now(); $('healthPill').textContent='Health: 0.0/s • 0 timeouts';
+
     setStatus('Connecting RPC…',true);
     if(!provider){ try{ await initProvider(); }catch(e){ setStatus('RPC error. See log.',false); log(e.message,'log-err'); return; } }
 
     setStatus('Fetching gas & FX…',true);
-    await refreshGasSafe();
+    try{ await refreshGas(); }catch(e){ log('Gas fetch failed: '+e.message,'log-warn'); }
 
     const entries=Object.entries(TOKENS);
-    const rows=[];
     setStatus('Quoting on-chain…',true);
+    const results=[];
 
-    let idx=0, active=0;
+    let idx=0, active=0, failures=0;
     return await new Promise(resolve=>{
       const kick=()=>{
         while(active<MAX_CONC && idx<entries.length){
           const [sym,addr]=entries[idx++]; active++;
-          scanToken(sym,addr,loan,threshold)
-            .then(r=>{ if(r) rows.push(r); })
-            .catch(e=>log(`${sym} error: ${e.message}`,'log-warn'))
-            .finally(()=>{ active--; if(idx<entries.length) kick(); else if(active===0) resolve(rows); });
+          scanToken(sym,addr,loan,threshold,fast)
+            .then(r=>{ results.push(r); renderRow(r,threshold); healthTick(); })
+            .catch(e=>{ log(`${sym} error: ${e.message}`,'log-warn'); failures++; if(failures%4===0) rotateRpc(); healthTick(); })
+            .finally(()=>{ active--; if(idx<entries.length) kick(); else if(active===0) resolve(results); });
         }
       };
       kick();
     });
   }
 
-  /* ---- Buttons ---- */
+  /* Buttons */
   let timer=null;
   $('scanBtn').addEventListener('click', async ()=>{
     if(timer){ clearInterval(timer); timer=null; }
     setStatus('Scanning…',true);
-    const rows=await scanAll();
+    const rows=await scanAllStream();
     setStatus('Scan complete.',false);
+    const good=rows.filter(r=>!r.error);
+    good.sort((a,b)=>b.net-a.net);
     const threshold=parseFloat($('threshold').value||'0');
-    rows.sort((a,b)=>b.net-a.net);
-    renderRows(rows, threshold);
-    saveCache({ rows, meta:{ loan: $('loan').value, threshold, ts:Date.now(), rpc:rpcHost, gas:lastGasUSDC } });
+    saveCache({ rows:good, meta:{ loan:$('loan').value, threshold, ts:Date.now(), rpc:rpcHost, gas:lastGasUSDC } });
     const secs=parseInt($('interval').value,10);
     if(secs>0){ timer=setInterval(()=>$('scanBtn').click(), secs*1000); }
   });
   $('stopBtn').addEventListener('click',()=>{ if(timer){ clearInterval(timer); timer=null; setStatus('Auto-rescan stopped.',false);} });
-  $('selectProfitable').addEventListener('click',()=>{
-    const thr=parseFloat($('threshold').value||'0');
-    document.querySelectorAll('.routeCheck').forEach(cb=> cb.checked = Number(cb.dataset.net||0) >= thr );
-    sumSelected();
-  });
+  $('selectProfitable').addEventListener('click',()=>{ const thr=parseFloat($('threshold').value||'0'); document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=(Number(cb.dataset.net||0)>=thr)); sumSelected(); });
   $('clearSelection').addEventListener('click',()=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=false); sumSelected(); });
   $('masterCheck').addEventListener('change',e=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=e.target.checked); sumSelected(); });
 
-  /* ---- Instant preload from cache, then rescan ---- */
+  /* Preload from cache then background scan */
   document.addEventListener('DOMContentLoaded', async ()=>{
-    const cache=loadCache();
-    if(cache?.data?.rows?.length){
-      const ageSec=Math.floor((Date.now()-cache.ts)/1000);
-      $('cachePill').textContent=`Cache: ${cache.data.rows.length} rows • ${ageSec}s ago`;
-      $('loan').value = cache.data.meta?.loan ?? $('loan').value;
-      $('threshold').value = cache.data.meta?.threshold ?? $('threshold').value;
-      renderRows(cache.data.rows, parseFloat($('threshold').value||'0'));
-      setStatus('Showing cached results… rescanning.',true);
-      // Start a silent fresh scan
-      $('scanBtn').click();
-    } else {
-      $('cachePill').textContent='Cache: empty';
-      setStatus('Ready. Tap Scan to start.',false);
-    }
+    try{
+      const cache=loadCache();
+      if(cache?.data?.rows?.length){
+        const age=Math.floor((Date.now()-cache.ts)/1000);
+        $('cachePill').textContent=`Cache: ${cache.data.rows.length} • ${age}s ago`;
+        $('loan').value = cache.data.meta?.loan ?? $('loan').value;
+        $('threshold').value = cache.data.meta?.threshold ?? $('threshold').value;
+        renderRows(cache.data.rows, parseFloat($('threshold').value||'0'));
+        setStatus('Showing cached… rescanning.',true);
+      } else {
+        $('cachePill').textContent='Cache: empty';
+        setStatus('Ready. Tap Scan.',false);
+      }
+    }catch{}
+    // kick a background scan on load
+    setTimeout(()=>{ $('scanBtn').click(); }, 250);
   });
 })();
 </script>

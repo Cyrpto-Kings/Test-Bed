@@ -3,24 +3,25 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.8.2 — On-chain Quotes (Arbitrum)</title>
+<title>Crypto Kings TestBed v9.8.4 — Arbitrum (On-chain)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
   :root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb}
   *{box-sizing:border-box}
   body{margin:0;font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
   header{background:#111;color:#fff}
-  .bar{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+  .bar{max-width:1150px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
   .brand{display:flex;gap:10px;align-items:center}
   .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
-  .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 80px}
+  .wrap{max-width:1150px;margin:0 auto;padding:18px 16px 90px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 6px 16px rgba(0,0,0,.04)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;font-size:14px}
+  input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;font-size:14px;background:#fff}
   button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .ghost{background:transparent;color:#111;border:1px solid var(--border)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:840px){ .row-3{grid-template-columns:repeat(3,1fr)} }
-  .status{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px;margin-top:10px}
+  @media (min-width:980px){ .row-4{grid-template-columns:repeat(4,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} .row-2{grid-template-columns:repeat(2,1fr)} }
+  .status{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px;margin-top:6px}
   .spin{border:3px solid rgba(0,0,0,.08);border-top:3px solid var(--brand);border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
   table{width:100%;border-collapse:collapse;margin-top:14px;background:#fff;border:1px solid var(--border)}
@@ -29,22 +30,29 @@
   .right{text-align:right}
   .ok{color:#10b981}
   .bad{color:#ef4444}
-  #log{margin-top:14px;font-size:12px;color:#374151;max-height:200px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
+  .muted{color:var(--muted)}
+  details{margin-top:12px}
+  details > summary{cursor:pointer;color:#374151}
+  #log{margin-top:10px;font-size:12px;color:#374151;max-height:220px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
   .log-warn{color:#b45309}
   .log-err{color:#b91c1c}
+  .pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+  .totals{margin-top:10px;font-weight:700}
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.2</span></div>
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.4</span></div>
     <div id="walletStatus">Wallet: Not connected</div>
   </div>
 </header>
 
 <div class="wrap">
+  <!-- Controls -->
   <div class="card">
-    <div class="row row-3">
+    <div class="row row-4">
       <div>
         <label for="loan">Loan Amount (USDC)</label>
         <input id="loan" type="number" value="10000" min="100" step="100"/>
@@ -53,17 +61,40 @@
         <label>Network</label>
         <input value="Arbitrum One" readonly/>
       </div>
+      <div>
+        <label for="interval">Auto-rescan interval</label>
+        <select id="interval">
+          <option value="0">Off</option>
+          <option value="30">30s</option>
+          <option value="60" selected>60s</option>
+          <option value="120">120s</option>
+        </select>
+      </div>
       <div style="display:flex;align-items:flex-end;gap:10px">
-        <button id="scanBtn">Scan Opportunities</button>
+        <button id="scanBtn">Scan</button>
+        <button id="stopBtn" class="ghost">Stop</button>
         <div class="status"><div id="spinner" class="spin" style="display:none"></div><span id="status">Idle.</span></div>
       </div>
     </div>
+    <div class="muted" style="margin-top:6px">
+      Net P/L subtracts <strong>0.09%</strong> flash fee & estimated <strong>gas</strong>. Prices are on-chain quotes at your loan size.
+      <span class="pill" id="rpcPill">RPC: —</span>
+      <span class="pill" id="gasPill">Gas: —</span>
+    </div>
   </div>
 
+  <!-- Results -->
   <div class="card" style="margin-top:12px">
+    <div class="controls">
+      <button id="selectProfitable" class="ghost">Select all profitable</button>
+      <button id="clearSelection" class="ghost">Clear selection</button>
+      <div class="totals">Selected total: <span id="totalNet">$0.00</span></div>
+    </div>
+
     <table>
       <thead>
         <tr>
+          <th><input type="checkbox" id="masterCheck"/></th>
           <th>Token</th>
           <th>Buy DEX</th>
           <th class="right">Token Out</th>
@@ -75,7 +106,11 @@
       </thead>
       <tbody id="rows"></tbody>
     </table>
-    <div id="log"></div>
+
+    <details>
+      <summary>Details / Logs</summary>
+      <div id="log"></div>
+    </details>
   </div>
 </div>
 
@@ -84,6 +119,7 @@
   const $=id=>document.getElementById(id);
   const log=(msg,cls)=>{ const el=document.createElement('div'); if(cls) el.className=cls; el.textContent=msg; $('log').appendChild(el); $('log').scrollTop=$('log').scrollHeight; };
   const setStatus=(t,spin)=>{ $('status').textContent=t; $('spinner').style.display=spin?'inline-block':'none'; };
+  const fmt=(n,dp=2)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:dp});
 
   /* -------- Provider with fallbacks -------- */
   const RPCS=[
@@ -91,17 +127,18 @@
     "https://arb1.arbitrum.io/rpc",
     "https://1rpc.io/arb",
     "https://arbitrum.llamarpc.com",
-    "https://arb-mainnet.g.alchemy.com/v2/demo", // may rate-limit
     "https://arbitrum.blockpi.network/v1/rpc/public",
     "https://arb-mainnet-public.unifra.io"
   ];
-  let provider=null;
+  let provider=null, rpcHost="—";
   async function initProvider(){
     for(const url of RPCS){
       try{
         const p=new ethers.providers.StaticJsonRpcProvider(url);
         await Promise.race([p.getBlockNumber(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),4000))]);
-        provider=p; log(`RPC OK: ${url}`);
+        provider=p; rpcHost=new URL(url).host;
+        $('rpcPill').textContent='RPC: '+rpcHost;
+        $('rpcPill').style.borderColor='#d1fae5';
         return;
       }catch(e){ log(`RPC failed: ${url} — ${e.message}`,'log-warn'); }
     }
@@ -110,25 +147,33 @@
 
   /* -------- Addresses & ABIs -------- */
   const USDC="0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // 6 decimals
-  // Uniswap v3 QuoterV2 (Arbitrum)
+  const WETH="0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
+  const FLASH_FEE = 0.0009; // 0.09%
+  const GAS_LIMIT = 380000; // conservative: 2 swaps + callback
   const UNI_QV2="0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
   const QV2_ABI=[ "function quoteExactInputSingle(tuple(address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut,uint160,uint32,uint256)" ];
-  // Sushi & Camelot (v2 routers)
   const V2_ROUTER_ABI=[ "function getAmountsOut(uint amountIn,address[] calldata path) external view returns (uint[] memory amounts)" ];
   const SUSHI="0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
   const CAMELOT="0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
   const ERC20_ABI=[ "function decimals() view returns (uint8)", "function symbol() view returns (string)" ];
 
-  // Liquid sample set (expand once rows appear)
+  // Liquid token set (~30)
   const TOKENS={
-    WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-    ARB :"0x912CE59144191C1204E64559FE8253a0e49E6548",
-    USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-    DAI :"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
-    GMX :"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a",
-    RDNT:"0x3082cc23568ea640225c2467653db90e9250aaa0",
-    LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
-    AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196"
+    WETH:WETH, ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548", USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+    DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a",
+    RDNT:"0x3082cc23568ea640225c2467653db90e9250aaa0", LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
+    AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196", MAGiC:"0x539bde0d7dbd336b79148aa742883198bbf60342",
+    GNS:"0x18c11fd286c5ec11c3b683caa813b77f5163a122", BAL:"0x040d1edc9569d4bab2d15287dc5a4f10f56a56b8",
+    CRV:"0x11cdb42b0eb46d95f990bedd4695a6e3fa034978", LDO:"0xFdb794692724153d1488CcdBE0C56c252596735F",
+    FRAX:"0x17fc002b466eec40dae837fc4be5c67993ddbd6f", FXS:"0x9d39a4f69f4d2f4d1f7cff51b4fcee2f4a6e3c7f",
+    UNI:"0x90D1b62f2718F241CE7b07F4f2A3E9C7D7f1b77e", SUSHI:"0x7b5b5d8d3d79042f2ff20c674b3a2af6b0c97c50",
+    PENDLE:"0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8", WBTC:"0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    MIM:"0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a", USDCe:"0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+    GRAIL:"0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8", JOE:"0x371c7ec6d8039ff7933a2aa28eb827ffe1f52f07",
+    HOP:"0xb8901acb165ed027e32754e0ffe830802919727f", RPL:"0xb766039cc6db368759c1e56b79affe831d0cc507",
+    WOO:"0x64048a06f3b3bb6b1e8f21f29c1d5d4f3cba8b9a", SPELL:"0x3E6648C5a70a1502B8c9d3670B66B51aB1b0b8bF",
+    YFI:"0x82e64f49ed5ec1e7df613bd4d9f2da6c2fde7a6a", SNX:"0x7f39c581f595b53c5cb18d4f8c5f05f3fd6b3c5f",
+    APE:"0x5c1b11d8f2f0a57f0b9e8d12c3eb7d95ad9d2456"
   };
 
   const decCache=new Map();
@@ -138,45 +183,54 @@
     decCache.set(addr,d); return d;
   }
 
-  function fmt(n,dp=6){ return Number(n).toLocaleString(undefined,{maximumFractionDigits:dp}); }
+  /* -------- Quote helpers -------- */
+  async function uniQuote(tokenIn, tokenOut, amountIn){
+    const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider);
+    const fees=[500,3000,10000];
+    let best=null;
+    for(const fee of fees){
+      try{
+        const params=[tokenIn, tokenOut, fee, amountIn, 0];
+        const [amtOut]=await q.callStatic.quoteExactInputSingle(params);
+        if(!best || amtOut.gt(best)) best=amtOut;
+      }catch(_){}
+    }
+    return best||null;
+  }
+  async function v2Out(router, path, amountIn){
+    try{
+      const r=await new ethers.Contract(router,V2_ROUTER_ABI,provider).getAmountsOut(amountIn,path);
+      return r[r.length-1];
+    }catch(_){ return null; }
+  }
 
-  async function uniBuy(token, amountIn6){
-    const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider);
-    const fees=[500,3000,10000];
-    let best=null;
-    for(const fee of fees){
-      try{
-        const params=[USDC, token, fee, amountIn6, 0];
-        const [amtOut]=await q.callStatic.quoteExactInputSingle(params);
-        if(!best || amtOut.gt(best.amt)) best={amt:amtOut, fee};
-      }catch(_){}
-    }
-    return best?.amt || null;
+  const DEXES=[
+    { name:'Uniswap V3', buy:(t,amt6)=>uniQuote(USDC,t,amt6), sell:(t,amtToken)=>uniQuote(t,USDC,amtToken) },
+    { name:'SushiSwap',  buy:(t,amt6)=>v2Out(SUSHI,[USDC,t],amt6), sell:(t,amtToken)=>v2Out(SUSHI,[t,USDC],amtToken) },
+    { name:'Camelot',    buy:(t,amt6)=>v2Out(CAMELOT,[USDC,t],amt6), sell:(t,amtToken)=>v2Out(CAMELOT,[t,USDC],amtToken) },
+  ];
+
+  /* -------- Gas & FX (ETH→USDC) -------- */
+  let lastGasUSDC = 0;
+  async function refreshGas(amt6){
+    // gas price in wei
+    const gp = await provider.getGasPrice();
+    // estimate ETH→USDC rate using Uni v3
+    const oneEth = ethers.utils.parseEther("1");
+    const usdcForEth = await uniQuote(WETH, USDC, oneEth); // tokenIn=WETH, out=USDC
+    const ethToUsdc = usdcForEth ? Number(ethers.utils.formatUnits(usdcForEth,6)) : 0;
+    const gasETH = Number(ethers.utils.formatEther(gp.mul(GAS_LIMIT)));
+    const gasUSDC = ethToUsdc ? gasETH * ethToUsdc : 0;
+    lastGasUSDC = gasUSDC;
+    $('gasPill').textContent = `Gas: ${fmt(gasUSDC,2)} USDC (gp ${fmt(Number(ethers.utils.formatUnits(gp,'gwei')),1)} gwei, limit ${GAS_LIMIT.toLocaleString()})`;
+    return gasUSDC;
   }
-  async function uniSell(token, amountToken){
-    const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider);
-    const fees=[500,3000,10000];
-    let best=null;
-    for(const fee of fees){
-      try{
-        const params=[token, USDC, fee, amountToken, 0];
-        const [amtOut]=await q.callStatic.quoteExactInputSingle(params);
-        if(!best || amtOut.gt(best.amt)) best={amt:amtOut, fee};
-      }catch(_){}
-    }
-    return best?.amt || null;
-  }
-  async function v2Buy(routerAddr, token, amountIn6){
-    try{
-      const r=await new ethers.Contract(routerAddr,V2_ROUTER_ABI,provider).getAmountsOut(amountIn6,[USDC,token]);
-      return r[1];
-    }catch(_){ return null; }
-  }
-  async function v2Sell(routerAddr, token, amountToken){
-    try{
-      const r=await new ethers.Contract(routerAddr,V2_ROUTER_ABI,provider).getAmountsOut(amountToken,[token,USDC]);
-      return r[1];
-    }catch(_){ return null; }
+
+  /* -------- Scan -------- */
+  let timer=null;
+  function sumSelected(){
+    let s=0; document.querySelectorAll('.routeCheck:checked').forEach(cb=>{ s+=Number(cb.dataset.net||0); });
+    $('totalNet').textContent = (s>=0?'+':'') + '$' + fmt(s,2);
   }
 
   async function scan(){
@@ -189,35 +243,43 @@
     setStatus('Connecting RPC…',true);
     if(!provider){ try{ await initProvider(); }catch(e){ setStatus('RPC error. See log.',false); log(e.message,'log-err'); return; } }
 
-    setStatus('Quoting on-chain…',true);
+    setStatus('Fetching gas & FX…',true);
+    await refreshGas(amtIn6).catch(e=>log('Gas fetch failed: '+e.message,'log-warn'));
 
-    const DEXES=[
-      {name:'Uniswap V3', buy:(t)=>uniBuy(t,amtIn6), sell:(tAmt,t)=>uniSell(t,tAmt)},
-      {name:'SushiSwap',  buy:(t)=>v2Buy(SUSHI,t,amtIn6), sell:(tAmt,t)=>v2Sell(SUSHI,t,tAmt)},
-      {name:'Camelot',    buy:(t)=>v2Buy(CAMELOT,t,amtIn6), sell:(tAmt,t)=>v2Sell(CAMELOT,t,tAmt)}
-    ];
+    setStatus('Quoting on-chain…',true);
+    log(`Loan: ${loan.toLocaleString()} USDC | RPC ${rpcHost}`);
 
     for(const [sym,addr] of Object.entries(TOKENS)){
       setStatus(`Quoting ${sym}…`,true);
 
-      // Gather buy quotes per DEX
-      const buys = await Promise.all(DEXES.map(async d=>({dex:d.name, out:await d.buy(addr)})));
-      const usableBuys = buys.filter(b=>b.out && b.out.gt(0));
-      if(!usableBuys.length){ log(`No buy quotes for ${sym}`,'log-warn'); continue; }
+      // BUY on each DEX
+      const buys=[];
+      for(const d of DEXES){
+        const out = await d.buy(addr, amtIn6);
+        if(out && out.gt(0)) buys.push({dex:d, name:d.name, tokenOut:out});
+      }
+      if(!buys.length){ log(`No BUY quotes for ${sym}`,'log-warn'); continue; }
 
-      // For each buy, try selling on each DEX with same token amount
       let best=null;
-      for(const b of usableBuys){
+      for(const b of buys){
         for(const d of DEXES){
+          if(d.name===b.name) continue; // cross-DEX only
           try{
-            const back = await d.sell(b.out, addr);
+            const back = await d.sell(addr, b.tokenOut);
             if(!back || back.lte(0)) continue;
             const usdcBack = Number(ethers.utils.formatUnits(back,6));
-            const net = usdcBack - loan;
+            const grossNet = usdcBack - loan;
+            const flashFee = loan * FLASH_FEE;
+            const gas = lastGasUSDC || 0;
+            const net = grossNet - flashFee - gas;
+
             if(!best || net > best.net){
-              best={ buyDex:b.dex, sellDex:d.name, tokenOut:b.out, usdcBack:back, net };
+              best={ token: sym, buyDex:b.name, sellDex:d.name, tokenOut:b.tokenOut, usdcBack:back,
+                     grossNet, flashFee, gas, net };
             }
-          }catch(_){}
+          }catch(e){
+            log(`${sym}: ${b.name}→${d.name} error ${e.message}`,'log-warn');
+          }
         }
       }
       if(!best){ log(`No cross-DEX route for ${sym}`,'log-warn'); continue; }
@@ -229,6 +291,7 @@
 
       const tr=document.createElement('tr');
       tr.innerHTML = `
+        <td><input type="checkbox" class="routeCheck" data-net="${best.net.toFixed(6)}"/></td>
         <td>${sym}</td>
         <td>${best.buyDex}</td>
         <td class="right">${fmt(tokenOutDisp,6)}</td>
@@ -241,9 +304,33 @@
     }
 
     setStatus('Scan complete.',false);
+    document.querySelectorAll('.routeCheck').forEach(cb=>cb.addEventListener('change',sumSelected));
+    sumSelected();
   }
 
-  $('scanBtn').addEventListener('click',scan);
+  $('scanBtn').addEventListener('click',()=>{
+    if(timer){ clearInterval(timer); timer=null; }
+    scan();
+    const secs=parseInt($('interval').value,10);
+    if(secs>0){
+      timer=setInterval(scan, secs*1000);
+    }
+  });
+  $('stopBtn').addEventListener('click',()=>{ if(timer){ clearInterval(timer); timer=null; setStatus('Auto-rescan stopped.',false); } });
+  $('selectProfitable').addEventListener('click',()=>{
+    document.querySelectorAll('.routeCheck').forEach(cb=>{
+      const n=Number(cb.dataset.net||0); cb.checked = n>0;
+    });
+    sumSelected();
+  });
+  $('clearSelection').addEventListener('click',()=>{
+    document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=false);
+    sumSelected();
+  });
+  $('masterCheck').addEventListener('change',(e)=>{
+    document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=e.target.checked);
+    sumSelected();
+  });
 })();
 </script>
 </body>

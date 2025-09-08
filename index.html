@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.8.9 — Arbitrum (10k, fast, streaming)</title>
+<title>Crypto Kings TestBed v9.9.0 — Auto-select & Auto-execute (mock)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
   :root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444}
@@ -21,7 +21,7 @@
   input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px}
   button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
   .ghost{background:transparent;color:#111;border:1px solid var(--border)}
-  .status{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px}
+  .status{display:flex;gap:10px;align-items:center;color:#6b7280;font-size:13px}
   .spin{border:3px solid rgba(0,0,0,.08);border-top:3px solid var(--brand);border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
   .pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
@@ -38,12 +38,17 @@
   .log-warn{color:#b45309}
   .log-err{color:#b91c1c}
   .hint{color:var(--muted);font-size:12px}
+  /* overlay */
+  .overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:center;justify-content:center;z-index:50}
+  .panel{width:min(680px,92vw);background:#111827;color:#e5e7eb;border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .rowmini{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin:8px 0;border-bottom:1px dashed rgba(255,255,255,.12);padding-bottom:8px}
+  .small{font-size:12px;color:#9ca3af}
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.8.9</span></div>
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.0</span></div>
     <div id="walletStatus">Wallet: Not connected</div>
   </div>
 </header>
@@ -53,7 +58,7 @@
     <div class="row row-5">
       <div>
         <label for="loan">Loan Amount (USDC)</label>
-        <input id="loan" type="number" value="10000" min="10000" step="1000"/>
+        <input id="loan" type="number" value="10000" min="1000" step="500"/>
       </div>
       <div>
         <label for="threshold">Min Profit to show (USDC)</label>
@@ -71,17 +76,21 @@
       <div>
         <label for="fast">Fast Mode</label>
         <select id="fast">
-          <option value="1" selected>On (direct pools only)</option>
+          <option value="1" selected>On (direct pools)</option>
           <option value="0">Off (include two-hop)</option>
+        </select>
+      </div>
+      <div>
+        <label for="autoExec">Auto-execute profitable</label>
+        <select id="autoExec">
+          <option value="1" selected>On</option>
+          <option value="0">Off</option>
         </select>
       </div>
       <div style="display:flex;align-items:flex-end;gap:8px">
         <button id="scanBtn">Scan</button>
         <button id="stopBtn" class="ghost">Stop</button>
-        <div class="status">
-          <div id="spinner" class="spin" style="display:none"></div>
-          <span id="status">Idle.</span>
-        </div>
+        <div class="status"><div id="spinner" class="spin" style="display:none"></div><span id="status">Idle.</span></div>
       </div>
     </div>
     <div class="hint" style="margin-top:6px">
@@ -125,20 +134,32 @@
   </div>
 </div>
 
+<!-- Execution overlay -->
+<div id="execOverlay" class="overlay">
+  <div class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <h3 style="margin:0">Executing routes (mock)</h3>
+      <button id="closeExec" class="ghost">Close</button>
+    </div>
+    <div id="execBody" style="margin-top:10px"></div>
+    <div class="small" style="margin-top:8px">This is a simulation. No real funds move yet.</div>
+  </div>
+</div>
+
 <script>
 (function(){
   const $=id=>document.getElementById(id);
   const log=(m,c)=>{const d=document.createElement('div'); if(c) d.className=c; d.textContent=m; $('log').appendChild(d); $('log').scrollTop=$('log').scrollHeight;};
   const setStatus=(t,spin)=>{$('status').textContent=t; $('spinner').style.display=spin?'inline-block':'none';};
   const fmt=(n,dp=2)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:dp});
-  const saveCache=(data)=>localStorage.setItem('ck-cache-v989', JSON.stringify({ts:Date.now(), data}));
-  const loadCache=()=>{try{return JSON.parse(localStorage.getItem('ck-cache-v989')||'{}')}catch{return {}}};
+  const saveCache=(data)=>localStorage.setItem('ck-cache-v990', JSON.stringify({ts:Date.now(), data}));
+  const loadCache=()=>{try{return JSON.parse(localStorage.getItem('ck-cache-v990')||'{}')}catch{return {}}};
 
-  /* Health metrics */
-  let hCalls=0, hTimeouts=0, hStart=0;
-  const healthTick=()=>{ const secs=Math.max(1,Math.floor((Date.now()-hStart)/1000)); const cps=(hCalls/secs).toFixed(1); $('healthPill').textContent=`Health: ${cps}/s • ${hTimeouts} timeouts`; };
+  /* Health */
+  let hCalls=0,hTimeouts=0,hStart=0;
+  const healthTick=()=>{ const secs=Math.max(1,Math.floor((Date.now()-hStart)/1000)); $('healthPill').textContent=`Health: ${(hCalls/secs).toFixed(1)}/s • ${hTimeouts} timeouts`; };
 
-  /* Provider with rotation */
+  /* RPC rotation */
   const RPCS=[
     "https://arbitrum-one.publicnode.com",
     "https://arb1.arbitrum.io/rpc",
@@ -156,9 +177,7 @@
     $('rpcPill').textContent='RPC: '+rpcHost; $('rpcPill').style.borderColor='#d1fae5';
   }
   async function initProvider(){
-    for(let i=0;i<RPCS.length;i++){
-      try{ await useRpc(i); return; }catch(e){ log(`RPC failed: ${RPCS[i]} — ${e.message}`,'log-warn'); }
-    }
+    for(let i=0;i<RPCS.length;i++){ try{ await useRpc(i); return; }catch(e){ log(`RPC failed: ${RPCS[i]} — ${e.message}`,'log-warn'); } }
     throw new Error('All RPCs failed');
   }
   async function rotateRpc(){ try{ await useRpc(rpcIdx+1); log('Rotated RPC → '+rpcHost); }catch(e){ log('RPC rotate failed: '+e.message,'log-warn'); } }
@@ -217,10 +236,10 @@
     $('gasPill').textContent=`Gas: ${fmt(lastGasUSDC,2)} USDC (gp ${fmt(Number(ethers.utils.formatUnits(gp,'gwei')),1)} gwei, limit ${GAS_LIMIT.toLocaleString()})`;
   }
 
-  /* Size policy: EXACT 10k (no adaptive) */
-  const SIZE_STEPS=[1.0];       // <<< force your loan size only
-  const THIN_GUARD=0.6;
-  const MAX_CONC=8;             // higher concurrency
+  /* Policy: adaptive sizes & guard */
+  const SIZE_SEQUENCE=[10000,7500,5000,2500,1000]; // in USDC
+  const THIN_GUARD=0.5;
+  const MAX_CONC=8;
 
   async function quoteBestForSize(tokenAddr, sym, sizeUSDC, fast){
     const dxs=dexes(fast);
@@ -247,15 +266,13 @@
 
   async function scanToken(sym, addr, loan, threshold, fast){
     let best=null, reason='no route';
-    for(const step of SIZE_STEPS){
-      const size=loan*step;
+    for(const size of SIZE_SEQUENCE){
+      if(size>loan) continue; // don't exceed user loan cap
       const cand=await quoteBestForSize(addr, sym, size, fast);
       if(cand && !cand.skip){
         best=(best && best.net>cand.net)?best:cand;
         if(cand.net>=threshold) break;
-      } else {
-        reason=cand?.skip || reason;
-      }
+      } else { reason=cand?.skip || reason; }
     }
     if(!best) return { sym, error:reason };
     const tDec=await decimals(addr).catch(()=>18);
@@ -279,7 +296,7 @@
       tb.appendChild(tr); return;
     }
     tr.innerHTML=`
-      <td><input type="checkbox" class="routeCheck" data-net="${r.net.toFixed(6)}" ${r.net>=threshold?'checked':''}/></td>
+      <td><input type="checkbox" class="routeCheck" data-sym="${r.sym}" data-b="${r.buyDex}" data-s="${r.sellDex}" data-size="${r.size}" data-net="${r.net.toFixed(6)}" ${r.net>=threshold&&r.net>0?'checked':''}/></td>
       <td>${r.sym}</td>
       <td>${r.buyDex}</td>
       <td class="right">${fmt(r.tokenOut,6)}</td>
@@ -313,11 +330,10 @@
     const entries=Object.entries(TOKENS);
     setStatus('Quoting on-chain…',true);
     const results=[];
-
     let idx=0, active=0, failures=0;
     return await new Promise(resolve=>{
       const kick=()=>{
-        while(active<MAX_CONC && idx<entries.length){
+        while(active<8 && idx<entries.length){
           const [sym,addr]=entries[idx++]; active++;
           scanToken(sym,addr,loan,threshold,fast)
             .then(r=>{ results.push(r); renderRow(r,threshold); healthTick(); })
@@ -329,6 +345,33 @@
     });
   }
 
+  /* Mock executor */
+  function showOverlay(on){ $('execOverlay').style.display=on?'flex':'none'; }
+  function statusLine(text, ok=null){
+    const row=document.createElement('div'); row.className='rowmini';
+    row.innerHTML=`<div>${text}</div><div>${ok===null?'<div class="spin" style="width:16px;height:16px;border-width:2px"></div>': ok?'<span class="ok">OK</span>':'<span class="bad">Fail</span>'}</div>`;
+    $('execBody').appendChild(row); return row;
+  }
+  async function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+  async function executeSelectedMock(){
+    const picks=[...document.querySelectorAll('.routeCheck:checked')];
+    if(!picks.length){ showOverlay(false); return; }
+    $('execBody').innerHTML=''; showOverlay(true);
+    let total=0;
+    for(const cb of picks){
+      const sym=cb.dataset.sym, buy=cb.dataset.b, sell=cb.dataset.s, size=Number(cb.dataset.size), net=Number(cb.dataset.net);
+      total += net;
+      const a=statusLine(`${sym} • taking flash-loan ${fmt(size,0)} USDC`);
+      await delay(500); a.querySelector('div:last-child').innerHTML='<span class="ok">OK</span>';
+      const b=statusLine(`→ Buy on ${buy}`); await delay(600); b.querySelector('div:last-child').innerHTML='<span class="ok">OK</span>';
+      const c=statusLine(`→ Sell on ${sell}`); await delay(600); c.querySelector('div:last-child').innerHTML='<span class="ok">OK</span>';
+      const d=statusLine(`→ Repay loan + fee (0.09%)`); await delay(400); d.querySelector('div:last-child').innerHTML='<span class="ok">OK</span>';
+      const e=statusLine(`→ Profit sent: ${net>=0?'+':''}$${net.toFixed(2)}`, net>=0); await delay(200);
+    }
+    statusLine(`TOTAL: ${total>=0?'+':''}$${total.toFixed(2)}`, total>=0);
+  }
+  $('closeExec').addEventListener('click',()=>showOverlay(false));
+
   /* Buttons */
   let timer=null;
   $('scanBtn').addEventListener('click', async ()=>{
@@ -336,10 +379,16 @@
     setStatus('Scanning…',true);
     const rows=await scanAllStream();
     setStatus('Scan complete.',false);
-    const good=rows.filter(r=>!r.error);
-    good.sort((a,b)=>b.net-a.net);
     const threshold=parseFloat($('threshold').value||'0');
+    const good=rows.filter(r=>!r.error).sort((a,b)=>b.net-a.net);
     saveCache({ rows:good, meta:{ loan:$('loan').value, threshold, ts:Date.now(), rpc:rpcHost, gas:lastGasUSDC } });
+    // auto-select profitable
+    document.querySelectorAll('.routeCheck').forEach(cb=>{
+      cb.checked = Number(cb.dataset.net||0) >= Math.max(0,threshold);
+    });
+    sumSelected();
+    // auto-execute
+    if($('autoExec').value==='1'){ executeSelectedMock(); }
     const secs=parseInt($('interval').value,10);
     if(secs>0){ timer=setInterval(()=>$('scanBtn').click(), secs*1000); }
   });
@@ -348,7 +397,7 @@
   $('clearSelection').addEventListener('click',()=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=false); sumSelected(); });
   $('masterCheck').addEventListener('change',e=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=e.target.checked); sumSelected(); });
 
-  /* Preload from cache then background scan */
+  /* Preload then background scan */
   document.addEventListener('DOMContentLoaded', async ()=>{
     try{
       const cache=loadCache();
@@ -359,12 +408,8 @@
         $('threshold').value = cache.data.meta?.threshold ?? $('threshold').value;
         renderRows(cache.data.rows, parseFloat($('threshold').value||'0'));
         setStatus('Showing cached… rescanning.',true);
-      } else {
-        $('cachePill').textContent='Cache: empty';
-        setStatus('Ready. Tap Scan.',false);
-      }
+      } else { $('cachePill').textContent='Cache: empty'; setStatus('Ready. Tap Scan.',false); }
     }catch{}
-    // kick a background scan on load
     setTimeout(()=>{ $('scanBtn').click(); }, 250);
   });
 })();

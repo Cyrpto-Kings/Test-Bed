@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.9.3 — Arbitrum</title>
+<title>Crypto Kings TestBed v9.9.3a — Arbitrum</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
   :root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444}
@@ -39,7 +39,7 @@
 <body>
 <header>
   <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.3</span></div>
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.3a</span></div>
     <div id="walletStatus">Arbitrum One • Majors</div>
   </div>
 </header>
@@ -135,7 +135,7 @@
   const log=(m)=>{const d=document.createElement('div'); d.textContent=m; $('log').appendChild(d); $('log').scrollTop=$('log').scrollHeight;};
   const setStatus=(t,spin)=>{$('status').textContent=t; $('spinner').style.display=spin?'inline-block':'none';};
 
-  /* ---------- Robust RPC via FallbackProvider ---------- */
+  /* ---------- Robust RPC (fixed) ---------- */
   const RPCS=[
     "https://arbitrum-one.publicnode.com",
     "https://1rpc.io/arb",
@@ -143,9 +143,20 @@
     "https://arb1.arbitrum.io/rpc",
     "https://arbitrum.blockpi.network/v1/rpc/public"
   ];
-  const backends=RPCS.map((url,i)=>({ provider:new ethers.providers.JsonRpcProvider(url), priority:i+1, stallTimeout:900, weight:1 }));
-  const provider=new ethers.providers.FallbackProvider(backends,{ quorum:1, polling:false });
-  $('rpcPill').textContent='RPC: multi (fallback)';
+  const CHAIN={ name:"arbitrum", chainId:42161 };
+  const makeProv=(url)=> new ethers.providers.StaticJsonRpcProvider({url, timeout:8000}, CHAIN);
+  const backends = RPCS.map((url,i)=>({ provider: makeProv(url), priority:i+1, stallTimeout:900, weight:1 }));
+  const provider = new ethers.providers.FallbackProvider(backends, { quorum:1, polling:false });
+
+  async function warmupProvider(){
+    try{
+      const n = await provider.getBlockNumber(); // forces network ready
+      $('rpcPill').textContent = `RPC: Arbitrum #${n}`;
+    }catch(e){
+      $('rpcPill').textContent = `RPC error`;
+      log('RPC warmup failed: '+e.message);
+    }
+  }
 
   /* ---------- Addresses / ABIs ---------- */
   const WETH ="0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
@@ -184,16 +195,35 @@
   async function v2Best(router,paths,amt,ms){ let best=null; for(const p of paths){ const out=await v2Out(router,p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
   const bestBig=(a,b)=> (a&&b) ? (a.gt(b)?a:b) : (a||b||null);
 
-  /* ---------- Gas & fee ---------- */
+  /* ---------- Gas & fee (with ETH/USD fallback) ---------- */
   const FLASH_FEE=0.0009, GAS_LIMIT=380000;
   let gasUSDC=0;
+
+  async function fetchEthUsdFallback(){
+    try{
+      const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',{cache:'no-store'});
+      if(!r.ok) return null; const j=await r.json(); return Number(j?.ethereum?.usd)||null;
+    }catch(_){ return null; }
+  }
+
   async function refreshGas(){
-    const gp=await provider.getGasPrice();
-    const out=await uniBest(WETH,USDC, ethers.utils.parseEther("1"), 1500);
-    const ethToUsdc = out ? Number(ethers.utils.formatUnits(out,6)) : 0;
-    const gasETH = Number(ethers.utils.formatEther(gp.mul(GAS_LIMIT)));
-    gasUSDC = ethToUsdc ? gasETH * ethToUsdc : 0.4; // fallback ~40c
-    $('gasPill').textContent = `Gas ≈ ${fmt(gasUSDC,2)} USDC (gp ${fmt(Number(ethers.utils.formatUnits(gp,'gwei')),1)} gwei)`;
+    try{
+      const gp=await provider.getGasPrice();
+      // try on-chain ETH->USDC via Uni; else Coingecko
+      let ethUsd=null;
+      try{
+        const out=await uniBest(WETH,USDC, ethers.utils.parseEther("1"), 1500);
+        if(out) ethUsd = Number(ethers.utils.formatUnits(out,6));
+      }catch(_){}
+      if(ethUsd==null){ ethUsd = await fetchEthUsdFallback(); }
+      const gasETH = Number(ethers.utils.formatEther(gp.mul(GAS_LIMIT)));
+      gasUSDC = (ethUsd? gasETH*ethUsd : 0.4);
+      $('gasPill').textContent = `Gas ≈ ${fmt(gasUSDC,2)} USDC (gp ${fmt(Number(ethers.utils.formatUnits(gp,'gwei')),1)} gwei)`;
+    }catch(e){
+      gasUSDC = 0.4; // safe default
+      $('gasPill').textContent = `Gas ≈ ${fmt(gasUSDC,2)} USDC (fallback)`;
+      log('Gas fetch failed: '+e.message);
+    }
   }
 
   const SIZE_SEQ=[1000,2500,5000,10000];
@@ -206,19 +236,19 @@
         buy: async(t,amt)=>await retry(async(ms)=>bestBig(
           bestBig(await uniBest(USDC,t,amt,ms), await uniBest(USDCe,t,amt,ms)),
           await uniViaMids(USDC,mids,t,amt,ms)
-        ), 1400),
+        ), 1600),
         sell:async(t,amt)=>await retry(async(ms)=>bestBig(
           bestBig(await uniBest(t,USDC,amt,ms), await uniBest(t,USDCe,amt,ms)),
           await uniViaMids(t,mids,USDC,amt,ms)
-        ), 1400)
+        ), 1600)
       },
       { name:'SushiSwap',
-        buy: async(t,amt)=>await retry(async(ms)=>v2Best(SUSHI, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t],[USDCe,WETH,t],[USDCe,USDT,t]], amt,ms), 1200),
-        sell:async(t,amt)=>await retry(async(ms)=>v2Best(SUSHI, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC],[t,WETH,USDCe],[t,USDT,USDCe]], amt,ms), 1200)
+        buy: async(t,amt)=>await retry(async(ms)=>v2Best(SUSHI, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t],[USDCe,WETH,t],[USDCe,USDT,t]], amt,ms), 1400),
+        sell:async(t,amt)=>await retry(async(ms)=>v2Best(SUSHI, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC],[t,WETH,USDCe],[t,USDT,USDCe]], amt,ms), 1400)
       },
       { name:'Camelot',
-        buy: async(t,amt)=>await retry(async(ms)=>v2Best(CAMELOT, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t],[USDCe,WETH,t],[USDCe,USDT,t]], amt,ms), 1200),
-        sell:async(t,amt)=>await retry(async(ms)=>v2Best(CAMELOT, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC],[t,WETH,USDCe],[t,USDT,USDCe]], amt,ms), 1200)
+        buy: async(t,amt)=>await retry(async(ms)=>v2Best(CAMELOT, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t],[USDCe,WETH,t],[USDCe,USDT,t]], amt,ms), 1400),
+        sell:async(t,amt)=>await retry(async(ms)=>v2Best(CAMELOT, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC],[t,WETH,USDCe],[t,USDT,USDCe]], amt,ms), 1400)
       }
     ];
   }
@@ -238,7 +268,7 @@
         if(!s.back || !s.back.gt(0)) continue;
         const usdcBack = Number(ethers.utils.formatUnits(s.back,6));
         if(usdcBack < THIN*sizeUSDC){ reason=`THIN @ ${sizeUSDC}`; continue; }
-        const gross=usdcBack-sizeUSDC, fee=sizeUSDC*FLASH_FEE, net=gross-fee-gasUSDC;
+        const gross=usdcBack-sizeUSDC, fee=sizeUSDC*0.0009, net=gross-fee-gasUSDC;
         if(!best || net>best.net){ best={ buyDex:b.d.name, sellDex:s.name, tokenOut:b.out, usdcBack:s.back, size:sizeUSDC, net, usdcBackNum:usdcBack }; }
       }
     }
@@ -303,8 +333,11 @@
     if(!(loan>=500)) return alert('Enter a loan ≥ 500');
 
     $('rows').innerHTML=''; $('log').innerHTML='';
+    setStatus('Connecting RPC…',true);
+    await warmupProvider();
+
     setStatus('Fetching gas…',true);
-    try{ await refreshGas(); }catch(e){ log('Gas fetch failed: '+e.message); }
+    await refreshGas();
 
     setStatus('Quoting (majors)…',true);
     const entries=Object.entries(TOKENS);
@@ -358,8 +391,8 @@
   }
   $('closeExec').addEventListener('click',()=>showOverlay(false));
 
-  // Quick auto-scan on load
-  document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>$('scanBtn').click(), 200); });
+  // Kick off once
+  document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>$('scanBtn').click(), 250); });
 })();
 </script>
 </body>

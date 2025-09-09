@@ -3,48 +3,42 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.9.3c — Arbitrum</title>
+<title>Crypto Kings TestBed v9.9.3d — Arbitrum</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
-  :root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444}
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  header{background:#111;color:#fff}
-  .bar{max-width:1100px;margin:0 auto;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
-  .brand{display:flex;gap:10px;align-items:center}
-  .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
-  .wrap{max-width:1100px;margin:0 auto;padding:16px 12px 80px}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 6px 16px rgba(0,0,0,.04)}
-  .row{display:grid;grid-template-columns:1fr;gap:8px}
-  @media (min-width:760px){ .row-5{grid-template-columns:repeat(5,1fr)} }
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px}
-  button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
-  .ghost{background:transparent;color:#111;border:1px solid var(--border)}
-  .status{display:flex;gap:10px;align-items:center;color:#6b7280;font-size:13px}
-  .spin{border:3px solid rgba(0,0,0,.08);border-top:3px solid var(--brand);border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite}
-  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-  .pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
-  .table-wrap{overflow-x:auto;border-radius:12px}
-  table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
-  th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
-  th{background:#fafafa;position:sticky;top:0}
-  .right{text-align:right}.ok{color:var(--ok)}.bad{color:var(--bad)}.hint{color:#6b7280;font-size:12px}
-  #log{margin-top:10px;font-size:12px;color:#374151;max-height:260px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
-  .overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:center;justify-content:center;z-index:50}
-  .panel{width:min(680px,92vw);background:#111827;color:#e5e7eb;border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
-  .rowmini{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin:8px 0;border-bottom:1px dashed rgba(255,255,255,.12);padding-bottom:8px}
-  .small{font-size:12px;color:#9ca3af}
+:root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
+header{background:#111;color:#fff}.bar{max-width:1100px;margin:0 auto;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:10px;align-items:center}.logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
+.wrap{max-width:1100px;margin:0 auto;padding:16px 12px 80px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 6px 16px rgba(0,0,0,.04)}
+.row{display:grid;grid-template-columns:1fr;gap:8px}@media(min-width:760px){.row-5{grid-template-columns:repeat(5,1fr)}}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px}
+button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+.ghost{background:transparent;color:#111;border:1px solid var(--border)}
+.status{display:flex;gap:10px;align-items:center;color:#6b7280;font-size:13px}
+.spin{border:3px solid rgba(0,0,0,.08);border-top:3px solid var(--brand);border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
+.table-wrap{overflow-x:auto;border-radius:12px}
+table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
+th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
+th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:var(--ok)}.bad{color:var(--bad)}.hint{color:#6b7280;font-size:12px}
+#log{margin-top:10px;font-size:12px;color:#374151;max-height:260px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
+.notice{background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;border-radius:12px;padding:10px;margin:10px 0;white-space:pre-wrap}
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.3c</span></div>
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.3d</span></div>
     <div id="walletStatus">Arbitrum One • Majors</div>
   </div>
 </header>
 
 <div class="wrap">
+  <div id="notices"></div>
+
   <div class="card">
     <div class="row row-5">
       <div>
@@ -74,7 +68,7 @@
       <div style="display:flex;align-items:flex-end;gap:8px">
         <button id="scanBtn">Scan</button>
         <button id="stopBtn" class="ghost">Stop</button>
-        <div class="status"><div id="spinner" class="spin" style="display:none"></div><span id="status">Idle.</span></div>
+        <div class="status"><div id="spinner" class="spin" style="display:none"></div><span id="status">Booting…</span></div>
       </div>
     </div>
     <div class="hint" style="margin-top:6px">
@@ -116,28 +110,26 @@
   </div>
 </div>
 
-<!-- Execution overlay (mock) -->
-<div id="execOverlay" class="overlay">
-  <div class="panel">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-      <h3 style="margin:0">Executing routes (mock)</h3>
-      <button id="closeExec" class="ghost">Close</button>
-    </div>
-    <div id="execBody" style="margin-top:10px"></div>
-    <div class="small" style="margin-top:8px">Simulation only — no funds move.</div>
-  </div>
-</div>
-
 <script>
 (function(){
   const $=id=>document.getElementById(id);
   const fmt=(n,dp=2)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:dp});
   const log=(m)=>{const d=document.createElement('div'); d.textContent=m; $('log').appendChild(d); $('log').scrollTop=$('log').scrollHeight;};
+  const notice=(m)=>{const n=document.createElement('div'); n.className='notice'; n.textContent='App notice\\n'+m; $('notices').prepend(n);};
   const setStatus=(t,spin)=>{$('status').textContent=t; $('spinner').style.display=spin?'inline-block':'none';};
 
-  /* ---------- RPC: use your own keys for speed ---------- */
+  window.addEventListener('error', e=> notice(e.message+'\n'+(e.filename||'')+' | '+(e.lineno||0)+':'+(e.colno||0)));
+
+  function boot(){
+    try{
+      if(typeof ethers==='undefined'){ notice('ethers not loaded — CDN blocked?'); $('status').textContent='Script error.'; return; }
+      $('status').textContent='Ready.';
+      bindUI();
+    }catch(err){ notice(err.message); }
+  }
+
+  /* --------- RPC & provider --------- */
   const RPCS=[
-    // REPLACE THESE WITH YOUR ALCHEMY / QUICKNODE HTTPS URLs FOR RELIABILITY:
     "https://arbitrum-one.publicnode.com",
     "https://1rpc.io/arb",
     "https://arbitrum.llamarpc.com",
@@ -145,183 +137,122 @@
     "https://arbitrum.blockpi.network/v1/rpc/public"
   ];
   const CHAIN={ name:"arbitrum", chainId:42161 };
-
-  const makeProv=(url)=> new ethers.providers.StaticJsonRpcProvider({url, timeout:12000}, CHAIN);
-  const backends = RPCS.map((url,i)=>({ provider: makeProv(url), priority:i+1, stallTimeout:1200, weight:1 }));
-  const provider = new ethers.providers.FallbackProvider(backends, { quorum:1, polling:false });
-
+  let provider;
+  function buildProvider(){
+    const backends = RPCS.map((url,i)=>({ provider: new ethers.providers.StaticJsonRpcProvider({url, timeout:15000}, CHAIN), priority:i+1, stallTimeout:1800, weight:1 }));
+    provider = new ethers.providers.FallbackProvider(backends,{quorum:1,polling:false});
+  }
   async function warmupProvider(){
     try{
-      // race: detectNetwork OR blockNumber — whichever wins first
-      const networkP=provider.detectNetwork();
-      const blockP=provider.getBlockNumber();
-      const res = await Promise.race([networkP, blockP]);
-      const suffix = typeof res === 'number' ? `#${res}` : `id ${res.chainId}`;
-      $('rpcPill').textContent = `RPC OK • ${suffix}`;
+      const res = await Promise.race([provider.detectNetwork(), provider.getBlockNumber()]);
+      const tag = (typeof res==='number') ? '#'+res : 'id '+res.chainId;
+      $('rpcPill').textContent='RPC OK • '+tag;
+      log('RPC warmup OK: '+tag);
       return true;
     }catch(e){
-      $('rpcPill').textContent = `RPC error`;
+      $('rpcPill').textContent='RPC error';
       log('RPC warmup failed: '+e.message);
       return false;
     }
   }
 
-  /* ---------- Addresses / ABIs ---------- */
-  const WETH ="0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
-  const USDC ="0xaf88d065e77c8C2239327C5EDb3A432268e5831";
+  /* --------- Minimal quoting (same core as before, tighter timeouts) --------- */
+  const WETH="0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
+  const USDC="0xaf88d065e77c8C2239327C5EDb3A432268e5831";
   const USDCe="0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
-  const USDT ="0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9";
-  const TOKENS={
-    WETH: WETH,
-    USDT: USDT,
-    DAI : "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
-    ARB : "0x912CE59144191C1204E64559FE8253a0e49E6548",
-    LINK: "0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
-    GMX : "0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a"
-  };
-
-  const UNI_QV2="0x61fFE014bA17989E743c5F6cB21bF9697530B21e"; // Uniswap v3 QuoterV2
-  const QV2_ABI=[ "function quoteExactInput(bytes path,uint256 amountIn) external returns (uint256,uint160,uint32,uint256)" ];
+  const USDT="0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9";
+  const TOKENS={ WETH, USDT, DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548", LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4", GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a" };
+  const ERC20_ABI=[ "function decimals() view returns (uint8)" ];
   const V2_ABI=[ "function getAmountsOut(uint amountIn,address[] calldata path) external view returns (uint[] memory)" ];
+  const UNI_QV2="0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
+  const QV2_ABI=[ "function quoteExactInput(bytes path,uint256 amountIn) external returns (uint256,uint160,uint32,uint256)" ];
   const SUSHI="0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
   const CAMELOT="0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
-  const ERC20_ABI=[ "function decimals() view returns (uint8)" ];
-
+  const FEES=[500,3000,10000];
   const decCache=new Map();
   async function decimals(addr){ if(decCache.has(addr)) return decCache.get(addr); const d=await new ethers.Contract(addr,ERC20_ABI,provider).decimals(); decCache.set(addr,d); return d; }
-
-  /* ---------- Helpers ---------- */
-  const FEES=[500,3000,10000];
   function packPath(hops){ const types=[],values=[]; for(let i=0;i<hops.length;i++){ if(i%2===0){types.push('address');values.push(hops[i]);} else {types.push('uint24');values.push(hops[i]);} } return ethers.utils.solidityPack(types,values); }
   function withTimeout(p,ms){ return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]); }
-  async function retry(fn,ms){ try{ return await fn(ms); }catch(_){ try{ return await fn(ms);}catch(e){ log('retry failed: '+e.message); return null; } } }
-
-  async function uniExactIn(path,amt,ms){ try{ const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider); const [out]=await withTimeout(q.callStatic.quoteExactInput(path,amt),ms); return out; }catch(e){ log('uniExactIn: '+e.message); return null; } }
+  async function uniExactIn(path,amt,ms){ try{ const q=new ethers.Contract(UNI_QV2,QV2_ABI,provider); const [out]=await withTimeout(q.callStatic.quoteExactInput(path,amt),ms); return out; }catch(e){ log('uni quote: '+e.message); return null; } }
   async function uniBest(a,b,amt,ms){ let best=null; for(const f of FEES){ const p=packPath([a,f,b]); const out=await uniExactIn(p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
-  async function uniViaMids(a,mids,b,amt,ms){ let best=null; for(const m of mids){ for(const f1 of [500,3000]) for(const f2 of [500,3000]){ const p=packPath([a,f1,m,f2,b]); const out=await uniExactIn(p,amt,ms); if(out && (!best || out.gt(best))) best=out; } } return best; }
-  async function v2Out(router,path,amt,ms){ try{ const r=await withTimeout(new ethers.Contract(router,V2_ABI,provider).getAmountsOut(amt,path),ms); return r[r.length-1]; } catch(e){ log('v2Out: '+e.message); return null; } }
+  async function v2Out(router,path,amt,ms){ try{ const r=await withTimeout(new ethers.Contract(router,V2_ABI,provider).getAmountsOut(amt,path),ms); return r[r.length-1]; } catch(e){ log('v2 quote: '+e.message); return null; } }
   async function v2Best(router,paths,amt,ms){ let best=null; for(const p of paths){ const out=await v2Out(router,p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
   const bestBig=(a,b)=> (a&&b) ? (a.gt(b)?a:b) : (a||b||null);
 
-  /* ---------- Gas & fee ---------- */
-  const FLASH_FEE=0.0009, GAS_LIMIT=380000;
-  let gasUSDC=0;
-
+  let gasUSDC=0; const GAS_LIMIT=380000;
   async function fetchEthUsdFallback(){
-    try{
-      const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',{cache:'no-store'});
-      if(!r.ok) return null; const j=await r.json(); return Number(j?.ethereum?.usd)||null;
-    }catch(_){ return null; }
+    try{ const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',{cache:'no-store'}); if(!r.ok) return null; const j=await r.json(); return Number(j?.ethereum?.usd)||null; }catch(_){ return null; }
   }
-
   async function refreshGas(){
     try{
       const gp=await provider.getGasPrice();
       let ethUsd=null;
       try{
-        const out=await uniBest(WETH,USDC, ethers.utils.parseEther("1"), 2200);
+        const out=await uniBest(WETH,USDC, ethers.utils.parseEther("1"), 2500);
         if(out) ethUsd = Number(ethers.utils.formatUnits(out,6));
       }catch(_){}
-      if(ethUsd==null){ ethUsd = await fetchEthUsdFallback(); }
+      if(ethUsd==null) ethUsd = await fetchEthUsdFallback();
       const gasETH = Number(ethers.utils.formatEther(gp.mul(GAS_LIMIT)));
       gasUSDC = (ethUsd? gasETH*ethUsd : 0.5);
-      $('gasPill').textContent = `Gas ≈ ${fmt(gasUSDC,2)} USDC (gp ${fmt(Number(ethers.utils.formatUnits(gp,'gwei')),1)} gwei)`;
-    }catch(e){
-      gasUSDC = 0.5;
-      $('gasPill').textContent = `Gas ≈ ${fmt(gasUSDC,2)} USDC (fallback)`;
-      log('Gas fetch failed: '+e.message);
-    }
+      $('gasPill').textContent = `Gas ≈ ${fmt(gasUSDC,2)} USDC`;
+      log('Gas OK: ~'+gasUSDC.toFixed(2)+' USDC');
+    }catch(e){ gasUSDC=0.5; $('gasPill').textContent='Gas: fallback'; log('Gas failed: '+e.message); }
   }
 
-  const SIZE_SEQ=[1000,2500,5000,10000];
-  const THIN=0.40;
-
+  const SIZE_SEQ=[1000,2500,5000,10000]; const THIN=0.40;
   function dexes(){
     const mids=[WETH,USDT];
     return [
       { name:'Uniswap V3',
-        buy: async(t,amt)=>await retry(async(ms)=>bestBig(
-          bestBig(await uniBest(USDC,t,amt,ms), await uniBest(USDCe,t,amt,ms)),
-          await uniViaMids(USDC,mids,t,amt,ms)
-        ), 2400),
-        sell:async(t,amt)=>await retry(async(ms)=>bestBig(
-          bestBig(await uniBest(t,USDC,amt,ms), await uniBest(t,USDCe,amt,ms)),
-          await uniViaMids(t,mids,USDC,amt,ms)
-        ), 2400)
+        buy: async(t,amt)=>bestBig(await uniBest(USDC,t,amt,2600), await uniBest(USDCe,t,amt,2600)),
+        sell:async(t,amt)=>bestBig(await uniBest(t,USDC,amt,2600), await uniBest(t,USDCe,amt,2600))
       },
       { name:'SushiSwap',
-        buy: async(t,amt)=>await retry(async(ms)=>v2Best(SUSHI, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t],[USDCe,WETH,t],[USDCe,USDT,t]], amt,ms), 2200),
-        sell:async(t,amt)=>await retry(async(ms)=>v2Best(SUSHI, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC],[t,WETH,USDCe],[t,USDT,USDCe]], amt,ms), 2200)
+        buy: async(t,amt)=>v2Best(SUSHI, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t]], amt,2400),
+        sell:async(t,amt)=>v2Best(SUSHI, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC]], amt,2400)
       },
       { name:'Camelot',
-        buy: async(t,amt)=>await retry(async(ms)=>v2Best(CAMELOT, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t],[USDCe,WETH,t],[USDCe,USDT,t]], amt,ms), 2200),
-        sell:async(t,amt)=>await retry(async(ms)=>v2Best(CAMELOT, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC],[t,WETH,USDCe],[t,USDT,USDCe]], amt,ms), 2200)
+        buy: async(t,amt)=>v2Best(CAMELOT, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t]], amt,2400),
+        sell:async(t,amt)=>v2Best(CAMELOT, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC]], amt,2400)
       }
     ];
   }
 
-  async function quoteBest(tokenAddr, sym, sizeUSDC){
-    const amtIn = ethers.utils.parseUnits(String(sizeUSDC),6);
-    const dxs = dexes();
-
-    const buys = await Promise.all(dxs.map(async d=>({d,out:await d.buy(tokenAddr, amtIn)})));
-    const goodBuys = buys.filter(b=>b.out && b.out.gt(0));
-    if(!goodBuys.length){ log(`${sym}: BUY_FAIL @ ${sizeUSDC}`); return { skip:`BUY_FAIL @ ${sizeUSDC}` }; }
-
-    let best=null, reason='SELL_FAIL';
-    for(const b of goodBuys){
-      const sells = await Promise.all(dxs.filter(x=>x.name!==b.d.name).map(async x=>({name:x.name, back:await x.sell(tokenAddr, b.out)})));
-      for(const s of sells){
-        if(!s.back || !s.back.gt(0)) continue;
-        const usdcBack = Number(ethers.utils.formatUnits(s.back,6));
-        if(usdcBack < THIN*sizeUSDC){ reason=`THIN @ ${sizeUSDC}`; continue; }
-        const gross=usdcBack-sizeUSDC, fee=sizeUSDC*0.0009, net=gross-fee-gasUSDC;
-        if(!best || net>best.net){ best={ buyDex:b.d.name, sellDex:s.name, tokenOut:b.out, usdcBack:s.back, size:sizeUSDC, net, usdcBackNum:usdcBack }; }
-      }
-    }
-    if(!best){ log(`${sym}: ${reason}`); return { skip:reason }; }
-    log(`${sym}: ${best.buyDex} -> ${best.sellDex} back ${best.usdcBackNum.toFixed(2)} (net ${best.net.toFixed(2)})`);
-    return best;
-  }
-
   async function scanToken(sym, addr, maxSize, threshold){
-    const tDec=await decimals(addr).catch(()=>18);
-    let best=null; let lastReason='no route';
-    for(const size of SIZE_SEQ){
-      if(size>maxSize) continue;
-      const r=await quoteBest(addr, sym, size);
-      if(r && !r.skip){
-        best = (best && best.net>r.net) ? best : r;
-        if(r.net>=threshold) break;
-      } else {
-        lastReason = r?.skip || lastReason;
+    try{
+      const tDec=await decimals(addr).catch(()=>18);
+      let best=null, reason='no route';
+      for(const size of SIZE_SEQ){
+        if(size>maxSize) continue;
+        const amtIn = ethers.utils.parseUnits(String(size),6);
+        const dxs = dexes();
+        const buys = await Promise.all(dxs.map(async d=>({d,out:await d.buy(addr, amtIn)})));
+        const goodBuys = buys.filter(b=>b.out && b.out.gt(0));
+        if(!goodBuys.length){ reason='BUY_FAIL @ '+size; continue; }
+        for(const b of goodBuys){
+          const sells = await Promise.all(dxs.filter(x=>x.name!==b.d.name).map(async x=>({name:x.name, back:await x.sell(addr, b.out)})));
+          for(const s of sells){
+            if(!s.back || !s.back.gt(0)) continue;
+            const backNum = Number(ethers.utils.formatUnits(s.back,6));
+            if(backNum < THIN*size){ reason='THIN @ '+size; continue; }
+            const net = (backNum-size) - size*0.0009 - gasUSDC;
+            if(!best || net>best.net){ best={ buyDex:b.d.name, sellDex:s.name, tokenOut:Number(ethers.utils.formatUnits(b.out,tDec)), back:backNum, size, net }; }
+          }
+        }
+        if(best && best.net>=threshold) break;
       }
-    }
-    if(!best) return { sym, error:lastReason };
-    return {
-      sym,
-      buyDex: best.buyDex,
-      sellDex: best.sellDex,
-      tokenOut: Number(ethers.utils.formatUnits(best.tokenOut, tDec)),
-      usdcBack: best.usdcBackNum,
-      spreadPct: ((best.usdcBackNum - best.size)/best.size)*100,
-      net: best.net,
-      size: best.size
-    };
+      if(!best) return { sym, error:reason };
+      return { sym, buyDex:best.buyDex, sellDex:best.sellDex, tokenOut:best.tokenOut, usdcBack:best.back, spreadPct:((best.back-best.size)/best.size)*100, net:best.net, size:best.size };
+    }catch(e){ return { sym, error:e.message }; }
   }
 
   function renderRow(r, threshold){
     const tb=$('rows'); const tr=document.createElement('tr');
-    if(r.error){
-      tr.innerHTML=`<td></td><td>${r.sym}</td><td colspan="7" class="hint">Skipped: ${r.error}</td>`;
-      tb.appendChild(tr); return;
-    }
+    if(r.error){ tr.innerHTML=`<td></td><td>${r.sym}</td><td colspan="7" class="hint">Skipped: ${r.error}</td>`; tb.appendChild(tr); return; }
     tr.innerHTML=`
-      <td><input type="checkbox" class="routeCheck" data-sym="${r.sym}" data-b="${r.buyDex}" data-s="${r.sellDex}" data-size="${r.size}" data-net="${r.net.toFixed(6)}" ${r.net>=threshold&&r.net>0?'checked':''}/></td>
-      <td>${r.sym}</td>
-      <td>${r.buyDex}</td>
-      <td class="right">${fmt(r.tokenOut,6)}</td>
-      <td>${r.sellDex}</td>
+      <td><input type="checkbox" class="routeCheck" data-net="${r.net.toFixed(6)}" ${r.net>=threshold&&r.net>0?'checked':''}/></td>
+      <td>${r.sym}</td><td>${r.buyDex}</td>
+      <td class="right">${fmt(r.tokenOut,6)}</td><td>${r.sellDex}</td>
       <td class="right">${fmt(r.usdcBack,2)}</td>
       <td class="right">${r.spreadPct.toFixed(2)}%</td>
       <td class="right ${r.net>0?'ok':'bad'}">${r.net.toFixed(2)}</td>
@@ -333,7 +264,8 @@
   function sumSelected(){ let s=0; document.querySelectorAll('.routeCheck:checked').forEach(cb=>s+=Number(cb.dataset.net||0)); $('totalNet').textContent=(s>=0?'+':'')+'$'+fmt(s,2); }
   function renderRows(rows, thr){ $('rows').innerHTML=''; rows.forEach(r=>renderRow(r,thr)); }
 
-  let timer=null;
+  let timer=null, booted=false;
+
   async function scanAll(){
     const loan = parseFloat($('loan').value||'0');
     const thr  = parseFloat($('threshold').value||'0');
@@ -341,63 +273,37 @@
 
     $('rows').innerHTML=''; $('log').innerHTML='';
     setStatus('Connecting RPC…',true);
-    const ok = await warmupProvider();
-    if(!ok){ setStatus('RPC unhappy — still trying quotes…',true); }
+    if(!booted){ buildProvider(); booted=true; }
+    await warmupProvider();
 
     setStatus('Fetching gas…',true);
     await refreshGas();
 
     setStatus('Quoting (majors)…',true);
-    const entries=Object.entries(TOKENS);
-    for(const [sym,addr] of entries){
-      try{
-        const r=await scanToken(sym,addr,loan,thr);
-        renderRow(r,thr);
-      }catch(e){ log(`${sym}: error ${e.message}`); }
+    for(const [sym,addr] of Object.entries(TOKENS)){
+      log('Scanning '+sym+' …');
+      const r=await scanToken(sym,addr,loan,thr);
+      renderRow(r,thr);
     }
     setStatus('Done.',false);
+  }
 
-    // auto-select ≥ threshold
-    document.querySelectorAll('.routeCheck').forEach(cb=>{
-      cb.checked = Number(cb.dataset.net||0) >= Math.max(0,thr);
+  function bindUI(){
+    $('scanBtn').addEventListener('click', async ()=>{
+      try{
+        if(timer){ clearInterval(timer); timer=null; }
+        await scanAll();
+        const secs=parseInt($('interval').value,10);
+        if(secs>0){ timer=setInterval(scanAll, secs*1000); }
+      }catch(e){ notice('Scan error: '+e.message); setStatus('Error.',false); }
     });
-    sumSelected();
-
-    if($('autoExec').value==='1'){ executeSelectedMock(); }
+    $('stopBtn').addEventListener('click',()=>{ if(timer){ clearInterval(timer); timer=null; setStatus('Auto-rescan stopped.',false);} });
+    $('selectProfitable').addEventListener('click',()=>{ const thr=parseFloat($('threshold').value||'0'); document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=(Number(cb.dataset.net||0)>=thr)); sumSelected(); });
+    $('clearSelection').addEventListener('click',()=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=false); sumSelected(); });
+    $('masterCheck').addEventListener('change',e=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=e.target.checked); sumSelected(); });
   }
 
-  $('scanBtn').addEventListener('click', async ()=>{
-    if(timer){ clearInterval(timer); timer=null; }
-    await scanAll();
-    const secs=parseInt($('interval').value,10);
-    if(secs>0){ timer=setInterval(scanAll, secs*1000); }
-  });
-  $('stopBtn').addEventListener('click',()=>{ if(timer){ clearInterval(timer); timer=null; setStatus('Auto-rescan stopped.',false);} });
-  $('selectProfitable').addEventListener('click',()=>{ const thr=parseFloat($('threshold').value||'0'); document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=(Number(cb.dataset.net||0)>=thr)); sumSelected(); });
-  $('clearSelection').addEventListener('click',()=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=false); sumSelected(); });
-  $('masterCheck').addEventListener('change',e=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=e.target.checked); sumSelected(); });
-
-  /* ---------- Mock execution overlay ---------- */
-  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-  function showOverlay(on){ $('execOverlay').style.display=on?'flex':'none'; }
-  function line(text, ok=null){ const row=document.createElement('div'); row.className='rowmini'; row.innerHTML=`<div>${text}</div><div>${ok===null?'<div class="spin" style="width:16px;height:16px;border-width:2px"></div>': ok?'<span class="ok">OK</span>':'<span class="bad">Fail</span>'}</div>`; $('execBody').appendChild(row); return row; }
-  async function executeSelectedMock(){
-    const picks=[...document.querySelectorAll('.routeCheck:checked')];
-    if(!picks.length) return;
-    $('execBody').innerHTML=''; showOverlay(true);
-    let total=0;
-    for(const cb of picks){
-      const sym=cb.dataset.sym, buy=cb.dataset.b, sell=cb.dataset.s, size=Number(cb.dataset.size), net=Number(cb.dataset.net);
-      total+=net;
-      const a=line(`${sym} • flash-loan ${fmt(size,0)} USDC`); await sleep(250); a.lastChild.innerHTML='<span class="ok">OK</span>';
-      const b=line(`→ Buy on ${buy}`); await sleep(350); b.lastChild.innerHTML='<span class="ok">OK</span>';
-      const c=line(`→ Sell on ${sell}`); await sleep(350); c.lastChild.innerHTML='<span class="ok">OK</span>';
-      const d=line(`→ Repay loan + fee (0.09%)`); await sleep(250); d.lastChild.innerHTML='<span class="ok">OK</span>';
-      const e=line(`→ Profit sent: ${net>=0?'+':''}$${net.toFixed(2)}`, net>=0); await sleep(150);
-    }
-    line(`TOTAL: ${total>=0?'+':''}$${total.toFixed(2)}`, total>=0);
-  }
-  $('closeExec').addEventListener('click',()=>showOverlay(false));
+  document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
 </body>

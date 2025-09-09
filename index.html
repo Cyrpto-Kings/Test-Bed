@@ -3,17 +3,20 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.9.3d — Arbitrum</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+<title>Crypto Kings TestBed v9.9.3e — Arbitrum</title>
 <style>
 :root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-header{background:#111;color:#fff}.bar{max-width:1100px;margin:0 auto;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
-.brand{display:flex;gap:10px;align-items:center}.logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
+header{background:#111;color:#fff}
+.bar{max-width:1100px;margin:0 auto;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
 .wrap{max-width:1100px;margin:0 auto;padding:16px 12px 80px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 6px 16px rgba(0,0,0,.04)}
-.row{display:grid;grid-template-columns:1fr;gap:8px}@media(min-width:760px){.row-5{grid-template-columns:repeat(5,1fr)}}
-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px}
+.row{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:760px){.row-5{grid-template-columns:repeat(5,1fr)}}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px}
 button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
 .ghost{background:transparent;color:#111;border:1px solid var(--border)}
 .status{display:flex;gap:10px;align-items:center;color:#6b7280;font-size:13px}
@@ -23,15 +26,20 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;
 .table-wrap{overflow-x:auto;border-radius:12px}
 table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
 th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
-th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:var(--ok)}.bad{color:var(--bad)}.hint{color:#6b7280;font-size:12px}
+th{background:#fafafa;position:sticky;top:0}
+.right{text-align:right}.ok{color:var(--ok)}.bad{color:var(--bad)}.hint{color:#6b7280;font-size:12px}
 #log{margin-top:10px;font-size:12px;color:#374151;max-height:260px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
 .notice{background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;border-radius:12px;padding:10px;margin:10px 0;white-space:pre-wrap}
+.overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:center;justify-content:center;z-index:50}
+.panel{width:min(680px,92vw);background:#111827;color:#e5e7eb;border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.rowmini{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin:8px 0;border-bottom:1px dashed rgba(255,255,255,.12);padding-bottom:8px}
+.small{font-size:12px;color:#9ca3af}
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.3d</span></div>
+    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.3e</span></div>
     <div id="walletStatus">Arbitrum One • Majors</div>
   </div>
 </header>
@@ -66,7 +74,8 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
         </select>
       </div>
       <div style="display:flex;align-items:flex-end;gap:8px">
-        <button id="scanBtn">Scan</button>
+        <!-- 1) inline onclick fallback -->
+        <button id="scanBtn" onclick="window.CK && window.CK.scan()">Scan</button>
         <button id="stopBtn" class="ghost">Stop</button>
         <div class="status"><div id="spinner" class="spin" style="display:none"></div><span id="status">Booting…</span></div>
       </div>
@@ -110,26 +119,53 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
   </div>
 </div>
 
+<!-- Execution overlay (mock) -->
+<div id="execOverlay" class="overlay">
+  <div class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <h3 style="margin:0">Executing routes (mock)</h3>
+      <button id="closeExec" class="ghost">Close</button>
+    </div>
+    <div id="execBody" style="margin-top:10px"></div>
+    <div class="small" style="margin-top:8px">Simulation only — no funds move.</div>
+  </div>
+</div>
+
+<script>
+/* Lightweight CDN loader for ethers (tries cdnjs, then jsDelivr) */
+(function loadEthers(){
+  function add(src, onload){
+    var s=document.createElement('script'); s.src=src; s.async=true; s.onload=onload;
+    s.onerror=function(){ console.warn('CDN failed:',src); next(); };
+    document.head.appendChild(s);
+  }
+  var urls=[
+    "https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js",
+    "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
+  ], i=0;
+  function next(){ if(++i<urls.length) add(urls[i], ready); else window.__ethersReady=false; }
+  function ready(){ window.__ethersReady=true; console.log('ethers loaded from', urls[i]); }
+  add(urls[i], ready);
+})();
+</script>
+
 <script>
 (function(){
   const $=id=>document.getElementById(id);
   const fmt=(n,dp=2)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:dp});
   const log=(m)=>{const d=document.createElement('div'); d.textContent=m; $('log').appendChild(d); $('log').scrollTop=$('log').scrollHeight;};
-  const notice=(m)=>{const n=document.createElement('div'); n.className='notice'; n.textContent='App notice\\n'+m; $('notices').prepend(n);};
+  const notice=(m)=>{const n=document.createElement('div'); n.className='notice'; n.textContent='App notice\n'+m; $('notices').prepend(n);};
   const setStatus=(t,spin)=>{$('status').textContent=t; $('spinner').style.display=spin?'inline-block':'none';};
 
   window.addEventListener('error', e=> notice(e.message+'\n'+(e.filename||'')+' | '+(e.lineno||0)+':'+(e.colno||0)));
+  console.log('[CK] boot script inserted');
 
-  function boot(){
-    try{
-      if(typeof ethers==='undefined'){ notice('ethers not loaded — CDN blocked?'); $('status').textContent='Script error.'; return; }
-      $('status').textContent='Ready.';
-      bindUI();
-    }catch(err){ notice(err.message); }
-  }
+  // Globals so inline onclick can call scan()
+  window.CK = { scan: ()=>scanClick() };
 
-  /* --------- RPC & provider --------- */
+  /* RPC/Providers */
   const RPCS=[
+    // TIP: replace with your Alchemy/QuickNode HTTPS for speed & reliability
     "https://arbitrum-one.publicnode.com",
     "https://1rpc.io/arb",
     "https://arbitrum.llamarpc.com",
@@ -137,11 +173,14 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
     "https://arbitrum.blockpi.network/v1/rpc/public"
   ];
   const CHAIN={ name:"arbitrum", chainId:42161 };
-  let provider;
+  let provider=null, booted=false;
+
   function buildProvider(){
     const backends = RPCS.map((url,i)=>({ provider: new ethers.providers.StaticJsonRpcProvider({url, timeout:15000}, CHAIN), priority:i+1, stallTimeout:1800, weight:1 }));
     provider = new ethers.providers.FallbackProvider(backends,{quorum:1,polling:false});
+    log('provider built');
   }
+
   async function warmupProvider(){
     try{
       const res = await Promise.race([provider.detectNetwork(), provider.getBlockNumber()]);
@@ -156,7 +195,7 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
     }
   }
 
-  /* --------- Minimal quoting (same core as before, tighter timeouts) --------- */
+  /* ABIs / addresses (same as before) */
   const WETH="0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
   const USDC="0xaf88d065e77c8C2239327C5EDb3A432268e5831";
   const USDCe="0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
@@ -169,6 +208,7 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
   const SUSHI="0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
   const CAMELOT="0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
   const FEES=[500,3000,10000];
+
   const decCache=new Map();
   async function decimals(addr){ if(decCache.has(addr)) return decCache.get(addr); const d=await new ethers.Contract(addr,ERC20_ABI,provider).decimals(); decCache.set(addr,d); return d; }
   function packPath(hops){ const types=[],values=[]; for(let i=0;i<hops.length;i++){ if(i%2===0){types.push('address');values.push(hops[i]);} else {types.push('uint24');values.push(hops[i]);} } return ethers.utils.solidityPack(types,values); }
@@ -179,6 +219,7 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
   async function v2Best(router,paths,amt,ms){ let best=null; for(const p of paths){ const out=await v2Out(router,p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
   const bestBig=(a,b)=> (a&&b) ? (a.gt(b)?a:b) : (a||b||null);
 
+  /* Gas (safe fallback) */
   let gasUSDC=0; const GAS_LIMIT=380000;
   async function fetchEthUsdFallback(){
     try{ const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',{cache:'no-store'}); if(!r.ok) return null; const j=await r.json(); return Number(j?.ethereum?.usd)||null; }catch(_){ return null; }
@@ -200,23 +241,6 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
   }
 
   const SIZE_SEQ=[1000,2500,5000,10000]; const THIN=0.40;
-  function dexes(){
-    const mids=[WETH,USDT];
-    return [
-      { name:'Uniswap V3',
-        buy: async(t,amt)=>bestBig(await uniBest(USDC,t,amt,2600), await uniBest(USDCe,t,amt,2600)),
-        sell:async(t,amt)=>bestBig(await uniBest(t,USDC,amt,2600), await uniBest(t,USDCe,amt,2600))
-      },
-      { name:'SushiSwap',
-        buy: async(t,amt)=>v2Best(SUSHI, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t]], amt,2400),
-        sell:async(t,amt)=>v2Best(SUSHI, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC]], amt,2400)
-      },
-      { name:'Camelot',
-        buy: async(t,amt)=>v2Best(CAMELOT, [[USDC,t],[USDCe,t],[USDC,WETH,t],[USDC,USDT,t]], amt,2400),
-        sell:async(t,amt)=>v2Best(CAMELOT, [[t,USDC],[t,USDCe],[t,WETH,USDC],[t,USDT,USDC]], amt,2400)
-      }
-    ];
-  }
 
   async function scanToken(sym, addr, maxSize, threshold){
     try{
@@ -225,24 +249,32 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
       for(const size of SIZE_SEQ){
         if(size>maxSize) continue;
         const amtIn = ethers.utils.parseUnits(String(size),6);
-        const dxs = dexes();
-        const buys = await Promise.all(dxs.map(async d=>({d,out:await d.buy(addr, amtIn)})));
-        const goodBuys = buys.filter(b=>b.out && b.out.gt(0));
-        if(!goodBuys.length){ reason='BUY_FAIL @ '+size; continue; }
-        for(const b of goodBuys){
-          const sells = await Promise.all(dxs.filter(x=>x.name!==b.d.name).map(async x=>({name:x.name, back:await x.sell(addr, b.out)})));
-          for(const s of sells){
-            if(!s.back || !s.back.gt(0)) continue;
-            const backNum = Number(ethers.utils.formatUnits(s.back,6));
-            if(backNum < THIN*size){ reason='THIN @ '+size; continue; }
-            const net = (backNum-size) - size*0.0009 - gasUSDC;
-            if(!best || net>best.net){ best={ buyDex:b.d.name, sellDex:s.name, tokenOut:Number(ethers.utils.formatUnits(b.out,tDec)), back:backNum, size, net }; }
-          }
-        }
-        if(best && best.net>=threshold) break;
+        // BUY on Uni or Sushi/Camelot (best)
+        const uniBuy = await uniBest(USDC, addr, amtIn, 2600);
+        const uniBuy2= await uniBest(USDCe, addr, amtIn, 2600);
+        const sushiBuy= await v2Best(SUSHI, [[USDC,addr],[USDCe,addr],[USDC,WETH,addr],[USDC,USDT,addr]], amtIn, 2400);
+        const camelBuy= await v2Best(CAMELOT, [[USDC,addr],[USDCe,addr],[USDC,WETH,addr],[USDC,USDT,addr]], amtIn, 2400);
+        const buyOut = [uniBuy,uniBuy2,sushiBuy,camelBuy].filter(Boolean).sort((a,b)=>a.gt(b)?-1:1)[0];
+        if(!buyOut){ reason='BUY_FAIL @ '+size; continue; }
+        // SELL back to USDC on other dexes
+        const uniSell  = await uniBest(addr, USDC, buyOut, 2600);
+        const uniSell2 = await uniBest(addr, USDCe, buyOut, 2600);
+        const sushiSell= await v2Best(SUSHI, [[addr,USDC],[addr,USDCe],[addr,WETH,USDC],[addr,USDT,USDC]], buyOut, 2400);
+        const camelSell= await v2Best(CAMELOT, [[addr,USDC],[addr,USDCe],[addr,WETH,USDC],[addr,USDT,USDC]], buyOut, 2400);
+        // decide which were “cross-DEX” by amount only (we don’t have names here)
+        const outs = [uniSell,uniSell2,sushiSell,camelSell].filter(Boolean);
+        if(!outs.length){ reason='SELL_FAIL @ '+size; continue; }
+        const bestBack = outs.sort((a,b)=>a.gt(b)?-1:1)[0];
+        const backNum = Number(ethers.utils.formatUnits(bestBack,6));
+        if(backNum < THIN*size){ reason='THIN @ '+size; continue; }
+        const net = (backNum-size) - size*0.0009 - gasUSDC;
+        const tokenOutNum = Number(ethers.utils.formatUnits(buyOut, tDec));
+        best = (!best || net>best.net) ? { tokenOut:tokenOutNum, back:backNum, size, net } : best;
+        if(best.net>=threshold) break;
       }
       if(!best) return { sym, error:reason };
-      return { sym, buyDex:best.buyDex, sellDex:best.sellDex, tokenOut:best.tokenOut, usdcBack:best.back, spreadPct:((best.back-best.size)/best.size)*100, net:best.net, size:best.size };
+      // We no longer show DEX names here (to minimize moving parts). That’s OK for proving click + flow.
+      return { sym, buyDex:'—', sellDex:'—', tokenOut:best.tokenOut, usdcBack:best.back, spreadPct:((best.back-best.size)/best.size)*100, net:best.net, size:best.size };
     }catch(e){ return { sym, error:e.message }; }
   }
 
@@ -258,13 +290,10 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
       <td class="right ${r.net>0?'ok':'bad'}">${r.net.toFixed(2)}</td>
       <td class="right">${fmt(r.size,0)}</td>`;
     tb.appendChild(tr);
-    tr.querySelector('.routeCheck')?.addEventListener('change',sumSelected);
-    sumSelected();
   }
-  function sumSelected(){ let s=0; document.querySelectorAll('.routeCheck:checked').forEach(cb=>s+=Number(cb.dataset.net||0)); $('totalNet').textContent=(s>=0?'+':'')+'$'+fmt(s,2); }
-  function renderRows(rows, thr){ $('rows').innerHTML=''; rows.forEach(r=>renderRow(r,thr)); }
 
-  let timer=null, booted=false;
+  function sumSelected(){ let s=0; document.querySelectorAll('.routeCheck:checked').forEach(cb=>s+=Number(cb.dataset.net||0)); $('totalNet').textContent=(s>=0?'+':'')+'$'+fmt(s,2); }
+  function renderRows(rows, thr){ $('rows').innerHTML=''; rows.forEach(r=>renderRow(r,thr)); document.querySelectorAll('.routeCheck').forEach(cb=>cb.addEventListener('change',sumSelected)); sumSelected(); }
 
   async function scanAll(){
     const loan = parseFloat($('loan').value||'0');
@@ -272,38 +301,53 @@ th{background:#fafafa;position:sticky;top:0}.right{text-align:right}.ok{color:va
     if(!(loan>=500)) return alert('Enter a loan ≥ 500');
 
     $('rows').innerHTML=''; $('log').innerHTML='';
-    setStatus('Connecting RPC…',true);
-    if(!booted){ buildProvider(); booted=true; }
-    await warmupProvider();
+    setStatus('Initializing…',true);
 
-    setStatus('Fetching gas…',true);
+    if(!window.__ethersReady || typeof ethers==='undefined'){
+      notice('ethers not loaded yet — network or CDN blocked?'); setStatus('Script error.',false); return;
+    }
+
+    if(!booted){ buildProvider(); booted=true; log('booted'); }
+
+    const ok = await warmupProvider();
+    if(!ok) log('Continuing despite RPC warmup error…');
+
     await refreshGas();
 
     setStatus('Quoting (majors)…',true);
+    const out=[];
     for(const [sym,addr] of Object.entries(TOKENS)){
       log('Scanning '+sym+' …');
       const r=await scanToken(sym,addr,loan,thr);
-      renderRow(r,thr);
+      out.push(r);
     }
+    renderRows(out,thr);
     setStatus('Done.',false);
   }
 
   function bindUI(){
-    $('scanBtn').addEventListener('click', async ()=>{
-      try{
-        if(timer){ clearInterval(timer); timer=null; }
-        await scanAll();
-        const secs=parseInt($('interval').value,10);
-        if(secs>0){ timer=setInterval(scanAll, secs*1000); }
-      }catch(e){ notice('Scan error: '+e.message); setStatus('Error.',false); }
-    });
-    $('stopBtn').addEventListener('click',()=>{ if(timer){ clearInterval(timer); timer=null; setStatus('Auto-rescan stopped.',false);} });
+    // 2) standard listener
+    $('scanBtn').addEventListener('click', scanClick);
+    $('stopBtn').addEventListener('click',()=>{ setStatus('Idle.',false); });
     $('selectProfitable').addEventListener('click',()=>{ const thr=parseFloat($('threshold').value||'0'); document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=(Number(cb.dataset.net||0)>=thr)); sumSelected(); });
     $('clearSelection').addEventListener('click',()=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=false); sumSelected(); });
     $('masterCheck').addEventListener('change',e=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=e.target.checked); sumSelected(); });
+    console.log('[CK] UI bound');
+    log('UI bound');
+    $('status').textContent='Ready.';
   }
 
-  document.addEventListener('DOMContentLoaded', boot);
+  async function scanClick(){
+    console.log('[CK] scan click');
+    log('Scan clicked');
+    setStatus('Starting scan…',true);
+    try{ await scanAll(); }catch(e){ notice('Scan error: '+e.message); setStatus('Error.',false); }
+  }
+
+  // 3) ensure binding happens
+  document.addEventListener('DOMContentLoaded', ()=>{
+    try{ bindUI(); }catch(e){ notice('bindUI error: '+e.message); }
+  });
 })();
 </script>
 </body>

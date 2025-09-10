@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings v9.9.8 — Arbitrum (Show All)</title>
+<title>Crypto Kings v9.9.10 — Arbitrum (Core/Extended scan)</title>
 <style>
   :root{
     --bg:#f6f7fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
@@ -20,10 +20,10 @@
   .wrap{max-width:980px;margin:0 auto;padding:18px 12px 40px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--ink);outline:none}
-  input:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+  input[type="number"],select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--ink);outline:none}
+  input:focus,select:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:720px){ .row-3{grid-template-columns:repeat(3,1fr)} .row-2{grid-template-columns:repeat(2,1fr)} }
+  @media (min-width:720px){ .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} .row-2{grid-template-columns:repeat(2,1fr)} }
   .btn{appearance:none;border:0;border-radius:12px;padding:12px 16px;font-weight:800;color:white;background:linear-gradient(135deg,var(--brand1),var(--brand2));cursor:pointer}
   .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border)}
   .btn:disabled{opacity:.6;cursor:not-allowed}
@@ -44,7 +44,7 @@
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;">Crypto Kings</div>
-      <div class="muted" style="font-size:12px;">v9.9.8 — Arbitrum (Show All)</div>
+      <div class="muted" style="font-size:12px;">v9.9.10 — Arbitrum</div>
     </div>
   </div>
   <nav>
@@ -59,7 +59,7 @@
 
   <!-- Controls -->
   <div class="card">
-    <div class="row row-3">
+    <div class="row row-4">
       <div>
         <label for="loan">Loan Amount (USDC)</label>
         <input id="loan" type="number" min="1" step="1" value="10000" />
@@ -69,8 +69,15 @@
         <input id="gasLimit" type="number" step="1000" value="380000" />
       </div>
       <div>
-        <label for="note">Mode</label>
-        <input id="note" value="Filters relaxed: liq≥10k • freshness OFF • show all P/L" readonly />
+        <label for="tokenSet">Token set</label>
+        <select id="tokenSet">
+          <option value="core" selected>Core (≈11) — fastest</option>
+          <option value="extended">Extended (≈40) — deeper scan</option>
+        </select>
+      </div>
+      <div>
+        <label for="modeNote">Mode</label>
+        <input id="modeNote" value="Liq≥10k • freshness OFF • spread cap 50%" readonly />
       </div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
@@ -82,6 +89,7 @@
       <div id="rpcPill" class="pill">RPC: —</div>
       <div id="gasPill" class="pill">Gas: —</div>
       <div id="ethPill" class="pill">WETH: —</div>
+      <div id="countPill" class="pill">Tokens: —</div>
     </div>
   </div>
 
@@ -116,7 +124,7 @@
 
   <div class="muted" style="font-size:12px;margin:8px 2px;">
     Net P/L = (loan ÷ buyPrice × sellPrice) − loan − 0.09% flash fee − est. gas (gasPrice × gasLimit / 1e9 × WETH$).
-    This build shows all routes that pass basic liquidity ($10k) & DEX allow-list, regardless of P/L.
+    Listing routes after basic filters (DEX allow-list, liq ≥ $10k) with a raw spread sanity cap of 50%.
   </div>
 </div>
 
@@ -130,12 +138,14 @@ const RPCS = [
   "https://arbitrum-one.publicnode.com"
 ];
 const ALLOW_DEX = new Set(["uniswap-v3","sushiswap","camelot"]); // Dexscreener IDs
-const MIN_LIQ_USD = 10000;   // relaxed liquidity guard
-const REQUIRE_TXN_M5 = false; // freshness OFF
-const MIN_VOL24_USD = 0;      // relaxed volume
+const MIN_LIQ_USD = 10000;     // relaxed liquidity guard
+const REQUIRE_TXN_M5 = false;  // freshness OFF
+const MIN_VOL24_USD = 0;       // relaxed volume
+const MAX_SPREAD_PCT = 50;     // sanity cap: drop routes with raw spread > 50%
 
-// Tokens on Arbitrum
-const TOKENS = {
+// ---------- Token sets (Arbitrum) ----------
+// Core: majors
+const TOKENS_CORE = {
   WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
   USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
@@ -148,6 +158,31 @@ const TOKENS = {
   PENDLE:"0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8",
   RDNT:"0x3082CC23568eA640225c2467653dB90e9250AaA0",
 };
+
+// Extended: majors + popular Arbitrum assets
+const TOKENS_EXTENDED = {
+  ...TOKENS_CORE,
+  MAGIC:"0x539bdE0d7Dbd336b79148AA742883198BBF60342",
+  GNS  :"0x18c11FD286C5EC11c3b683Caa813B77f5163A122",
+  GRAIL:"0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8",
+  DPX  :"0x6c2C06790b3E3E3c38e12Ee22F8183b37a13EE55",
+  rDPX :"0x32Eb7902D4134bf98A28b963D26de779AF92A212",
+  JONES:"0x10393c20975cf177a3513071bc110f7962cd67da",
+  LDO  :"0xFdb794692724153d1488CcdBE0C56c252596735F",
+  CRV  :"0x11cdb42b0EB46D95f990Bil1c (verify if needed)", // if this one logs "no pools", just remove/replace; address varies by bridge
+  BAL  :"0x040d1EdC9569d4Bab2D15287Dc5A4F10F56a56B8",
+  UNI  :"0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0",
+  FXS  :"0xBd1bdD (verify)", // keep as placeholder; will be skipped if bad
+  FRAX :"0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
+  MIM  :"0xFEa7a6a0B346 (verify)", // placeholder
+  SYN  :"0x080F6AEd32Fc474DD5717105Dba5ea57268F46eb",
+  GRAI :"0x... (optional)",
+  USDCe:"0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", // bridged USDC.e
+  wstETH:"0x5979D7b546E38E414F7E9822514be443A4800529",
+  GM   :"0x... (optional)",
+  SNX  :"0x7Bf693aB7fAbc3e... (optional)"
+};
+// NOTE: A few marked “verify/optional” may not return pools; they’ll simply log “no pools”.
 
 // ---------- Helpers ----------
 const $ = (id)=>document.getElementById(id);
@@ -195,7 +230,7 @@ async function fetchPairsFor(addr){
     return true;
   });
 
-  // one best pool per DEX by highest liquidity
+  // best pool per DEX by highest liquidity
   const byDex = new Map();
   for(const p of rows){
     const k = (p.dexId||"").toLowerCase();
@@ -207,12 +242,18 @@ async function fetchPairsFor(addr){
 
 // ---------- Core scan ----------
 let abort=false;
+function getTokenMap(){
+  return $("tokenSet").value==="extended" ? TOKENS_EXTENDED : TOKENS_CORE;
+}
 async function scan(){
   abort=false;
   const loan = parseFloat($("loan").value||"0");
   const gasLimit = parseFloat($("gasLimit").value||"0");
+  const TOKENS = getTokenMap();
+  $("countPill").textContent = `Tokens: ${Object.keys(TOKENS).length}`;
+
   $("status").textContent = "Fetching gas & WETH…";
-  tbody.innerHTML=""; $("summary").textContent="—";
+  tbody.innerHTML=""; $("summary").textContent="—"; logEl.innerHTML="";
 
   // gas
   let gasGwei=0, rpcUsed="";
@@ -230,7 +271,7 @@ async function scan(){
   // WETH price (for gas USD)
   let ethUSD = NaN;
   try{
-    const ethPairs = await fetchPairsFor(TOKENS.WETH);
+    const ethPairs = await fetchPairsFor(TOKENS_CORE.WETH);
     const bestUSDC = ethPairs.find(p => (p.quoteToken?.symbol||"").toUpperCase().includes("USD"));
     ethUSD = Number(bestUSDC?.priceUsd);
     $("ethPill").textContent = isFinite(ethUSD) ? `WETH: ${fmtUSD(ethUSD)}` : "WETH: —";
@@ -258,32 +299,37 @@ async function scan(){
         if(pr < min){ min=pr; bestBuy=p; }
         if(pr > max){ max=pr; bestSell=p; }
       });
-      if(!bestBuy || !bestSell || !isFinite(min) || !isFinite(max)){ log(`${sym}: missing price`); }
-      else {
-        const units = loan / min;
-        const usdcBack = units * max;
-        const flashFee = loan * 0.0009; // 0.09%
-        const netPL = usdcBack - loan - flashFee - gasUSD;
-        const spreadPct = ((max/min)-1)*100;
 
-        out.push({
-          sym,
-          buy:{ dex:(bestBuy.dexId||"").toUpperCase(), price:min },
-          sell:{ dex:(bestSell.dexId||"").toUpperCase(), price:max },
-          spreadPct,
-          usdcBack,
-          netPL,
-          m5:`${bestBuy?.txns?.m5?.buys||0}/${bestBuy?.txns?.m5?.sells||0} & ${bestSell?.txns?.m5?.buys||0}/${bestSell?.txns?.m5?.sells||0}`
-        });
+      if(!bestBuy || !bestSell || !isFinite(min) || !isFinite(max)){
+        log(`${sym}: missing price`);
+      } else {
+        const rawSpreadPct = ((max/min)-1)*100;
+        if(rawSpreadPct > MAX_SPREAD_PCT){
+          log(`${sym}: dropped by cap (raw spread ${rawSpreadPct.toFixed(2)}% > ${MAX_SPREAD_PCT}%)`);
+        } else {
+          const units = loan / min;
+          const usdcBack = units * max;
+          const flashFee = loan * 0.0009; // 0.09%
+          const netPL = usdcBack - loan - flashFee - gasUSD;
+
+          out.push({
+            sym,
+            buy:{ dex:(bestBuy.dexId||"").toUpperCase(), price:min },
+            sell:{ dex:(bestSell.dexId||"").toUpperCase(), price:max },
+            spreadPct: rawSpreadPct,
+            usdcBack,
+            netPL
+          });
+        }
       }
     }catch(e){
       log(`${sym}: error ${e.message}`);
     }
     done++; $("summary").textContent = `Progress ${done}/${total} • loan ${fmtUSD(loan)}`;
-    await sleep(120); // gentle on API
+    await sleep(120); // gentle on API (Dexscreener rate limits)
   }
 
-  // render (sort by Net P/L desc so winners float up)
+  // render (sort by Net P/L desc)
   tbody.innerHTML="";
   out.sort((a,b)=>b.netPL - a.netPL);
   for(const row of out){
@@ -302,16 +348,21 @@ async function scan(){
   }
 
   $("status").textContent = `Done. Listed ${out.length} routes (fee 0.09% + gas ~ ${fmtUSD(gasUSD,4)}).`;
-  if(!out.length) log("No routes after relaxed filters — try later or adjust token set.");
+  if(!out.length) log("No routes after filters — try later, switch to Core/Extended, or adjust token list.");
 }
 
 $("scanBtn").addEventListener("click", ()=>{ $("stopBtn").disabled=false; scan().finally(()=>{ $("stopBtn").disabled=true; }); });
 $("stopBtn").addEventListener("click", ()=>{ abort=true; $("status").textContent="Stopping…"; });
 
-// First paint: gas fetch for UI
+// First paint: gas fetch
 fetchGasGwei().then(g=>{
   $("gasPill").textContent = `Gas: ${g.gwei.toFixed(2)} gwei`; $("rpcPill").textContent = "RPC: " + new URL(g.rpc).host;
 }).catch(()=>{$("gasPill").textContent="Gas: —";});
+$("countPill").textContent = "Tokens: " + Object.keys(TOKENS_CORE).length;
+$("tokenSet").addEventListener("change", ()=>{
+  const m = getTokenMap();
+  $("countPill").textContent = "Tokens: " + Object.keys(m).length;
+});
 </script>
 </body>
 </html>

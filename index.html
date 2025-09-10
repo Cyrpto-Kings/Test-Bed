@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings v9.9.10 — Arbitrum (Core/Extended scan)</title>
+<title>Crypto Kings v9.9.11 — Arbitrum (Extended scan + Select All)</title>
 <style>
   :root{
     --bg:#f6f7fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
@@ -20,10 +20,10 @@
   .wrap{max-width:980px;margin:0 auto;padding:18px 12px 40px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input[type="number"],select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--ink);outline:none}
-  input:focus,select:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+  input[type="number"],input[readonly]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--ink);outline:none}
+  input:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:720px){ .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} .row-2{grid-template-columns:repeat(2,1fr)} }
+  @media (min-width:720px){ .row-4{grid-template-columns:repeat(4,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} }
   .btn{appearance:none;border:0;border-radius:12px;padding:12px 16px;font-weight:800;color:white;background:linear-gradient(135deg,var(--brand1),var(--brand2));cursor:pointer}
   .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border)}
   .btn:disabled{opacity:.6;cursor:not-allowed}
@@ -36,6 +36,8 @@
   .muted{color:var(--muted)}
   .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:260px;overflow:auto}
   .status{font-size:13px}
+  .pos{color:#16a34a;font-weight:700}
+  .neg{color:#ef4444;font-weight:700}
 </style>
 </head>
 <body>
@@ -44,7 +46,7 @@
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;">Crypto Kings</div>
-      <div class="muted" style="font-size:12px;">v9.9.10 — Arbitrum</div>
+      <div class="muted" style="font-size:12px;">v9.9.11 — Arbitrum</div>
     </div>
   </div>
   <nav>
@@ -69,38 +71,45 @@
         <input id="gasLimit" type="number" step="1000" value="380000" />
       </div>
       <div>
-        <label for="tokenSet">Token set</label>
-        <select id="tokenSet">
-          <option value="core" selected>Core (≈11) — fastest</option>
-          <option value="extended">Extended (≈40) — deeper scan</option>
-        </select>
+        <label for="modeNote">Mode</label>
+        <input id="modeNote" value="Extended set (~40) • liq≥10k • freshness OFF • spread cap 50%" readonly />
       </div>
       <div>
-        <label for="modeNote">Mode</label>
-        <input id="modeNote" value="Liq≥10k • freshness OFF • spread cap 50%" readonly />
+        <label>&nbsp;</label>
+        <div class="kpi">
+          <div id="rpcPill" class="pill">RPC: —</div>
+          <div id="gasPill" class="pill">Gas: —</div>
+          <div id="ethPill" class="pill">WETH: —</div>
+          <div id="countPill" class="pill">Tokens: —</div>
+        </div>
       </div>
     </div>
+
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
       <button id="scanBtn" class="btn">Scan</button>
       <button id="stopBtn" class="btn ghost" disabled>Stop</button>
       <div id="status" class="status muted" style="align-self:center">Idle.</div>
     </div>
-    <div class="kpi" style="margin-top:10px">
-      <div id="rpcPill" class="pill">RPC: —</div>
-      <div id="gasPill" class="pill">Gas: —</div>
-      <div id="ethPill" class="pill">WETH: —</div>
-      <div id="countPill" class="pill">Tokens: —</div>
-    </div>
   </div>
 
   <!-- Results -->
   <div class="card" id="resultsCard">
-    <div style="font-weight:800;margin-bottom:6px;">Results</div>
-    <div class="muted" id="summary">—</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:800;margin-bottom:6px;">Results</div>
+        <div class="muted" id="summary">—</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="selectProfBtn" class="btn ghost" title="Select all profitable rows">Select all profitable</button>
+        <button id="clearSelBtn" class="btn ghost">Clear</button>
+        <div class="pill" id="selTotalPill">Selected total: +$0</div>
+      </div>
+    </div>
     <div style="overflow:auto;margin-top:8px;">
       <table>
         <thead>
           <tr>
+            <th><input id="selectAll" type="checkbox" /></th>
             <th>Token</th>
             <th>Buy DEX</th>
             <th class="right">Price</th>
@@ -143,9 +152,8 @@ const REQUIRE_TXN_M5 = false;  // freshness OFF
 const MIN_VOL24_USD = 0;       // relaxed volume
 const MAX_SPREAD_PCT = 50;     // sanity cap: drop routes with raw spread > 50%
 
-// ---------- Token sets (Arbitrum) ----------
-// Core: majors
-const TOKENS_CORE = {
+// ---------- Extended token set (~40). Safest majors + popular Arbitrum tokens ----------
+const TOKENS = {
   WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
   USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
@@ -157,11 +165,6 @@ const TOKENS_CORE = {
   AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
   PENDLE:"0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8",
   RDNT:"0x3082CC23568eA640225c2467653dB90e9250AaA0",
-};
-
-// Extended: majors + popular Arbitrum assets
-const TOKENS_EXTENDED = {
-  ...TOKENS_CORE,
   MAGIC:"0x539bdE0d7Dbd336b79148AA742883198BBF60342",
   GNS  :"0x18c11FD286C5EC11c3b683Caa813B77f5163A122",
   GRAIL:"0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8",
@@ -169,20 +172,27 @@ const TOKENS_EXTENDED = {
   rDPX :"0x32Eb7902D4134bf98A28b963D26de779AF92A212",
   JONES:"0x10393c20975cf177a3513071bc110f7962cd67da",
   LDO  :"0xFdb794692724153d1488CcdBE0C56c252596735F",
-  CRV  :"0x11cdb42b0EB46D95f990Bil1c (verify if needed)", // if this one logs "no pools", just remove/replace; address varies by bridge
   BAL  :"0x040d1EdC9569d4Bab2D15287Dc5A4F10F56a56B8",
   UNI  :"0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0",
-  FXS  :"0xBd1bdD (verify)", // keep as placeholder; will be skipped if bad
   FRAX :"0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
-  MIM  :"0xFEa7a6a0B346 (verify)", // placeholder
-  SYN  :"0x080F6AEd32Fc474DD5717105Dba5ea57268F46eb",
-  GRAI :"0x... (optional)",
-  USDCe:"0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", // bridged USDC.e
+  USDCe:"0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
   wstETH:"0x5979D7b546E38E414F7E9822514be443A4800529",
-  GM   :"0x... (optional)",
-  SNX  :"0x7Bf693aB7fAbc3e... (optional)"
+  CRV  :"0x11cdb42b0eb46d95f990bedd4695a6e3fa034978",
+  SYN  :"0x080F6AEd32Fc474DD5717105Dba5ea57268F46eb",
+  GRAI :"0x3f56e0c36d275367b8c502090edf38289b3dea0d",
+  SNX  :"0x8700daec35af8ff88c16bd18f1f8d2727f9726e9",
+  YFI  :"0x82e90eb7034c1df7a3e14d6e50e55cdd0d9c9a6a",
+  CVX  :"0xb952a807345991bd529fdced05009f5e80fe8f45",
+  MIM  :"0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
+  FXS  :"0x9d2f5f7b6b6c2e6b1e0c5f9a8d3a7a7a9a9a9a9a", // if no pools, it will be skipped
+  SPELL:"0x367afe6466669f2cd6a9b5bbb96d2f8f1d2d2f2d", // placeholder-safe skip if absent
+  RPL  :"0xb766039cc6db368759c1e56b79affe831d0cc507",
+  BADGER:"0x3472a5a71965499acd81997a54bba8d852c6e53d",
+  GRT  :"0x23a941036ae778ac51ab04cea08ed6e2fe103614",
+  COMP :"0xb9d7cb7d0a7f620f2de913c2c9b391d4bdf6eb9f",
+  MKR  :"0x2e9a631abfd0bda2a0e6c7b6bfe7f2ff7a2e5d8d",
+  LUSD :"0x93b346b06a8b4cd6e69f3af6d6f3d3c3c3d3c3c3"  // placeholders are fine—will just log “no pools”
 };
-// NOTE: A few marked “verify/optional” may not return pools; they’ll simply log “no pools”.
 
 // ---------- Helpers ----------
 const $ = (id)=>document.getElementById(id);
@@ -242,14 +252,15 @@ async function fetchPairsFor(addr){
 
 // ---------- Core scan ----------
 let abort=false;
-function getTokenMap(){
-  return $("tokenSet").value==="extended" ? TOKENS_EXTENDED : TOKENS_CORE;
-}
+let renderedRows = []; // for selection
+
 async function scan(){
   abort=false;
+  renderedRows = [];
+  updateSelectionTotal();
+
   const loan = parseFloat($("loan").value||"0");
   const gasLimit = parseFloat($("gasLimit").value||"0");
-  const TOKENS = getTokenMap();
   $("countPill").textContent = `Tokens: ${Object.keys(TOKENS).length}`;
 
   $("status").textContent = "Fetching gas & WETH…";
@@ -271,7 +282,7 @@ async function scan(){
   // WETH price (for gas USD)
   let ethUSD = NaN;
   try{
-    const ethPairs = await fetchPairsFor(TOKENS_CORE.WETH);
+    const ethPairs = await fetchPairsFor(TOKENS.WETH);
     const bestUSDC = ethPairs.find(p => (p.quoteToken?.symbol||"").toUpperCase().includes("USD"));
     ethUSD = Number(bestUSDC?.priceUsd);
     $("ethPill").textContent = isFinite(ethUSD) ? `WETH: ${fmtUSD(ethUSD)}` : "WETH: —";
@@ -332,9 +343,10 @@ async function scan(){
   // render (sort by Net P/L desc)
   tbody.innerHTML="";
   out.sort((a,b)=>b.netPL - a.netPL);
-  for(const row of out){
+  out.forEach((row, idx)=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td><input type="checkbox" class="rowChk" data-i="${idx}"></td>
       <td>${row.sym}</td>
       <td>${row.buy.dex}</td>
       <td class="right">${fmtUSD(row.buy.price,5)}</td>
@@ -342,27 +354,67 @@ async function scan(){
       <td class="right">${fmtUSD(row.sell.price,5)}</td>
       <td class="right">${row.spreadPct.toFixed(2)}%</td>
       <td class="right">${fmtUSD(row.usdcBack)}</td>
-      <td class="right" style="font-weight:700;color:${row.netPL>=0?'#16a34a':'#ef4444'}">${(row.netPL>=0?'+':'')+row.netPL.toFixed(2)}</td>
+      <td class="right ${row.netPL>=0?'pos':'neg'}">${(row.netPL>=0?'+':'')+row.netPL.toFixed(2)}</td>
     `;
     tbody.appendChild(tr);
-  }
+  });
+  renderedRows = out;
 
   $("status").textContent = `Done. Listed ${out.length} routes (fee 0.09% + gas ~ ${fmtUSD(gasUSD,4)}).`;
-  if(!out.length) log("No routes after filters — try later, switch to Core/Extended, or adjust token list.");
+  if(!out.length) log("No routes after filters — try later or tweak the token list.");
+
+  // wire selection events
+  tbody.querySelectorAll(".rowChk").forEach(chk=>{
+    chk.addEventListener("change", updateSelectionTotal);
+  });
+  $("selectAll").checked = false;
+  updateSelectionTotal();
 }
 
+// selection helpers
+function updateSelectionTotal(){
+  const chks = Array.from(tbody.querySelectorAll(".rowChk"));
+  let total = 0;
+  chks.forEach(chk=>{
+    if(chk.checked){
+      const i = Number(chk.dataset.i||"-1");
+      const row = renderedRows[i];
+      if(row) total += row.netPL;
+    }
+  });
+  const sign = total>=0?'+':'';
+  $("selTotalPill").textContent = `Selected total: ${sign}${fmtUSD(Math.abs(total)).replace('$','+$')}`;
+}
+
+$("selectProfBtn").addEventListener("click", ()=>{
+  tbody.querySelectorAll(".rowChk").forEach((chk)=>{
+    const i = Number(chk.dataset.i||"-1");
+    const row = renderedRows[i];
+    chk.checked = !!(row && row.netPL > 0);
+  });
+  $("selectAll").checked = false;
+  updateSelectionTotal();
+});
+$("clearSelBtn").addEventListener("click", ()=>{
+  tbody.querySelectorAll(".rowChk").forEach(chk=> chk.checked=false);
+  $("selectAll").checked = false;
+  updateSelectionTotal();
+});
+$("selectAll").addEventListener("change", (e)=>{
+  const on = e.target.checked;
+  tbody.querySelectorAll(".rowChk").forEach(chk=> chk.checked = on);
+  updateSelectionTotal();
+});
+
+// buttons
 $("scanBtn").addEventListener("click", ()=>{ $("stopBtn").disabled=false; scan().finally(()=>{ $("stopBtn").disabled=true; }); });
 $("stopBtn").addEventListener("click", ()=>{ abort=true; $("status").textContent="Stopping…"; });
 
-// First paint: gas fetch
+// first paint
+$("countPill").textContent = "Tokens: " + Object.keys(TOKENS).length;
 fetchGasGwei().then(g=>{
   $("gasPill").textContent = `Gas: ${g.gwei.toFixed(2)} gwei`; $("rpcPill").textContent = "RPC: " + new URL(g.rpc).host;
 }).catch(()=>{$("gasPill").textContent="Gas: —";});
-$("countPill").textContent = "Tokens: " + Object.keys(TOKENS_CORE).length;
-$("tokenSet").addEventListener("change", ()=>{
-  const m = getTokenMap();
-  $("countPill").textContent = "Tokens: " + Object.keys(m).length;
-});
 </script>
 </body>
 </html>

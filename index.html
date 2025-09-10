@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings v9.9.11 — Arbitrum (Extended scan + Select All)</title>
+<title>Crypto Kings v9.9.12 — Arbitrum (Preview Execute)</title>
 <style>
   :root{
     --bg:#f6f7fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
     --brand1:#3b82f6; --brand2:#9333ea; --ok:#10b981; --bad:#ef4444;
-    --border:#e5e7eb;
+    --border:#e5e7eb; --shadow:0 2px 12px rgba(0,0,0,.06);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
@@ -18,9 +18,9 @@
   header nav a{color:#fff;text-decoration:none;margin-left:14px;font-weight:600;opacity:.9}
   header nav a:hover{opacity:1}
   .wrap{max-width:980px;margin:0 auto;padding:18px 12px 40px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input[type="number"],input[readonly]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--ink);outline:none}
+  input[type="number"],input[readonly]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#000;outline:none}
   input:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
   @media (min-width:720px){ .row-4{grid-template-columns:repeat(4,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} }
@@ -38,6 +38,13 @@
   .status{font-size:13px}
   .pos{color:#16a34a;font-weight:700}
   .neg{color:#ef4444;font-weight:700}
+  /* Modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .modal{background:#fff;color:#111;border-radius:16px;max-width:820px;width:100%;box-shadow:var(--shadow)}
+  .modal header{background:#fff;color:#111;border-bottom:1px solid var(--border);border-radius:16px 16px 0 0;padding:14px 16px}
+  .modal .content{padding:16px;max-height:70vh;overflow:auto}
+  .close-x{cursor:pointer;border:0;background:transparent;font-weight:900;font-size:18px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
 </style>
 </head>
 <body>
@@ -46,7 +53,7 @@
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;">Crypto Kings</div>
-      <div class="muted" style="font-size:12px;">v9.9.11 — Arbitrum</div>
+      <div class="muted" style="font-size:12px;">v9.9.12 — Arbitrum</div>
     </div>
   </div>
   <nav>
@@ -72,7 +79,7 @@
       </div>
       <div>
         <label for="modeNote">Mode</label>
-        <input id="modeNote" value="Extended set (~40) • liq≥10k • freshness OFF • spread cap 50%" readonly />
+        <input id="modeNote" value="Extended (~40) • liq≥10k • freshness OFF • spread cap 50%" readonly />
       </div>
       <div>
         <label>&nbsp;</label>
@@ -103,6 +110,7 @@
         <button id="selectProfBtn" class="btn ghost" title="Select all profitable rows">Select all profitable</button>
         <button id="clearSelBtn" class="btn ghost">Clear</button>
         <div class="pill" id="selTotalPill">Selected total: +$0</div>
+        <button id="previewBtn" class="btn" title="Preview execution of selected">Execute Selected (Preview)</button>
       </div>
     </div>
     <div style="overflow:auto;margin-top:8px;">
@@ -137,6 +145,23 @@
   </div>
 </div>
 
+<!-- Preview Modal -->
+<div id="modalBackdrop" class="modal-backdrop">
+  <div class="modal">
+    <header style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-weight:800">Execution Preview</div>
+      <button id="modalClose" class="close-x">✕</button>
+    </header>
+    <div class="content">
+      <div id="modalBody" class="mono"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button id="modalClose2" class="btn ghost">Close</button>
+        <button id="modalProceed" class="btn" disabled title="Live execution coming next step">Proceed (disabled)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---------- Config ----------
 const RPCS = [
@@ -147,17 +172,17 @@ const RPCS = [
   "https://arbitrum-one.publicnode.com"
 ];
 const ALLOW_DEX = new Set(["uniswap-v3","sushiswap","camelot"]); // Dexscreener IDs
-const MIN_LIQ_USD = 10000;     // relaxed liquidity guard
+const MIN_LIQ_USD = 10000;     // relaxed for visibility
 const REQUIRE_TXN_M5 = false;  // freshness OFF
-const MIN_VOL24_USD = 0;       // relaxed volume
-const MAX_SPREAD_PCT = 50;     // sanity cap: drop routes with raw spread > 50%
+const MIN_VOL24_USD = 0;       // relaxed for visibility
+const MAX_SPREAD_PCT = 50;     // sanity cap
 
-// ---------- Extended token set (~40). Safest majors + popular Arbitrum tokens ----------
+// ---------- Token set (~40) ----------
 const TOKENS = {
   WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
   USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-  DAI :"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+  DAI :"0xda10009cbd5d07dd0cecc61...c9000da1".replace("...","61fc93d7"),
   ARB :"0x912CE59144191C1204E64559FE8253a0e49E6548",
   GMX :"0xfc5a96a8cE62fF190E4A44bD828F3E0eC4A6fBf9",
   LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
@@ -184,14 +209,14 @@ const TOKENS = {
   YFI  :"0x82e90eb7034c1df7a3e14d6e50e55cdd0d9c9a6a",
   CVX  :"0xb952a807345991bd529fdced05009f5e80fe8f45",
   MIM  :"0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
-  FXS  :"0x9d2f5f7b6b6c2e6b1e0c5f9a8d3a7a7a9a9a9a9a", // if no pools, it will be skipped
+  FXS  :"0x9d2f5f7b6b6c2e6b1e0c5f9a8d3a7a7a9a9a9a9a", // placeholder-safe skip if absent
   SPELL:"0x367afe6466669f2cd6a9b5bbb96d2f8f1d2d2f2d", // placeholder-safe skip if absent
   RPL  :"0xb766039cc6db368759c1e56b79affe831d0cc507",
   BADGER:"0x3472a5a71965499acd81997a54bba8d852c6e53d",
   GRT  :"0x23a941036ae778ac51ab04cea08ed6e2fe103614",
   COMP :"0xb9d7cb7d0a7f620f2de913c2c9b391d4bdf6eb9f",
   MKR  :"0x2e9a631abfd0bda2a0e6c7b6bfe7f2ff7a2e5d8d",
-  LUSD :"0x93b346b06a8b4cd6e69f3af6d6f3d3c3c3d3c3c3"  // placeholders are fine—will just log “no pools”
+  LUSD :"0x93b346b06a8b4cd6e69f3af6d6f3d3c3c3d3c3c3" // placeholder-safe skip
 };
 
 // ---------- Helpers ----------
@@ -315,8 +340,8 @@ async function scan(){
         log(`${sym}: missing price`);
       } else {
         const rawSpreadPct = ((max/min)-1)*100;
-        if(rawSpreadPct > MAX_SPREAD_PCT){
-          log(`${sym}: dropped by cap (raw spread ${rawSpreadPct.toFixed(2)}% > ${MAX_SPREAD_PCT}%)`);
+        if(rawSpreadPct > 50){
+          log(`${sym}: dropped by cap (raw spread ${rawSpreadPct.toFixed(2)}% > 50%)`);
         } else {
           const units = loan / min;
           const usdcBack = units * max;
@@ -337,7 +362,7 @@ async function scan(){
       log(`${sym}: error ${e.message}`);
     }
     done++; $("summary").textContent = `Progress ${done}/${total} • loan ${fmtUSD(loan)}`;
-    await sleep(120); // gentle on API (Dexscreener rate limits)
+    await sleep(120); // gentle on API
   }
 
   // render (sort by Net P/L desc)
@@ -363,15 +388,14 @@ async function scan(){
   $("status").textContent = `Done. Listed ${out.length} routes (fee 0.09% + gas ~ ${fmtUSD(gasUSD,4)}).`;
   if(!out.length) log("No routes after filters — try later or tweak the token list.");
 
-  // wire selection events
-  tbody.querySelectorAll(".rowChk").forEach(chk=>{
-    chk.addEventListener("change", updateSelectionTotal);
-  });
+  // selection events
+  tbody.querySelectorAll(".rowChk").forEach(chk=> chk.addEventListener("change", updateSelectionTotal));
   $("selectAll").checked = false;
   updateSelectionTotal();
 }
 
 // selection helpers
+let renderedRows = [];
 function updateSelectionTotal(){
   const chks = Array.from(tbody.querySelectorAll(".rowChk"));
   let total = 0;
@@ -409,6 +433,50 @@ $("selectAll").addEventListener("change", (e)=>{
 // buttons
 $("scanBtn").addEventListener("click", ()=>{ $("stopBtn").disabled=false; scan().finally(()=>{ $("stopBtn").disabled=true; }); });
 $("stopBtn").addEventListener("click", ()=>{ abort=true; $("status").textContent="Stopping…"; });
+
+// preview modal
+const backdrop = $("modalBackdrop");
+const modalBody = $("modalBody");
+function openModal(){ backdrop.style.display="flex"; }
+function closeModal(){ backdrop.style.display="none"; }
+$("modalClose").addEventListener("click", closeModal);
+$("modalClose2").addEventListener("click", closeModal);
+
+// Build preview from selected rows
+$("previewBtn").addEventListener("click", ()=>{
+  const loan = parseFloat($("loan").value||"0");
+  const chks = Array.from(tbody.querySelectorAll(".rowChk")).filter(c=>c.checked);
+  if(!chks.length){ modalBody.innerHTML = "No rows selected."; openModal(); return; }
+
+  let totalPL = 0;
+  let html = `<div><strong>Plan</strong> — ${chks.length} route(s) for loan ${fmtUSD(loan)}</div><br/>`;
+  html += `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="background:#f3f4f6">
+      <th style="text-align:left;padding:6px 8px">Token</th>
+      <th style="text-align:left;padding:6px 8px">Buy</th>
+      <th style="text-align:left;padding:6px 8px">Sell</th>
+      <th style="text-align:right;padding:6px 8px">USDC Back</th>
+      <th style="text-align:right;padding:6px 8px">Net P/L</th>
+    </tr>`;
+  chks.forEach(chk=>{
+    const i = Number(chk.dataset.i||"-1");
+    const r = renderedRows[i];
+    if(!r) return;
+    totalPL += r.netPL;
+    html += `<tr>
+      <td style="padding:6px 8px">${r.sym}</td>
+      <td style="padding:6px 8px">${r.buy.dex} @ ${fmtUSD(r.buy.price,5)}</td>
+      <td style="padding:6px 8px">${r.sell.dex} @ ${fmtUSD(r.sell.price,5)}</td>
+      <td style="padding:6px 8px;text-align:right">${fmtUSD(r.usdcBack)}</td>
+      <td style="padding:6px 8px;text-align:right;${r.netPL>=0?'color:#16a34a':'color:#ef4444'}">${(r.netPL>=0?'+':'')+r.netPL.toFixed(2)}</td>
+    </tr>`;
+  });
+  html += `</table><br/>`;
+  html += `<div><strong>Total (selected):</strong> <span style="font-weight:800;${totalPL>=0?'color:#16a34a':'color:#ef4444'}">${(totalPL>=0?'+':'')+totalPL.toFixed(2)} USDC</span></div>`;
+  html += `<br/><div class="muted">This is a preview only (no on-chain calls). Next step: add <em>simulate</em>, then enable live execution.</div>`;
+  modalBody.innerHTML = html;
+  openModal();
+});
 
 // first paint
 $("countPill").textContent = "Tokens: " + Object.keys(TOKENS).length;

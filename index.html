@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings v9.9.6 — Arbitrum</title>
+<title>Crypto Kings v9.9.7 — Arbitrum</title>
 <style>
   :root{
     --bg:#f6f7fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
@@ -36,7 +36,7 @@
   th{color:#374151;background:#fafafa;position:sticky;top:0;z-index:1}
   .right{text-align:right}
   .muted{color:var(--muted)}
-  .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:220px;overflow:auto}
+  .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:240px;overflow:auto}
   .status{font-size:13px}
 </style>
 </head>
@@ -46,7 +46,7 @@
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;">Crypto Kings</div>
-      <div class="muted" style="font-size:12px;">v9.9.6 — Arbitrum</div>
+      <div class="muted" style="font-size:12px;">v9.9.7 — Arbitrum</div>
     </div>
   </div>
   <nav>
@@ -84,6 +84,7 @@
       <div id="rpcPill" class="pill">RPC: —</div>
       <div id="gasPill" class="pill">Gas: —</div>
       <div id="ethPill" class="pill">WETH: —</div>
+      <div id="filtersPill" class="pill">Filters: liq≥100k • fresh m5</div>
     </div>
   </div>
 
@@ -117,7 +118,7 @@
   </div>
 
   <div class="muted" style="font-size:12px;margin:8px 2px;">
-    Net P/L = (loan ÷ buyPrice × sellPrice) − loan − 0.09% flash fee − est. gas (gasPrice × gasLimit / 1e9 × WETH$).
+    Net P/L = (loan ÷ buyPrice × sellPrice) − loan − 0.09% flash fee − est. gas (gasPrice × gasLimit / 1e9 × WETH$). Only liquid (≥$100k) & fresh (≥1 txn in last 5m) pools shown.
   </div>
 </div>
 
@@ -130,8 +131,13 @@ const RPCS = [
   "https://rpc.ankr.com/arbitrum",
   "https://arbitrum-one.publicnode.com"
 ];
-const ALLOW_DEX = new Set(["uniswap-v3","sushiswap","camelot"]); // id names from Dexscreener
-const TOKENS = { // Arbitrum main
+const ALLOW_DEX = new Set(["uniswap-v3","sushiswap","camelot"]); // Dexscreener IDs
+const MIN_LIQ_USD = 100000;   // pool liquidity filter
+const MIN_VOL24_USD = 25000;  // optional: daily volume guard (low enough to keep majors)
+const REQUIRE_TXN_M5 = true;  // require activity in last 5 minutes
+
+// Tokens on Arbitrum
+const TOKENS = {
   WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
   USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
@@ -175,7 +181,23 @@ async function fetchPairsFor(addr){
   const r = await fetch(url,{cache:"no-store"});
   if(!r.ok) throw new Error("Dexscreener HTTP "+r.status);
   const j = await r.json();
-  const rows = (j?.pairs||[]).filter(p => p.chainId==="arbitrum" && ALLOW_DEX.has((p.dexId||"").toLowerCase()));
+  // Filter: network, DEX allow-list, liquidity, volume, freshness (m5 txns)
+  const rows = (j?.pairs||[]).filter(p => {
+    if(p.chainId!=="arbitrum") return false;
+    const dex = (p.dexId||"").toLowerCase();
+    if(!ALLOW_DEX.has(dex)) return false;
+    const liq = Number(p?.liquidity?.usd||0);
+    if(!(liq>=MIN_LIQ_USD)) return false;
+    const vol24 = Number(p?.volume?.h24||0);
+    if(!(vol24>=MIN_VOL24_USD)) return false;
+    if(REQUIRE_TXN_M5){
+      const b = Number(p?.txns?.m5?.buys||0);
+      const s = Number(p?.txns?.m5?.sells||0);
+      if(b+s <= 0) return false;
+    }
+    return true;
+  });
+
   // one row per DEX: pick by highest liquidity
   const byDex = new Map();
   for(const p of rows){
@@ -231,7 +253,9 @@ async function scan(){
     if(abort){ log("Scan aborted."); break; }
     try{
       const pairs = await fetchPairsFor(addr);
-      // find best buy/sell across allowed DEXes
+      if(!pairs.length){ log(`${sym}: no liquid/fresh pools`); done++; $("summary").textContent = `Progress ${done}/${total} • min P/L ${fmtUSD(minPL)} • loan ${fmtUSD(loan)}`; await sleep(120); continue; }
+
+      // best buy/sell across allowed DEXes
       let bestBuy=null, bestSell=null, min=Infinity, max=-Infinity;
       pairs.forEach(p=>{
         const pr = Number(p?.priceUsd);
@@ -239,31 +263,32 @@ async function scan(){
         if(pr < min){ min=pr; bestBuy=p; }
         if(pr > max){ max=pr; bestSell=p; }
       });
-      if(!bestBuy || !bestSell || !isFinite(min) || !isFinite(max)){ log(`${sym}: no prices`); continue; }
-      const units = loan / min;
-      const usdcBack = units * max;
-      const flashFee = loan * 0.0009; // 0.09%
-      const netPL = usdcBack - loan - flashFee - gasUSD;
-      const spreadPct = ((max/min)-1)*100;
+      if(!bestBuy || !bestSell || !isFinite(min) || !isFinite(max)){ log(`${sym}: no prices after filters`); }
+      else {
+        const units = loan / min;
+        const usdcBack = units * max;
+        const flashFee = loan * 0.0009; // 0.09%
+        const netPL = usdcBack - loan - flashFee - gasUSD;
+        const spreadPct = ((max/min)-1)*100;
 
-      if(netPL >= minPL){
-        out.push({
-          sym,
-          buy:{ dex:(bestBuy.dexId||"").toUpperCase(), price:min },
-          sell:{ dex:(bestSell.dexId||"").toUpperCase(), price:max },
-          spreadPct,
-          usdcBack,
-          netPL
-        });
-      } else {
-        log(`${sym}: below min P/L (${netPL.toFixed(2)})`);
+        if(netPL >= minPL){
+          out.push({
+            sym,
+            buy:{ dex:(bestBuy.dexId||"").toUpperCase(), price:min },
+            sell:{ dex:(bestSell.dexId||"").toUpperCase(), price:max },
+            spreadPct,
+            usdcBack,
+            netPL
+          });
+        } else {
+          log(`${sym}: below min P/L (${netPL.toFixed(2)})`);
+        }
       }
     }catch(e){
       log(`${sym}: error ${e.message}`);
     }
     done++; $("summary").textContent = `Progress ${done}/${total} • min P/L ${fmtUSD(minPL)} • loan ${fmtUSD(loan)}`;
-    // small delay to be nice to API
-    await sleep(150);
+    await sleep(120); // gentle on API
   }
 
   // render
@@ -285,13 +310,13 @@ async function scan(){
   }
 
   $("status").textContent = `Done. Found ${out.length} ≥ ${fmtUSD(minPL)} (fee 0.09% + gas ~ ${fmtUSD(gasUSD,4)}).`;
-  if(!out.length) log("No routes met the threshold at this size. Try smaller loan or lower min P/L.");
+  if(!out.length) log("No routes met the threshold at this size with filters. Try smaller loan, lower min P/L, or wait for price changes.");
 }
 
 $("scanBtn").addEventListener("click", ()=>{ $("stopBtn").disabled=false; scan().finally(()=>{ $("stopBtn").disabled=true; }); });
 $("stopBtn").addEventListener("click", ()=>{ abort=true; $("status").textContent="Stopping…"; });
 
-// First paint: try gas immediately so the UI looks alive
+// First paint: gas fetch for UI
 fetchGasGwei().then(g=>{
   $("gasPill").textContent = `Gas: ${g.gwei.toFixed(2)} gwei`; $("rpcPill").textContent = "RPC: " + new URL(g.rpc).host;
 }).catch(()=>{$("gasPill").textContent="Gas: —";});

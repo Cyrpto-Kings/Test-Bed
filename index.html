@@ -1,162 +1,300 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.9.4-diag — UI Wiring Check</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crypto Kings v9.9.6 — Arbitrum</title>
 <style>
-:root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-/* header */
-header{background:#111;color:#fff;position:sticky;top:0;z-index:20}
-.head{max-width:1200px;margin:0 auto;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.brand{display:flex;gap:10px;align-items:center}
-.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
-.nav{display:flex;gap:14px;flex-wrap:wrap}
-.nav a{color:#e5e7eb;text-decoration:none;font-size:14px;opacity:.9}
-.nav a:hover{opacity:1;text-decoration:underline}
-.meta{font-size:13px;opacity:.8}
-/* layout */
-.wrap{max-width:1200px;margin:0 auto;padding:16px 12px 90px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 6px 16px rgba(0,0,0,.04)}
-.row{display:grid;grid-template-columns:1fr;gap:10px}
-@media(min-width:880px){.row-5{grid-template-columns:repeat(5,1fr)}}
-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px}
-button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
-.ghost{background:transparent;color:#111;border:1px solid var(--border)}
-.status{display:flex;gap:10px;align-items:center;color:#6b7280;font-size:13px}
-.spin{border:3px solid rgba(0,0,0,.08);border-top:3px solid var(--brand);border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite}
-@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-.pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
-.table-wrap{overflow-x:auto;border-radius:12px}
-table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
-th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
-th{background:#fafafa}
-.right{text-align:right}.ok{color:var(--ok)}.bad{color:var(--bad)}.hint{color:#6b7280;font-size:12px}
-#log{margin-top:10px;font-size:12px;color:#374151;max-height:260px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
-.notice{background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;border-radius:12px;padding:10px;margin:10px 0;white-space:pre-wrap}
-/* footer */
-footer{background:#111;color:#e5e7eb}
-.foot{max-width:1200px;margin:0 auto;padding:26px 14px}
-.grid4{display:grid;grid-template-columns:1fr;gap:18px}
-@media(min-width:760px){.grid4{grid-template-columns:repeat(4,1fr)}}
-.foot h4{margin:0 0 8px;font-size:14px}
-.foot ul{list-style:none;margin:0;padding:0}
-.foot li{margin:4px 0;font-size:13px;opacity:.9}
-.copy{margin-top:16px;font-size:12px;opacity:.8;text-align:center}
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
+    --brand1:#3b82f6; --brand2:#9333ea; --ok:#10b981; --bad:#ef4444;
+    --border:#e5e7eb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  header{background:#111;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  header .brand{display:flex;align-items:center;gap:10px}
+  header .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand1),var(--brand2));display:grid;place-items:center;font-weight:800}
+  header nav a{color:#fff;text-decoration:none;margin-left:14px;font-weight:600;opacity:.9}
+  header nav a:hover{opacity:1}
+  .wrap{max-width:980px;margin:0 auto;padding:18px 12px 40px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--ink);outline:none}
+  input:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+  .row{display:grid;grid-template-columns:1fr;gap:12px}
+  @media (min-width:720px){ .row-3{grid-template-columns:repeat(3,1fr)} .row-2{grid-template-columns:repeat(2,1fr)} }
+  .btn{appearance:none;border:0;border-radius:12px;padding:12px 16px;font-weight:800;color:white;background:linear-gradient(135deg,var(--brand1),var(--brand2));cursor:pointer}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border)}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .kpi{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .pill{background:#eef2ff;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:12px}
+  .pill.bad{background:#fee2e2}
+  .pill.ok{background:#dcfce7}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;text-align:left}
+  th{color:#374151;background:#fafafa;position:sticky;top:0;z-index:1}
+  .right{text-align:right}
+  .muted{color:var(--muted)}
+  .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:220px;overflow:auto}
+  .status{font-size:13px}
 </style>
 </head>
 <body>
 <header>
-  <div class="head">
-    <div class="brand">
-      <div class="logo">CK</div>
-      <div>
-        <div style="font-weight:800;letter-spacing:.2px">Crypto Kings</div>
-        <div class="meta">TestBed v9.9.4-diag • UI wiring only</div>
-      </div>
+  <div class="brand">
+    <div class="logo">CK</div>
+    <div>
+      <div style="font-weight:800;">Crypto Kings</div>
+      <div class="muted" style="font-size:12px;">v9.9.6 — Arbitrum</div>
     </div>
-    <nav class="nav">
-      <a href="#">Home</a><a href="#">Who we are</a><a href="#">What we do</a><a href="#">Connect with us</a>
-    </nav>
   </div>
+  <nav>
+    <a href="#">Home</a>
+    <a href="#">Who we are</a>
+    <a href="#">What we do</a>
+    <a href="#">Connect with us</a>
+  </nav>
 </header>
 
 <div class="wrap">
-  <div id="notices"></div>
+
+  <!-- Controls -->
   <div class="card">
-    <div class="row row-5">
+    <div class="row row-3">
       <div>
-        <label for="loan">Loan Amount (dummy)</label>
-        <input id="loan" type="number" value="10000" min="500" step="500"/>
+        <label for="loan">Loan Amount (USDC)</label>
+        <input id="loan" type="number" min="1" step="1" value="10000" />
       </div>
       <div>
-        <label for="threshold">Min Net P/L (dummy)</label>
-        <input id="threshold" type="number" value="0" min="0" step="1"/>
+        <label for="minPL">Min Net P/L (USDC)</label>
+        <input id="minPL" type="number" step="1" value="0" />
       </div>
       <div>
-        <label for="interval">Auto-rescan</label>
-        <select id="interval"><option value="0" selected>Off</option><option value="5">5s</option></select>
-      </div>
-      <div>
-        <label for="autoExec">Auto-execute (mock)</label>
-        <select id="autoExec"><option value="0" selected>Off</option><option value="1">On</option></select>
-      </div>
-      <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap">
-        <button id="scanBtn" onclick="window.CK && window.CK.scan()">Scan</button>
-        <button id="stopBtn" class="ghost">Stop</button>
-        <div class="status"><div id="spinner" class="spin" style="display:none"></div><span id="status">Booting…</span></div>
+        <label for="gasLimit">Gas Limit (2 swaps + callback)</label>
+        <input id="gasLimit" type="number" step="1000" value="380000" />
       </div>
     </div>
-    <div class="hint" style="margin-top:6px">
-      This build doesn’t call RPC or ethers. It only proves the UI is alive.
-      <span class="pill" id="rpcPill">RPC: (n/a)</span>
-      <span class="pill" id="gasPill">Gas: (n/a)</span>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+      <button id="scanBtn" class="btn">Scan</button>
+      <button id="stopBtn" class="btn ghost" disabled>Stop</button>
+      <div id="status" class="status muted" style="align-self:center">Idle.</div>
+    </div>
+    <div class="kpi" style="margin-top:10px">
+      <div id="rpcPill" class="pill">RPC: —</div>
+      <div id="gasPill" class="pill">Gas: —</div>
+      <div id="ethPill" class="pill">WETH: —</div>
     </div>
   </div>
 
-  <div class="card" style="margin-top:12px">
-    <div class="table-wrap">
+  <!-- Results -->
+  <div class="card" id="resultsCard">
+    <div style="font-weight:800;margin-bottom:6px;">Results</div>
+    <div class="muted" id="summary">—</div>
+    <div style="overflow:auto;margin-top:8px;">
       <table>
-        <thead><tr><th>#</th><th>Step</th><th>Status</th></tr></thead>
-        <tbody id="rows"></tbody>
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Buy DEX</th>
+            <th class="right">Price</th>
+            <th>Sell DEX</th>
+            <th class="right">Price</th>
+            <th class="right">Spread %</th>
+            <th class="right">USDC Back</th>
+            <th class="right">Net P/L</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
       </table>
     </div>
-    <details style="margin-top:10px"><summary>Details / Logs</summary><div id="log"></div></details>
+  </div>
+
+  <!-- Logs -->
+  <div class="card">
+    <div style="font-weight:800;margin-bottom:6px;">Details / Logs</div>
+    <div id="log" class="log"></div>
+  </div>
+
+  <div class="muted" style="font-size:12px;margin:8px 2px;">
+    Net P/L = (loan ÷ buyPrice × sellPrice) − loan − 0.09% flash fee − est. gas (gasPrice × gasLimit / 1e9 × WETH$).
   </div>
 </div>
 
-<footer>
-  <div class="foot">
-    <div class="grid4">
-      <div><h4>Crypto Kings</h4><ul><li>UI wiring check</li><li>No ethers</li><li>No RPC</li></ul></div>
-      <div><h4>Company</h4><ul><li><a style="color:#e5e7eb" href="#">About</a></li><li><a style="color:#e5e7eb" href="#">Careers</a></li></ul></div>
-      <div><h4>Legal</h4><ul><li><a style="color:#e5e7eb" href="#">Terms</a></li><li><a style="color:#e5e7eb" href="#">Privacy</a></li></ul></div>
-      <div><h4>Contact</h4><ul><li><a style="color:#e5e7eb" href="#">Support</a></li></ul></div>
-    </div>
-    <div class="copy">© <span id="year"></span> Crypto Kings Limited. All rights reserved.</div>
-  </div>
-</footer>
-
 <script>
-(function(){
-  const $=id=>document.getElementById(id);
-  document.getElementById('year').textContent=new Date().getFullYear();
-  const log=(m)=>{const d=document.createElement('div');d.textContent=m;$('log').appendChild(d);$('log').scrollTop=$('log').scrollHeight;};
-  const setStatus=(t,spin)=>{$('status').textContent=t;$('spinner').style.display=spin?'inline-block':'none';};
-  const addRow=(i,step,status)=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${i}</td><td>${step}</td><td>${status}</td>`;$('rows').appendChild(tr);};
+// ---------- Config ----------
+const RPCS = [
+  "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez", // your Alchemy node
+  "https://arb1.arbitrum.io/rpc",
+  "https://arbitrum.llamarpc.com",
+  "https://rpc.ankr.com/arbitrum",
+  "https://arbitrum-one.publicnode.com"
+];
+const ALLOW_DEX = new Set(["uniswap-v3","sushiswap","camelot"]); // id names from Dexscreener
+const TOKENS = { // Arbitrum main
+  WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+  USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+  USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+  DAI :"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+  ARB :"0x912CE59144191C1204E64559FE8253a0e49E6548",
+  GMX :"0xfc5a96a8cE62fF190E4A44bD828F3E0eC4A6fBf9",
+  LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
+  WBTC:"0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+  AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
+  PENDLE:"0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8",
+  RDNT:"0x3082CC23568eA640225c2467653dB90e9250AaA0",
+};
 
-  window.addEventListener('error',e=>{
-    const n=document.createElement('div');n.className='notice';n.textContent='App notice\n'+e.message+'\n'+(e.filename||'')+' | '+(e.lineno||0)+':'+(e.colno||0);
-    document.getElementById('notices').prepend(n);
-  });
+// ---------- Helpers ----------
+const $ = (id)=>document.getElementById(id);
+const logEl = $("log"), tbody = $("tbody");
+function log(msg){ const t=new Date().toLocaleTimeString(); logEl.innerHTML+=`[${t}] ${msg}<br>`; logEl.scrollTop=logEl.scrollHeight; }
+function fmtUSD(n,dp=2){ if(!isFinite(n)) return "—"; return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:dp}); }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-  // expose scan for inline fallback
-  window.CK={scan:scanClick};
+// ---------- RPC: gas ----------
+async function fetchGasGwei(){
+  const payload = { jsonrpc:"2.0", id:1, method:"eth_gasPrice", params:[] };
+  let lastErr=null, hostShown=false;
+  for(const url of RPCS){
+    try{
+      if(!hostShown){ $("rpcPill").textContent = "RPC: "+ new URL(url).host; hostShown=true; }
+      const r = await fetch(url,{method:"POST",headers:{ "Content-Type":"application/json"},body:JSON.stringify(payload)});
+      if(!r.ok) { lastErr = new Error("HTTP "+r.status); continue; }
+      const j = await r.json();
+      const wei = parseInt(j?.result,16);
+      if(Number.isFinite(wei)) return { gwei: wei/1e9, rpc:url };
+    }catch(e){ lastErr=e; }
+  }
+  throw lastErr || new Error("RPC gas failed");
+}
 
-  function bindUI(){
-    $('scanBtn').addEventListener('click',scanClick);
-    $('stopBtn').addEventListener('click',()=>setStatus('Idle.',false));
-    setStatus('Ready.',false);
-    log('UI bound');
+// ---------- Dexscreener fetch ----------
+async function fetchPairsFor(addr){
+  const url = `https://api.dexscreener.com/latest/dex/tokens/${addr}`;
+  const r = await fetch(url,{cache:"no-store"});
+  if(!r.ok) throw new Error("Dexscreener HTTP "+r.status);
+  const j = await r.json();
+  const rows = (j?.pairs||[]).filter(p => p.chainId==="arbitrum" && ALLOW_DEX.has((p.dexId||"").toLowerCase()));
+  // one row per DEX: pick by highest liquidity
+  const byDex = new Map();
+  for(const p of rows){
+    const k = (p.dexId||"").toLowerCase();
+    const liq = Number(p?.liquidity?.usd||0);
+    if(!byDex.has(k) || liq > (byDex.get(k)?.liquidity?.usd||0)) byDex.set(k,p);
+  }
+  return Array.from(byDex.values());
+}
+
+// ---------- Core scan ----------
+let abort=false;
+async function scan(){
+  abort=false;
+  const loan = parseFloat($("loan").value||"0");
+  const minPL = parseFloat($("minPL").value||"0");
+  const gasLimit = parseFloat($("gasLimit").value||"0");
+  $("status").textContent = "Fetching gas & WETH…";
+  tbody.innerHTML=""; $("summary").textContent="—";
+
+  // gas
+  let gasGwei=0, rpcUsed="";
+  try{
+    const g = await fetchGasGwei();
+    gasGwei = g.gwei; rpcUsed = g.rpc;
+    $("gasPill").textContent = `Gas: ${gasGwei.toFixed(2)} gwei`;
+    $("rpcPill").textContent = "RPC: " + new URL(rpcUsed).host;
+    log(`Gas: ${gasGwei.toFixed(2)} gwei via ${new URL(rpcUsed).host}`);
+  }catch(e){
+    log(`<span style="color:#fecaca">Gas fetch failed: ${e.message}</span>`);
+    $("gasPill").textContent = "Gas: error";
   }
 
-  async function scanClick(){
-    setStatus('Starting scan…',true);
-    $('rows').innerHTML='';$('log').innerHTML='';
-    log('Scan clicked');
-    // simulate 8 steps
-    for(let i=1;i<=8;i++){
-      await new Promise(r=>setTimeout(r,300));
-      addRow(i,'Step '+i,'OK');
-      log('Step '+i+' complete');
+  // WETH price (for gas USD)
+  let ethUSD = NaN;
+  try{
+    const ethPairs = await fetchPairsFor(TOKENS.WETH);
+    const bestUSDC = ethPairs.find(p => (p.quoteToken?.symbol||"").toUpperCase().includes("USD"));
+    ethUSD = Number(bestUSDC?.priceUsd);
+    $("ethPill").textContent = isFinite(ethUSD) ? `WETH: ${fmtUSD(ethUSD)}` : "WETH: —";
+  }catch(_e){
+    $("ethPill").textContent = "WETH: —";
+  }
+
+  const gasEth = isFinite(gasGwei)&&isFinite(gasLimit) ? (gasGwei*gasLimit)/1e9 : 0;
+  const gasUSD = isFinite(ethUSD) ? gasEth * ethUSD : 0;
+
+  $("status").textContent = "Scanning tokens…";
+  const out = [];
+  let done = 0, total = Object.keys(TOKENS).length;
+
+  for(const [sym,addr] of Object.entries(TOKENS)){
+    if(abort){ log("Scan aborted."); break; }
+    try{
+      const pairs = await fetchPairsFor(addr);
+      // find best buy/sell across allowed DEXes
+      let bestBuy=null, bestSell=null, min=Infinity, max=-Infinity;
+      pairs.forEach(p=>{
+        const pr = Number(p?.priceUsd);
+        if(!isFinite(pr)) return;
+        if(pr < min){ min=pr; bestBuy=p; }
+        if(pr > max){ max=pr; bestSell=p; }
+      });
+      if(!bestBuy || !bestSell || !isFinite(min) || !isFinite(max)){ log(`${sym}: no prices`); continue; }
+      const units = loan / min;
+      const usdcBack = units * max;
+      const flashFee = loan * 0.0009; // 0.09%
+      const netPL = usdcBack - loan - flashFee - gasUSD;
+      const spreadPct = ((max/min)-1)*100;
+
+      if(netPL >= minPL){
+        out.push({
+          sym,
+          buy:{ dex:(bestBuy.dexId||"").toUpperCase(), price:min },
+          sell:{ dex:(bestSell.dexId||"").toUpperCase(), price:max },
+          spreadPct,
+          usdcBack,
+          netPL
+        });
+      } else {
+        log(`${sym}: below min P/L (${netPL.toFixed(2)})`);
+      }
+    }catch(e){
+      log(`${sym}: error ${e.message}`);
     }
-    setStatus('Done.',false);
+    done++; $("summary").textContent = `Progress ${done}/${total} • min P/L ${fmtUSD(minPL)} • loan ${fmtUSD(loan)}`;
+    // small delay to be nice to API
+    await sleep(150);
   }
 
-  document.addEventListener('DOMContentLoaded',bindUI);
-})();
+  // render
+  tbody.innerHTML="";
+  out.sort((a,b)=>b.netPL - a.netPL);
+  for(const row of out){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.sym}</td>
+      <td>${row.buy.dex}</td>
+      <td class="right">${fmtUSD(row.buy.price,5)}</td>
+      <td>${row.sell.dex}</td>
+      <td class="right">${fmtUSD(row.sell.price,5)}</td>
+      <td class="right">${row.spreadPct.toFixed(2)}%</td>
+      <td class="right">${fmtUSD(row.usdcBack)}</td>
+      <td class="right" style="font-weight:700;color:${row.netPL>=0?'#16a34a':'#ef4444'}">${(row.netPL>=0?'+':'')+row.netPL.toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  $("status").textContent = `Done. Found ${out.length} ≥ ${fmtUSD(minPL)} (fee 0.09% + gas ~ ${fmtUSD(gasUSD,4)}).`;
+  if(!out.length) log("No routes met the threshold at this size. Try smaller loan or lower min P/L.");
+}
+
+$("scanBtn").addEventListener("click", ()=>{ $("stopBtn").disabled=false; scan().finally(()=>{ $("stopBtn").disabled=true; }); });
+$("stopBtn").addEventListener("click", ()=>{ abort=true; $("status").textContent="Stopping…"; });
+
+// First paint: try gas immediately so the UI looks alive
+fetchGasGwei().then(g=>{
+  $("gasPill").textContent = `Gas: ${g.gwei.toFixed(2)} gwei`; $("rpcPill").textContent = "RPC: " + new URL(g.rpc).host;
+}).catch(()=>{$("gasPill").textContent="Gas: —";});
 </script>
 </body>
 </html>

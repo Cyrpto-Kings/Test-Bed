@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings v9.9.7 — Arbitrum</title>
+<title>Crypto Kings v9.9.8 — Arbitrum (Show All)</title>
 <style>
   :root{
     --bg:#f6f7fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
@@ -29,14 +29,12 @@
   .btn:disabled{opacity:.6;cursor:not-allowed}
   .kpi{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
   .pill{background:#eef2ff;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:12px}
-  .pill.bad{background:#fee2e2}
-  .pill.ok{background:#dcfce7}
   table{width:100%;border-collapse:collapse}
   th,td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;text-align:left}
   th{color:#374151;background:#fafafa;position:sticky;top:0;z-index:1}
   .right{text-align:right}
   .muted{color:var(--muted)}
-  .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:240px;overflow:auto}
+  .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:260px;overflow:auto}
   .status{font-size:13px}
 </style>
 </head>
@@ -46,7 +44,7 @@
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;">Crypto Kings</div>
-      <div class="muted" style="font-size:12px;">v9.9.7 — Arbitrum</div>
+      <div class="muted" style="font-size:12px;">v9.9.8 — Arbitrum (Show All)</div>
     </div>
   </div>
   <nav>
@@ -67,12 +65,12 @@
         <input id="loan" type="number" min="1" step="1" value="10000" />
       </div>
       <div>
-        <label for="minPL">Min Net P/L (USDC)</label>
-        <input id="minPL" type="number" step="1" value="0" />
-      </div>
-      <div>
         <label for="gasLimit">Gas Limit (2 swaps + callback)</label>
         <input id="gasLimit" type="number" step="1000" value="380000" />
+      </div>
+      <div>
+        <label for="note">Mode</label>
+        <input id="note" value="Filters relaxed: liq≥10k • freshness OFF • show all P/L" readonly />
       </div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
@@ -84,7 +82,6 @@
       <div id="rpcPill" class="pill">RPC: —</div>
       <div id="gasPill" class="pill">Gas: —</div>
       <div id="ethPill" class="pill">WETH: —</div>
-      <div id="filtersPill" class="pill">Filters: liq≥100k • fresh m5</div>
     </div>
   </div>
 
@@ -118,23 +115,24 @@
   </div>
 
   <div class="muted" style="font-size:12px;margin:8px 2px;">
-    Net P/L = (loan ÷ buyPrice × sellPrice) − loan − 0.09% flash fee − est. gas (gasPrice × gasLimit / 1e9 × WETH$). Only liquid (≥$100k) & fresh (≥1 txn in last 5m) pools shown.
+    Net P/L = (loan ÷ buyPrice × sellPrice) − loan − 0.09% flash fee − est. gas (gasPrice × gasLimit / 1e9 × WETH$).
+    This build shows all routes that pass basic liquidity ($10k) & DEX allow-list, regardless of P/L.
   </div>
 </div>
 
 <script>
 // ---------- Config ----------
 const RPCS = [
-  "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez", // your Alchemy node
+  "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez", // your Alchemy node (primary)
   "https://arb1.arbitrum.io/rpc",
   "https://arbitrum.llamarpc.com",
   "https://rpc.ankr.com/arbitrum",
   "https://arbitrum-one.publicnode.com"
 ];
 const ALLOW_DEX = new Set(["uniswap-v3","sushiswap","camelot"]); // Dexscreener IDs
-const MIN_LIQ_USD = 100000;   // pool liquidity filter
-const MIN_VOL24_USD = 25000;  // optional: daily volume guard (low enough to keep majors)
-const REQUIRE_TXN_M5 = true;  // require activity in last 5 minutes
+const MIN_LIQ_USD = 10000;   // relaxed liquidity guard
+const REQUIRE_TXN_M5 = false; // freshness OFF
+const MIN_VOL24_USD = 0;      // relaxed volume
 
 // Tokens on Arbitrum
 const TOKENS = {
@@ -181,7 +179,6 @@ async function fetchPairsFor(addr){
   const r = await fetch(url,{cache:"no-store"});
   if(!r.ok) throw new Error("Dexscreener HTTP "+r.status);
   const j = await r.json();
-  // Filter: network, DEX allow-list, liquidity, volume, freshness (m5 txns)
   const rows = (j?.pairs||[]).filter(p => {
     if(p.chainId!=="arbitrum") return false;
     const dex = (p.dexId||"").toLowerCase();
@@ -198,7 +195,7 @@ async function fetchPairsFor(addr){
     return true;
   });
 
-  // one row per DEX: pick by highest liquidity
+  // one best pool per DEX by highest liquidity
   const byDex = new Map();
   for(const p of rows){
     const k = (p.dexId||"").toLowerCase();
@@ -213,7 +210,6 @@ let abort=false;
 async function scan(){
   abort=false;
   const loan = parseFloat($("loan").value||"0");
-  const minPL = parseFloat($("minPL").value||"0");
   const gasLimit = parseFloat($("gasLimit").value||"0");
   $("status").textContent = "Fetching gas & WETH…";
   tbody.innerHTML=""; $("summary").textContent="—";
@@ -253,9 +249,8 @@ async function scan(){
     if(abort){ log("Scan aborted."); break; }
     try{
       const pairs = await fetchPairsFor(addr);
-      if(!pairs.length){ log(`${sym}: no liquid/fresh pools`); done++; $("summary").textContent = `Progress ${done}/${total} • min P/L ${fmtUSD(minPL)} • loan ${fmtUSD(loan)}`; await sleep(120); continue; }
+      if(!pairs.length){ log(`${sym}: no pools after liq/DEX filters`); done++; $("summary").textContent = `Progress ${done}/${total} • loan ${fmtUSD(loan)}`; await sleep(120); continue; }
 
-      // best buy/sell across allowed DEXes
       let bestBuy=null, bestSell=null, min=Infinity, max=-Infinity;
       pairs.forEach(p=>{
         const pr = Number(p?.priceUsd);
@@ -263,7 +258,7 @@ async function scan(){
         if(pr < min){ min=pr; bestBuy=p; }
         if(pr > max){ max=pr; bestSell=p; }
       });
-      if(!bestBuy || !bestSell || !isFinite(min) || !isFinite(max)){ log(`${sym}: no prices after filters`); }
+      if(!bestBuy || !bestSell || !isFinite(min) || !isFinite(max)){ log(`${sym}: missing price`); }
       else {
         const units = loan / min;
         const usdcBack = units * max;
@@ -271,27 +266,24 @@ async function scan(){
         const netPL = usdcBack - loan - flashFee - gasUSD;
         const spreadPct = ((max/min)-1)*100;
 
-        if(netPL >= minPL){
-          out.push({
-            sym,
-            buy:{ dex:(bestBuy.dexId||"").toUpperCase(), price:min },
-            sell:{ dex:(bestSell.dexId||"").toUpperCase(), price:max },
-            spreadPct,
-            usdcBack,
-            netPL
-          });
-        } else {
-          log(`${sym}: below min P/L (${netPL.toFixed(2)})`);
-        }
+        out.push({
+          sym,
+          buy:{ dex:(bestBuy.dexId||"").toUpperCase(), price:min },
+          sell:{ dex:(bestSell.dexId||"").toUpperCase(), price:max },
+          spreadPct,
+          usdcBack,
+          netPL,
+          m5:`${bestBuy?.txns?.m5?.buys||0}/${bestBuy?.txns?.m5?.sells||0} & ${bestSell?.txns?.m5?.buys||0}/${bestSell?.txns?.m5?.sells||0}`
+        });
       }
     }catch(e){
       log(`${sym}: error ${e.message}`);
     }
-    done++; $("summary").textContent = `Progress ${done}/${total} • min P/L ${fmtUSD(minPL)} • loan ${fmtUSD(loan)}`;
+    done++; $("summary").textContent = `Progress ${done}/${total} • loan ${fmtUSD(loan)}`;
     await sleep(120); // gentle on API
   }
 
-  // render
+  // render (sort by Net P/L desc so winners float up)
   tbody.innerHTML="";
   out.sort((a,b)=>b.netPL - a.netPL);
   for(const row of out){
@@ -309,8 +301,8 @@ async function scan(){
     tbody.appendChild(tr);
   }
 
-  $("status").textContent = `Done. Found ${out.length} ≥ ${fmtUSD(minPL)} (fee 0.09% + gas ~ ${fmtUSD(gasUSD,4)}).`;
-  if(!out.length) log("No routes met the threshold at this size with filters. Try smaller loan, lower min P/L, or wait for price changes.");
+  $("status").textContent = `Done. Listed ${out.length} routes (fee 0.09% + gas ~ ${fmtUSD(gasUSD,4)}).`;
+  if(!out.length) log("No routes after relaxed filters — try later or adjust token set.");
 }
 
 $("scanBtn").addEventListener("click", ()=>{ $("stopBtn").disabled=false; scan().finally(()=>{ $("stopBtn").disabled=true; }); });

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Crypto Kings v9.9.16 — Arbitrum Scanner (Realistic)</title>
+<title>Crypto Kings v9.9.17 — Arbitrum Scanner (Realistic)</title>
 <style>
   :root{
     --bg:#f6f7fb; --card:#ffffff; --ink:#111827; --muted:#6b7280;
@@ -12,18 +12,32 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  header{background:#111;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  header{background:#111;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
   header .brand{display:flex;align-items:center;gap:10px}
   header .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--brand1),var(--brand2));display:grid;place-items:center;font-weight:900}
-  header nav a{color:#fff;text-decoration:none;margin-left:16px;font-weight:700;opacity:.9}
-  header nav a:hover{opacity:1}
+  header .title{display:flex;flex-direction:column}
+  header .title .v{font-size:12px;opacity:.8}
+  nav{display:flex;gap:16px;align-items:center}
+  nav a{color:#fff;text-decoration:none;font-weight:700;opacity:.9}
+  nav a:hover{opacity:1}
+  /* Hamburger */
+  .hamb{display:none;cursor:pointer;width:34px;height:34px;border-radius:8px;border:1px solid #333;display:grid;place-items:center}
+  .hamb span{display:block;width:18px;height:2px;background:#fff;position:relative}
+  .hamb span:before,.hamb span:after{content:"";position:absolute;left:0;height:2px;width:18px;background:#fff}
+  .hamb span:before{top:-6px}.hamb span:after{top:6px}
+  @media (max-width:760px){
+    nav{display:none;position:absolute;left:0;right:0;top:58px;background:#0d0f13;padding:10px 16px;flex-direction:column}
+    nav.open{display:flex}
+    .hamb{display:grid}
+  }
+
   .wrap{max-width:1024px;margin:0 auto;padding:18px 12px 40px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input[type="number"],input[readonly]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#111;outline:none}
   input:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
   .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:760px){ .row-4{grid-template-columns:repeat(4,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} }
+  @media (min-width:760px){ .row-4{grid-template-columns:repeat(4,1fr)} }
   .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:800;color:white;background:linear-gradient(135deg,var(--brand1),var(--brand2));cursor:pointer}
   .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border)}
   .btn:disabled{opacity:.6;cursor:not-allowed}
@@ -33,20 +47,12 @@
   .right{text-align:right}
   table{width:100%;border-collapse:collapse}
   th,td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;text-align:left}
-  th{color: #374151;background:#fafafa;position:sticky;top:0;z-index:1}
+  th{color:#374151;background:#fafafa;position:sticky;top:0;z-index:1}
   .pos{color:var(--ok);font-weight:700}
   .neg{color:var(--bad);font-weight:700}
   .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:260px;overflow:auto}
   footer{background:#111;color:#cbd5e1;padding:22px;margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:22px}
   footer b{color:#fff}
-  /* Modal */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
-  .modal{background:#fff;color:#111;border-radius:16px;max-width:860px;width:100%;box-shadow:var(--shadow)}
-  .modal header{background:#fff;color:#111;border-bottom:1px solid var(--border);border-radius:16px 16px 0 0;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
-  .modal .content{padding:16px;max-height:72vh;overflow:auto}
-  .close-x{cursor:pointer;border:0;background:transparent;font-weight:900;font-size:18px}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
-  /* Loading */
   .center{display:flex;justify-content:center;align-items:center}
   .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand1);border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
@@ -56,12 +62,13 @@
 <header>
   <div class="brand">
     <div class="logo">CK</div>
-    <div>
+    <div class="title">
       <div style="font-weight:900;">Crypto Kings</div>
-      <div class="muted" style="font-size:12px;">v9.9.16 — Arbitrum</div>
+      <div class="v">v9.9.17 — Arbitrum</div>
     </div>
   </div>
-  <nav>
+  <div class="hamb" id="hamb"><span></span></div>
+  <nav id="nav">
     <a href="#">Home</a>
     <a href="#">Who we are</a>
     <a href="#">What we do</a>
@@ -70,21 +77,20 @@
 </header>
 
 <div class="wrap">
-
   <!-- Controls -->
   <div class="card">
     <div class="row row-4">
       <div>
         <label for="loan">Loan Amount (USDC)</label>
-        <input id="loan" type="number" min="1" step="1" value="10000" />
+        <input id="loan" type="number" min="1" step="1" value="10000"/>
       </div>
       <div>
         <label for="gasLimit">Gas Limit (2 swaps + callback)</label>
-        <input id="gasLimit" type="number" step="1000" value="380000" />
+        <input id="gasLimit" type="number" step="1000" value="380000"/>
       </div>
       <div>
         <label for="modeNote">Mode</label>
-        <input id="modeNote" value="Extended (~40) • liq≥4×loan • fresh m5 • spread cap 25%" readonly />
+        <input id="modeNote" value="Extended (~40) • liq≥4×loan • fresh m5 • spread cap 25%" readonly/>
       </div>
       <div>
         <label>&nbsp;</label>
@@ -96,7 +102,6 @@
         </div>
       </div>
     </div>
-
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
       <button id="scanBtn" class="btn">Scan</button>
       <button id="stopBtn" class="btn ghost" disabled>Stop</button>
@@ -112,10 +117,10 @@
         <div class="muted" id="summary">—</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button id="selectProfBtn" class="btn ghost" title="Select all profitable rows">Select all profitable</button>
+        <button id="selectProfBtn" class="btn ghost">Select all profitable</button>
         <button id="clearSelBtn" class="btn ghost">Clear</button>
         <div class="pill" id="selTotalPill">Selected total: +$0</div>
-        <button id="previewBtn" class="btn" title="Preview execution of selected">Execute Selected (Preview)</button>
+        <button id="previewBtn" class="btn">Execute Selected (Preview)</button>
       </div>
     </div>
 
@@ -127,7 +132,7 @@
       <table>
         <thead>
           <tr>
-            <th><input id="selectAll" type="checkbox" /></th>
+            <th><input id="selectAll" type="checkbox"/></th>
             <th>Token</th>
             <th>Buy DEX</th>
             <th class="right">Price</th>
@@ -155,7 +160,6 @@
   </div>
 </div>
 
-<!-- Footer -->
 <footer>
   <div><b>Crypto Kings</b><br/>© 2025 All Rights Reserved</div>
   <div><b>Explore</b><br/>Home<br/>About<br/>Services<br/>Contact</div>
@@ -163,48 +167,31 @@
   <div><b>Social</b><br/>Twitter<br/>Telegram<br/>Discord</div>
 </footer>
 
-<!-- Preview Modal -->
-<div id="modalBackdrop" class="modal-backdrop">
-  <div class="modal">
-    <header>
-      <div style="font-weight:800">Execution Preview</div>
-      <button id="modalClose" class="close-x">✕</button>
-    </header>
-    <div class="content">
-      <div id="modalBody" class="mono"></div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
-        <button id="modalClose2" class="btn ghost">Close</button>
-        <button id="modalProceed" class="btn" disabled title="Live execution next step">Proceed (disabled)</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
-/* ===========================
-   Tunables (Realism)
-=========================== */
-const FLASH_FEE = 0.0009;          // 0.09% (Aave v3)
-const DEX_FEE_PER_LEG = 0.0025;    // 0.25% per swap (approx)
-const SLIPPAGE_BUF = 0.0015;       // 0.15% per leg buffer
-const GAS_LIMIT_DEFAULT = 380000;  // two swaps + callback
-const LIQ_GUARD_X = 4;             // pool must be ≥ 4× loan (USD)
-const SPREAD_CAP_PCT = 25;         // cap raw spread outliers
-const MIN_POOL_USD = 50000;        // absolute floor per pool
-const REQUIRE_FRESH = true;        // require activity in last 5m
+/* ====== Mobile hamburger ====== */
+document.getElementById('hamb').addEventListener('click',()=>{
+  const nav=document.getElementById('nav');
+  nav.classList.toggle('open');
+});
 
-/* ===========================
-   UI Helpers
-=========================== */
-const $ = (id)=>document.getElementById(id);
+/* ====== Tunables (Realism) ====== */
+const FLASH_FEE = 0.0009;        // 0.09% Aave v3
+const DEX_FEE_PER_LEG = 0.0025;  // 0.25% per swap
+const SLIPPAGE_BUF = 0.0015;     // 0.15% per leg buffer
+const GAS_LIMIT_DEFAULT = 380000;
+const LIQ_GUARD_X = 4;
+const SPREAD_CAP_PCT = 25;
+const MIN_POOL_USD = 50000;
+const REQUIRE_FRESH = true;
+
+/* ====== Helpers ====== */
+const $ = id => document.getElementById(id);
 const logEl = $("log"), tbody = $("tbody");
-function log(msg){ const t=new Date().toLocaleTimeString(); logEl.innerHTML+=`[${t}] ${msg}<br>`; logEl.scrollTop=logEl.scrollHeight; }
+function log(m){ const t=new Date().toLocaleTimeString(); logEl.innerHTML+=`[${t}] ${m}<br>`; logEl.scrollTop=logEl.scrollHeight; }
 function fmtUSD(n,dp=2){ if(!isFinite(n)) return "—"; return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:dp}); }
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-/* ===========================
-   Data sources
-=========================== */
+/* ====== RPC & tokens ====== */
 const RPCS = [
   "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez",
   "https://arb1.arbitrum.io/rpc",
@@ -234,223 +221,177 @@ const TOKENS = {
   SNX :"0x8700daec35af8ff88c16bd18f1f8d2727f9726e9",
   COMP:"0xb9d7cb7d0a7f620f2de913c2c9b391d4bdf6eb9f",
   YFI :"0x82e90eb7034c1df7a3e14d6e50e55cdd0d9c9a6a",
-  GRT :"0x23a941036ae778ac51ab04cea08ed6e2fe103614",
-  OP  :"0x4200000000000000000000000000000000000042" /* (placeholder - OP native, likely no pools on Arb) */
+  GRT :"0x23a941036ae778ac51ab04cea08ed6e2fe103614"
 };
 
-/* ===========================
-   Math (realistic model)
-=========================== */
-function isFreshPool(p){
-  if(!REQUIRE_FRESH) return true;
-  const b = Number(p?.txns?.m5?.buys||0);
-  const s = Number(p?.txns?.m5?.sells||0);
-  return (b + s) > 0;
-}
+/* ====== Math (CP model) ====== */
+function isFreshPool(p){ if(!REQUIRE_FRESH) return true; const b=Number(p?.txns?.m5?.buys||0); const s=Number(p?.txns?.m5?.sells||0); return (b+s)>0; }
 function bestPerDex(pairs){
-  const by = new Map();
+  const by=new Map();
   for(const p of pairs){
-    const dex = (p?.dexId||"").toLowerCase();
+    const dex=(p?.dexId||"").toLowerCase();
     if(!ALLOW_DEX.has(dex)) continue;
-    const liq = Number(p?.liquidity?.usd||0);
-    if(liq < MIN_POOL_USD) continue;
+    const liq=Number(p?.liquidity?.usd||0);
+    if(liq<MIN_POOL_USD) continue;
     if(!isFreshPool(p)) continue;
-    const quote = (p?.quoteToken?.symbol||"").toUpperCase();
-    const quoteRank = quote === "USDC" ? 0 : quote === "USDT" ? 1 : 9;
-    const prev = by.get(dex);
-    if(!prev || quoteRank < prev.quoteRank || (quoteRank === prev.quoteRank && liq > prev.liq)){
-      by.set(dex, {rec:p, liq, quoteRank});
-    }
+    const q=(p?.quoteToken?.symbol||"").toUpperCase();
+    const rank=q==="USDC"?0:q==="USDT"?1:9;
+    const prev=by.get(dex);
+    if(!prev || rank<prev.rank || (rank===prev.rank && liq>prev.liq)) by.set(dex,{rec:p,liq,rank});
   }
   return Array.from(by.values()).map(x=>x.rec);
 }
-// constant-product approximations (V2-like), using USD liquidity
 function cp_USDC_to_TOKEN(loanUSDC, priceUsd, liqUsd, perLegCost){
-  if(!(loanUSDC>0 && priceUsd>0 && liqUsd>0)) return 0;
-  const Ru = liqUsd/2;                 // USDC reserve ($)
-  const Rt = (liqUsd/2)/priceUsd;      // token reserve (units)
-  const usdcIn = loanUSDC * (1 - perLegCost);
-  return Rt * (usdcIn / (Ru + usdcIn)); // token out
+  if(!(loanUSDC>0&&priceUsd>0&&liqUsd>0)) return 0;
+  const Ru=liqUsd/2, Rt=(liqUsd/2)/priceUsd;
+  const usdcIn=loanUSDC*(1-perLegCost);
+  return Rt*(usdcIn/(Ru+usdcIn));
 }
 function cp_TOKEN_to_USDC(tokenIn, priceUsd, liqUsd, perLegCost){
-  if(!(tokenIn>0 && priceUsd>0 && liqUsd>0)) return 0;
-  const Ru = liqUsd/2;                 // USDC reserve ($)
-  const Rt = (liqUsd/2)/priceUsd;      // token reserve (units)
-  const tIn = tokenIn * (1 - perLegCost);
-  return Ru * (tIn / (Rt + tIn));      // usdc out
+  if(!(tokenIn>0&&priceUsd>0&&liqUsd>0)) return 0;
+  const Ru=liqUsd/2, Rt=(liqUsd/2)/priceUsd;
+  const tIn=tokenIn*(1-perLegCost);
+  return Ru*(tIn/(Rt+tIn));
 }
 function computeRoutePLUSD({loanUSDC,buyPx,sellPx,buyLiq,sellLiq,ethUsd,gasGwei,gasLimit}){
   if(!(loanUSDC>0&&buyPx>0&&sellPx>0&&buyLiq>0&&sellLiq>0&&ethUsd>0&&gasGwei>=0&&gasLimit>0)) return null;
-  const perLegCost = DEX_FEE_PER_LEG + SLIPPAGE_BUF;  // combined fee+buffer each leg
-  const tokens = cp_USDC_to_TOKEN(loanUSDC,buyPx,buyLiq,perLegCost);
-  const back = cp_TOKEN_to_USDC(tokens,sellPx,sellLiq,perLegCost);
-  const rawSpreadPct = ((sellPx - buyPx)/buyPx)*100;
-  if(rawSpreadPct > SPREAD_CAP_PCT) return {usdcBack:back, pnl:null, why:`capped > ${SPREAD_CAP_PCT}%`};
-  const gasEth = (gasGwei*gasLimit)/1e9;
-  const gasUsd = gasEth*ethUsd;
-  const flashUsd = loanUSDC*FLASH_FEE;
-  const pnl = back - loanUSDC - flashUsd - gasUsd;
-  return {usdcBack:back, pnl, rawSpreadPct, gasUsd, flashUsd};
+  const perLeg = DEX_FEE_PER_LEG + SLIPPAGE_BUF;
+  const tokens = cp_USDC_to_TOKEN(loanUSDC,buyPx,buyLiq,perLeg);
+  const back   = cp_TOKEN_to_USDC(tokens,sellPx,sellLiq,perLeg);
+  const raw    = ((sellPx-buyPx)/buyPx)*100;
+  if(raw>SPREAD_CAP_PCT) return {usdcBack:back,pnl:null,rawSpreadPct:raw};
+  const gasUsd = (gasGwei*gasLimit/1e9)*ethUsd;
+  const flash  = loanUSDC*FLASH_FEE;
+  const pnl    = back - loanUSDC - flash - gasUsd;
+  return {usdcBack:back,pnl,rawSpreadPct:raw,gasUsd,flashUsd:flash};
 }
 
-/* ===========================
-   Fetchers
-=========================== */
-async function fetchGasGwei(){
-  const payload = {jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
+/* ====== Fetchers ====== */
+async function rpcHostAndGas(){
+  const payload={jsonrpc:"2.0",id:1,method:"eth_feeHistory",params:[5,"latest",[10,50,90]]};
   for(const url of RPCS){
     try{
-      const r = await fetch(url,{method:"POST",headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      const r=await fetch(url,{method:"POST",headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
       if(!r.ok) continue;
-      const j = await r.json(), bh=j?.result;
-      if(!bh?.baseFeePerGas) continue;
-      const base = parseInt(bh.baseFeePerGas.at(-1),16)/1e9;
-      const tip50 = parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
-      $("rpcPill").textContent = "RPC: " + new URL(url).host;
-      return base + tip50;
+      const j=await r.json(); const bh=j?.result; if(!bh?.baseFeePerGas) continue;
+      const base=parseInt(bh.baseFeePerGas.at(-1),16)/1e9;
+      const tip50=parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
+      return {host:new URL(url).host,gwei:base+tip50};
     }catch(_){}
   }
-  // fallback
+  // fallback to gasPrice
   for(const url of RPCS){
     try{
-      const r = await fetch(url,{method:"POST",headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:"2.0",id:2,method:"eth_gasPrice",params:[]})});
-      const j = await r.json(); const wei = parseInt(j?.result||"0x0",16);
-      if(wei>0){ $("rpcPill").textContent = "RPC: " + new URL(url).host; return wei/1e9; }
+      const r=await fetch(url,{method:"POST",headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:"2.0",id:2,method:"eth_gasPrice",params:[]})});
+      const j=await r.json(); const wei=parseInt(j?.result||"0x0",16); if(wei>0) return {host:new URL(url).host,gwei:wei/1e9};
     }catch(_){}
   }
   return null;
 }
 async function fetchETHUSD(){
   try{
-    const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
-    const j = await r.json(); const p = j?.ethereum?.usd;
-    if(typeof p==="number") return p;
+    const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
+    const j=await r.json(); const p=j?.ethereum?.usd; if(typeof p==="number") return p;
   }catch(_){}
   return null;
 }
 async function fetchPairsFor(addr){
-  const url = `https://api.dexscreener.com/latest/dex/tokens/${addr}`;
-  const r = await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error("Dexscreener HTTP "+r.status);
-  const j = await r.json();
-  return j?.pairs || [];
+  const url=`https://api.dexscreener.com/latest/dex/tokens/${addr}`;
+  const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error("Dexscreener HTTP "+r.status);
+  const j=await r.json(); return j?.pairs||[];
 }
 
-/* ===========================
-   Scan logic
-=========================== */
+/* ====== Scan ====== */
 let abort=false;
-let renderedRows=[];
+let rowsRendered=[];
+const state = { ethUsd:null, gasGwei:null };
 
 async function scan(){
-  abort=false;
-  renderedRows=[];
-  updateSelectionTotal();
-  $("countPill").textContent = "Tokens: " + Object.keys(TOKENS).length;
+  abort=false; rowsRendered=[]; $("selTotalPill").textContent="Selected total: +$0";
+  $("countPill").textContent="Tokens: "+Object.keys(TOKENS).length;
+  $("loading").style.display="flex"; tbody.innerHTML=""; $("summary").textContent="—"; logEl.innerHTML="";
+  $("status").textContent="Fetching gas & ETH…";
 
-  // Show loading spinner
-  $("loading").style.display="flex";
-  tbody.innerHTML=""; $("summary").textContent="—"; logEl.innerHTML="";
-  $("status").textContent = "Fetching gas & ETH…";
+  // defaults first
+  state.ethUsd = 4300;
+  state.gasGwei = 0.15;
+  $("ethPill").textContent = "WETH: " + fmtUSD(state.ethUsd);
+  $("gasPill").textContent = `Gas: ${state.gasGwei.toFixed(2)} gwei`;
 
-  // Fill sane fallbacks if auto-fetch fails
-  if (!Number($("ethUsd").value)) $("ethUsd").value = "4300";
-  if (!Number($("gasPrice").value)) $("gasPrice").value = "0.15";
-  if (!Number($("gasLimit").value)) $("gasLimit").value = String(GAS_LIMIT_DEFAULT);
-
-  // Gas & ETH
-  let gasGwei = Number($("gasPrice").value) || 0;
-  const g = await fetchGasGwei().catch(()=>null);
-  if(g && isFinite(g)){ gasGwei = g; $("gasPrice").value = g.toFixed(2); }
-  $("gasPill").textContent = `Gas: ${gasGwei?gasGwei.toFixed(2):"—"} gwei`;
-
-  let ethUSD = Number($("ethUsd").value) || 0;
-  const e = await fetchETHUSD().catch(()=>null);
-  if(e && isFinite(e)){ ethUSD = e; $("ethUsd").value = String(e); }
-  $("ethPill").textContent = `WETH: ${ethUSD?fmtUSD(ethUSD):"—"}`;
+  // try live
+  try{
+    const g = await rpcHostAndGas();
+    if(g){ state.gasGwei = g.gwei; $("gasPill").textContent = `Gas: ${g.gwei.toFixed(2)} gwei`; $("rpcPill").textContent = "RPC: "+g.host; }
+  }catch(_){}
+  try{
+    const e = await fetchETHUSD();
+    if(e){ state.ethUsd = e; $("ethPill").textContent = "WETH: " + fmtUSD(e); }
+  }catch(_){}
 
   const loanUSDC = Number($("loan").value)||10000;
   const gasLimit = Number($("gasLimit").value)||GAS_LIMIT_DEFAULT;
   const requiredLiq = Math.max(MIN_POOL_USD, LIQ_GUARD_X*loanUSDC);
 
-  $("status").textContent = "Scanning tokens…";
-  const out = [];
-  const symbols = Object.keys(TOKENS);
-  let done=0;
-
-  for(const sym of symbols){
+  $("status").textContent="Scanning tokens…";
+  const out=[]; const syms=Object.keys(TOKENS); let done=0;
+  for(const sym of syms){
     if(abort){ log("Scan aborted."); break; }
-    const addr = TOKENS[sym];
+    const addr=TOKENS[sym];
     try{
-      const all = await fetchPairsFor(addr);
-      // keep only Arbitrum pools with USDC/USDT quotes
-      let pools = all.filter(p=>{
+      const all=await fetchPairsFor(addr);
+      let pools=all.filter(p=>{
         if(p.chainId!=="arbitrum") return false;
-        const q = (p?.quoteToken?.symbol||"").toUpperCase();
-        if(q!=="USDC" && q!=="USDT" && q!=="USDC.E") return false;
-        return true;
+        const q=(p?.quoteToken?.symbol||"").toUpperCase();
+        return (q==="USDC"||q==="USDT"||q==="USDC.E");
       });
-      if(!pools.length){ log(`${sym}: no USDC/USDT pools`); progress(++done, symbols.length, loanUSDC); await sleep(80); continue; }
-      pools = bestPerDex(pools);
-      if(!pools.length){ log(`${sym}: no allowed/fresh/liquid pools (per DEX)`); progress(++done, symbols.length, loanUSDC); await sleep(80); continue; }
-
-      const viable = pools.filter(p=> Number(p?.liquidity?.usd||0) >= requiredLiq);
-      if(!viable.length){ log(`${sym}: thin < ${LIQ_GUARD_X}× loan`); progress(++done, symbols.length, loanUSDC); await sleep(80); continue; }
-
+      if(!pools.length){ log(`${sym}: no USDC/USDT pools`); progress(++done,syms.length,loanUSDC); await sleep(60); continue; }
+      pools=bestPerDex(pools);
+      if(!pools.length){ log(`${sym}: no allowed/fresh/liquid pools per DEX`); progress(++done,syms.length,loanUSDC); await sleep(60); continue; }
+      const viable=pools.filter(p=> Number(p?.liquidity?.usd||0) >= requiredLiq);
+      if(!viable.length){ log(`${sym}: thin < ${LIQ_GUARD_X}× loan`); progress(++done,syms.length,loanUSDC); await sleep(60); continue; }
       let min=Infinity,max=-Infinity,buy=null,sell=null;
       for(const p of viable){
-        const price = Number(p?.priceUsd||NaN);
-        if(!isFinite(price)) continue;
-        if(price < min){ min=price; buy=p; }
-        if(price > max){ max=price; sell=p; }
+        const px=Number(p?.priceUsd||NaN); if(!isFinite(px)) continue;
+        if(px<min){ min=px; buy=p; } if(px>max){ max=px; sell=p; }
       }
-      if(!(buy&&sell&&isFinite(min)&&isFinite(max))){ log(`${sym}: missing price`); progress(++done, symbols.length, loanUSDC); await sleep(60); continue; }
-
-      const buyPx=min, sellPx=max;
-      const rawSpreadPct = ((sellPx - buyPx)/buyPx)*100;
-      if(rawSpreadPct <= 0){ log(`${sym}: negative spread`); progress(++done, symbols.length, loanUSDC); await sleep(60); continue; }
-      if(rawSpreadPct > SPREAD_CAP_PCT){ log(`${sym}: capped ${rawSpreadPct.toFixed(2)}% > ${SPREAD_CAP_PCT}%`); progress(++done, symbols.length, loanUSDC); await sleep(60); continue; }
-
-      const buyLiq = Number(buy?.liquidity?.usd||0);
-      const sellLiq = Number(sell?.liquidity?.usd||0);
-      const result = computeRoutePLUSD({
-        loanUSDC,buyPx,sellPx,buyLiq,sellLiq,ethUsd:ethUSD,gasGwei,gasLimit
+      if(!(buy&&sell&&isFinite(min)&&isFinite(max))){ log(`${sym}: missing price`); progress(++done,syms.length,loanUSDC); await sleep(60); continue; }
+      const raw = ((max-min)/min)*100;
+      if(raw<=0){ progress(++done,syms.length,loanUSDC); await sleep(40); continue; }
+      if(raw>SPREAD_CAP_PCT){ log(`${sym}: capped ${raw.toFixed(2)}% > ${SPREAD_CAP_PCT}%`); progress(++done,syms.length,loanUSDC); await sleep(40); continue; }
+      const res=computeRoutePLUSD({
+        loanUSDC,buyPx:min,sellPx:max,
+        buyLiq:Number(buy?.liquidity?.usd||0),
+        sellLiq:Number(sell?.liquidity?.usd||0),
+        ethUsd:state.ethUsd,gasGwei:state.gasGwei,gasLimit
       });
-      if(!result){ log(`${sym}: computation skipped`); progress(++done, symbols.length, loanUSDC); await sleep(60); continue; }
-
-      const row = {
+      if(!res){ progress(++done,syms.length,loanUSDC); await sleep(40); continue; }
+      out.push({
         sym,
-        buy:{dex:(buy?.dexId||"").toUpperCase(), price:buyPx},
-        sell:{dex:(sell?.dexId||"").toUpperCase(), price:sellPx},
-        spreadPct: result.rawSpreadPct,
-        usdcBack: result.usdcBack,
-        netPL: result.pnl
-      };
-      out.push(row);
-
-    }catch(err){
-      log(`${sym}: error ${err.message||err}`);
-    }
-    progress(++done, symbols.length, loanUSDC);
-    await sleep(80);
+        buy:{dex:(buy?.dexId||"").toUpperCase(),price:min},
+        sell:{dex:(sell?.dexId||"").toUpperCase(),price:max},
+        spreadPct:res.rawSpreadPct, usdcBack:res.usdcBack, netPL:res.pnl
+      });
+    }catch(err){ log(`${sym}: error ${err.message||err}`); }
+    progress(++done,syms.length,loanUSDC);
+    await sleep(60);
   }
 
-  // render
-  out.sort((a,b)=> (b.netPL||-1) - (a.netPL||-1));
+  out.sort((a,b)=> (b.netPL||-1)-(a.netPL||-1));
   renderRows(out);
-  $("status").textContent = `Done. Listed ${out.length} routes (fee 0.09% + gas auto).`;
+  $("status").textContent=`Done. Listed ${out.length} routes (fee 0.09% + gas auto).`;
   if(!out.length) log("No routes after realism filters — try different loan or time.");
   $("loading").style.display="none";
 }
-function progress(done,total,loan){ $("summary").textContent = `Progress ${done}/${total} • loan ${fmtUSD(loan)}`; }
+function progress(done,total,loan){ $("summary").textContent=`Progress ${done}/${total} • loan ${fmtUSD(loan)}`; }
 
+/* ====== Render / Selection ====== */
 function renderRows(rows){
-  tbody.innerHTML="";
-  renderedRows = rows.slice();
-  rows.forEach((r,idx)=>{
-    const tr = document.createElement("tr");
-    const good = r?.netPL>0;
-    tr.innerHTML = `
-      <td><input type="checkbox" class="rowChk" data-i="${idx}" ${good?'checked':''}></td>
+  tbody.innerHTML=""; rowsRendered = rows.slice();
+  rows.forEach((r,i)=>{
+    const tr=document.createElement("tr");
+    const good=r?.netPL>0;
+    tr.innerHTML=`
+      <td><input type="checkbox" class="rowChk" data-i="${i}" ${good?'checked':''}></td>
       <td>${r.sym}</td>
       <td>${r.buy.dex}</td>
       <td class="right">${fmtUSD(r.buy.price,5)}</td>
@@ -458,105 +399,48 @@ function renderRows(rows){
       <td class="right">${fmtUSD(r.sell.price,5)}</td>
       <td class="right">${r.spreadPct.toFixed(2)}%</td>
       <td class="right">${fmtUSD(r.usdcBack)}</td>
-      <td class="right ${good?'pos':'neg'}">${(good?'+':'')+ (isFinite(r.netPL)?r.netPL.toFixed(2):'0.00')}</td>
+      <td class="right ${good?'pos':'neg'}">${(good?'+':'')+(isFinite(r.netPL)?r.netPL.toFixed(2):'0.00')}</td>
     `;
     tbody.appendChild(tr);
   });
-  // bind selection update
-  tbody.querySelectorAll(".rowChk").forEach(chk=> chk.addEventListener("change", updateSelectionTotal));
-  $("selectAll").checked=false;
-  updateSelectionTotal();
+  tbody.querySelectorAll(".rowChk").forEach(chk=>chk.addEventListener("change",updateSel));
+  $("selectAll").checked=false; updateSel();
 }
-
-/* ===========================
-   Selection & Preview
-=========================== */
-function updateSelectionTotal(){
-  const chks = Array.from(tbody.querySelectorAll(".rowChk"));
-  let total = 0;
-  chks.forEach(chk=>{
+function updateSel(){
+  let tot=0;
+  tbody.querySelectorAll(".rowChk").forEach(chk=>{
     if(!chk.checked) return;
-    const i = Number(chk.dataset.i||"-1"); const row = renderedRows[i];
-    if(row && isFinite(row.netPL)) total += row.netPL;
+    const i=Number(chk.dataset.i||"-1"); const r=rowsRendered[i];
+    if(r && isFinite(r.netPL)) tot += r.netPL;
   });
-  const sign = total>=0?'+':'';
-  $("selTotalPill").textContent = `Selected total: ${sign}${fmtUSD(Math.abs(total)).replace('$','+$')}`;
+  $("selTotalPill").textContent = `Selected total: ${(tot>=0?'+':'')+fmtUSD(Math.abs(tot)).replace('$','+$')}`;
 }
-$("selectProfBtn").addEventListener("click", ()=>{
+$("selectAll").addEventListener("change",e=>{
+  tbody.querySelectorAll(".rowChk").forEach(chk=>chk.checked=e.target.checked); updateSel();
+});
+$("selectProfBtn").addEventListener("click",()=>{
   tbody.querySelectorAll(".rowChk").forEach((chk)=>{
-    const i = Number(chk.dataset.i||"-1");
-    const r = renderedRows[i];
-    chk.checked = !!(r && r.netPL>0);
-  });
-  $("selectAll").checked=false;
-  updateSelectionTotal();
+    const i=Number(chk.dataset.i||"-1"); const r=rowsRendered[i];
+    chk.checked=!!(r && r.netPL>0);
+  }); $("selectAll").checked=false; updateSel();
 });
-$("clearSelBtn").addEventListener("click", ()=>{
-  tbody.querySelectorAll(".rowChk").forEach(chk=> chk.checked=false);
-  $("selectAll").checked=false;
-  updateSelectionTotal();
+$("clearSelBtn").addEventListener("click",()=>{
+  tbody.querySelectorAll(".rowChk").forEach(chk=>chk.checked=false); $("selectAll").checked=false; updateSel();
 });
-$("selectAll").addEventListener("change", (e)=>{
-  const on=e.target.checked;
-  tbody.querySelectorAll(".rowChk").forEach(chk=> chk.checked=on);
-  updateSelectionTotal();
+$("previewBtn").addEventListener("click",()=>{
+  const sel=[...tbody.querySelectorAll(".rowChk")].filter(c=>c.checked).map(c=>rowsRendered[Number(c.dataset.i)]);
+  const loan=Number($("loan").value)||0;
+  if(!sel.length){ alert("No rows selected."); return; }
+  let tot=0; sel.forEach(r=>tot+=r.netPL||0);
+  const lines = sel.map(r=>`${r.sym}: ${r.buy.dex} @ ${fmtUSD(r.buy.price,5)} → ${r.sell.dex} @ ${fmtUSD(r.sell.price,5)} | back ${fmtUSD(r.usdcBack)} | net ${(r.netPL>=0?'+':'')+(r.netPL||0).toFixed(2)}`).join('\n');
+  alert(`Execution preview (mock)\nLoan: ${fmtUSD(loan)}\n\n${lines}\n\nSelected total: ${(tot>=0?'+':'')+tot.toFixed(2)} USDC`);
 });
 
-// Modal
-const backdrop = $("modalBackdrop");
-const modalBody = $("modalBody");
-function openModal(){ backdrop.style.display="flex"; }
-function closeModal(){ backdrop.style.display="none"; }
-$("modalClose").addEventListener("click", closeModal);
-$("modalClose2").addEventListener("click", closeModal);
+/* ====== Buttons / Init ====== */
+$("scanBtn").addEventListener("click",()=>{ $("stopBtn").disabled=false; scan().finally(()=>$("stopBtn").disabled=true); });
+$("stopBtn").addEventListener("click",()=>{ abort=true; $("status").textContent="Stopping…"; });
 
-$("previewBtn").addEventListener("click", ()=>{
-  const loan = Number($("loan").value)||0;
-  const chks = Array.from(tbody.querySelectorAll(".rowChk")).filter(c=>c.checked);
-  if(!chks.length){ modalBody.innerHTML="No rows selected."; openModal(); return; }
-  let totalPL = 0;
-  let html = `<div><strong>Plan</strong> — ${chks.length} route(s) for loan ${fmtUSD(loan)}</div><br/>`;
-  html += `<table style="width:100%;border-collapse:collapse;font-size:13px">
-    <tr style="background:#f3f4f6">
-      <th style="text-align:left;padding:6px 8px">Token</th>
-      <th style="text-align:left;padding:6px 8px">Buy</th>
-      <th style="text-align:left;padding:6px 8px">Sell</th>
-      <th style="text-align:right;padding:6px 8px">USDC Back</th>
-      <th style="text-align:right;padding:6px 8px">Net P/L</th>
-    </tr>`;
-  chks.forEach(chk=>{
-    const i = Number(chk.dataset.i||"-1"); const r = renderedRows[i]; if(!r) return;
-    totalPL += (r.netPL||0);
-    html += `<tr>
-      <td style="padding:6px 8px">${r.sym}</td>
-      <td style="padding:6px 8px">${r.buy.dex} @ ${fmtUSD(r.buy.price,5)}</td>
-      <td style="padding:6px 8px">${r.sell.dex} @ ${fmtUSD(r.sell.price,5)}</td>
-      <td style="padding:6px 8px;text-align:right">${fmtUSD(r.usdcBack)}</td>
-      <td style="padding:6px 8px;text-align:right;${(r.netPL||0)>=0?'color:#16a34a':'color:#ef4444'}">${((r.netPL||0)>=0?'+':'')+(r.netPL||0).toFixed(2)}</td>
-    </tr>`;
-  });
-  html += `</table><br/>`;
-  html += `<div><strong>Total (selected):</strong> <span style="font-weight:800;${totalPL>=0?'color:#16a34a':'color:#ef4444'}">${(totalPL>=0?'+':'')+totalPL.toFixed(2)} USDC</span></div>`;
-  html += `<br/><div class="muted">Preview only (no chain calls). Next step: hook contract executor.</div>`;
-  modalBody.innerHTML = html; openModal();
-});
-
-/* ===========================
-   Buttons / Init
-=========================== */
-$("scanBtn").addEventListener("click", ()=>{
-  $("stopBtn").disabled=false;
-  scan().finally(()=>{ $("stopBtn").disabled=true; });
-});
-$("stopBtn").addEventListener("click", ()=>{ abort=true; $("status").textContent="Stopping…"; });
-
-$("countPill").textContent = "Tokens: " + Object.keys(TOKENS).length;
-// initial gas probe (non-blocking)
-(async()=>{
-  try{
-    const g = await fetchGasGwei(); if(g){ $("gasPill").textContent = `Gas: ${g.toFixed(2)} gwei`; $("gasPrice").value = g.toFixed(2); }
-  }catch(_){}
-})();
+$("countPill").textContent="Tokens: "+Object.keys(TOKENS).length;
 </script>
 </body>
 </html>

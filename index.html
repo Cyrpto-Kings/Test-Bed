@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings v9.9.19 — Arbitrum Scanner (Looser Balanced)</title>
+<title>Crypto Kings v9.9.20 — Arbitrum Scanner (Reality Check)</title>
 <style>
   :root{
     --bg:#f6f7fb; --card:#ffffff; --ink:#111827; --muted:#6b7280;
@@ -48,12 +48,14 @@
   th{color:#374151;background:#fafafa;position:sticky;top:0;z-index:1}
   .pos{color:var(--ok);font-weight:700}
   .neg{color:var(--bad);font-weight:700}
-  .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:260px;overflow:auto}
+  .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:300px;overflow:auto}
   footer{background:#111;color:#cbd5e1;padding:22px;margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:22px}
   footer b{color:#fff}
   .center{display:flex;justify-content:center;align-items:center}
   .spinner{border:4px solid rgba(0,0,0,.08);border-top:4px solid var(--brand1);border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  details{margin-top:10px}
+  summary{cursor:pointer}
 </style>
 </head>
 <body>
@@ -62,7 +64,7 @@
     <div class="logo">CK</div>
     <div class="title">
       <div style="font-weight:900;">Crypto Kings</div>
-      <div class="v">v9.9.19 — Arbitrum (Looser Balanced)</div>
+      <div class="v">v9.9.20 — Arbitrum (Reality Check)</div>
     </div>
   </div>
   <div class="hamb" id="hamb"><span></span></div>
@@ -88,7 +90,7 @@
       </div>
       <div>
         <label for="modeNote">Profile</label>
-        <input id="modeNote" value="liq≥2×loan • fresh≤30m • spread cap 12% • 0.3%+0.2% per leg" readonly/>
+        <input id="modeNote" value="liq≥1.5×loan (≥$20k) • fresh≤90m OR ≥5 txns/24h • spread cap 25%" readonly/>
       </div>
       <div>
         <label>&nbsp;</label>
@@ -144,6 +146,11 @@
         <tbody id="tbody"></tbody>
       </table>
     </div>
+
+    <details>
+      <summary>Per-DEX debug (last token processed)</summary>
+      <div id="perDex" class="log"></div>
+    </details>
   </div>
 
   <!-- Logs -->
@@ -153,8 +160,8 @@
   </div>
 
   <div class="muted" style="font-size:12px;margin:8px 2px;">
-    Net P/L = (loan ÷ buyPrice × sellPrice) − per-leg DEX fee (0.3%) − slippage buffer (0.2%/leg) − flash (0.09%) − gas (gwei×limit/1e9×ETH$).
-    Pools must be liquid (≥ 2× loan), fresh (≤ 30m), and raw spread ≤ 12%.
+    Net P/L = (loan ÷ buyPrice × sellPrice) − 0.3%+0.2% per leg − flash (0.09%) − gas (gwei×limit/1e9×ETH$).
+    Pools must be liquid (≥ 1.5× loan, min $20k), fresh (≤ 90m) <i>or</i> active (≥5 txns/24h), and raw spread ≤ 25%.
   </div>
 </div>
 
@@ -167,26 +174,27 @@
 
 <script>
 /* ====== Mobile hamburger ====== */
-document.getElementById('hamb').addEventListener('click',()=>{
-  document.getElementById('nav').classList.toggle('open');
-});
+document.getElementById('hamb').addEventListener('click',()=>{ document.getElementById('nav').classList.toggle('open'); });
 
-/* ====== Profile (Looser Balanced) ====== */
+/* ====== Profile (Reality Check) ====== */
 const FLASH_FEE = 0.0009;        // 0.09% Aave v3
 const DEX_FEE_PER_LEG = 0.003;   // 0.30% per swap
 const SLIPPAGE_BUF = 0.002;      // 0.20% per leg buffer
 const GAS_LIMIT_DEFAULT = 380000;
-const LIQ_MULTIPLIER = 2;        // ≥ 2× loan
-const FRESH_MAX_MIN = 30;        // ≤ 30 minutes
-const SPREAD_CAP_PCT = 12;       // ≤ 12% raw spread
-const MIN_NET_USD = 5;           // ignore dust profits for auto-select
+const LIQ_MULTIPLIER = 1.5;      // ≥ 1.5× loan
+const LIQ_FLOOR_USD = 20000;     // at least $20k
+const FRESH_MAX_MIN = 90;        // ≤ 90 minutes
+const FRESH_ALT_MIN_TXNS = 5;    // OR ≥5 txns/24h
+const SPREAD_CAP_PCT = 25;       // ≤ 25% raw spread
+const MIN_NET_USD = 1;           // auto-select threshold
 
 /* ====== Helpers ====== */
 const $ = id => document.getElementById(id);
-const logEl = $("log"), tbody = $("tbody");
+const logEl = $("log"), tbody = $("tbody"), perDexEl = $("perDex");
 function log(m){ const t=new Date().toLocaleTimeString(); logEl.innerHTML+=`[${t}] ${m}<br>`; logEl.scrollTop=logEl.scrollHeight; }
 function fmtUSD(n,dp=2){ if(!isFinite(n)) return "—"; return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:dp}); }
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function isFresh(ts){ if(!ts) return false; const ageMin=(Date.now()-new Date(ts).getTime())/60000; return ageMin<=FRESH_MAX_MIN; }
 
 /* ====== RPC & tokens ====== */
 const RPCS = [
@@ -196,7 +204,6 @@ const RPCS = [
   "https://arbitrum-one.publicnode.com"
 ];
 const ALLOW_DEX = new Set(["uniswap","sushiswap","camelot","balancer","zyberswap","woofi","traderjoe"]);
-
 const TOKENS = {
   WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
   USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
@@ -236,7 +243,6 @@ const TOKENS = {
 };
 
 /* ====== Math (realistic) ====== */
-function isFresh(ts){ if(!ts) return false; const ageMin=(Date.now()-new Date(ts).getTime())/60000; return ageMin<=FRESH_MAX_MIN; }
 function bestPerDex(pairs){
   const by=new Map();
   for(const p of pairs){
@@ -313,7 +319,7 @@ $("countPill").textContent="Tokens: "+Object.keys(TOKENS).length;
 
 async function scan(){
   abort=false; renderedRows=[]; updateSelectionTotal();
-  $("loading").style.display="flex"; tbody.innerHTML=""; $("summary").textContent="—"; logEl.innerHTML="";
+  $("loading").style.display="flex"; tbody.innerHTML=""; $("summary").textContent="—"; logEl.innerHTML=""; perDexEl.innerHTML="";
   $("status").textContent="Fetching gas & ETH…";
 
   // defaults
@@ -326,7 +332,7 @@ async function scan(){
 
   const loanUSDC = Number($("loan").value)||10000;
   const gasLimit = Number($("gasLimit").value)||GAS_LIMIT_DEFAULT;
-  const requiredLiq = Math.max(30000, LIQ_MULTIPLIER*loanUSDC); // keep a sensible floor
+  const requiredLiq = Math.max(LIQ_FLOOR_USD, LIQ_MULTIPLIER*loanUSDC);
 
   $("status").textContent="Scanning tokens…";
   const out=[]; const entries=Object.entries(TOKENS); let done=0;
@@ -335,17 +341,23 @@ async function scan(){
     if(abort) break;
     try{
       const all=await fetchPairs(addr);
-      if(!all.length){ log(`${sym}: no pools on Arbitrum`); progress(++done,entries.length,loanUSDC); await sleep(50); continue; }
+      if(!all.length){ log(`${sym}: no pools on Arbitrum`); progress(++done,entries.length,loanUSDC); await sleep(40); continue; }
 
-      const filtered = all.filter(p=>{
+      // loosened freshness: either updated ≤ 90m OR >= 5 txns in 24h
+      const fresh = all.filter(p=>{
         const liq = Number(p?.liquidity?.usd||0);
-        const ts  = p?.updatedAt || p?.info?.lastUpdatedAt || p?.pairCreatedAt;
-        return liq >= requiredLiq && isFresh(ts);
+        const updated = p?.updatedAt || p?.info?.lastUpdatedAt || p?.pairCreatedAt;
+        const t24 = (p?.txns?.h24?.buys||0) + (p?.txns?.h24?.sells||0);
+        const okFresh = isFresh(updated) || t24 >= FRESH_ALT_MIN_TXNS;
+        return liq >= requiredLiq && okFresh;
       });
-      if(!filtered.length){ log(`${sym}: thin or stale (liq<${LIQ_MULTIPLIER}×loan or >${FRESH_MAX_MIN}m old)`); progress(++done,entries.length,loanUSDC); await sleep(40); continue; }
+      if(!fresh.length){ log(`${sym}: thin or stale (liq<${LIQ_MULTIPLIER}×loan/${LIQ_FLOOR_USD} floor or not fresh/active)`); progress(++done,entries.length,loanUSDC); await sleep(35); continue; }
 
-      const perDex = bestPerDex(filtered);
-      if(!perDex.length){ log(`${sym}: no allowed DEX after filter`); progress(++done,entries.length,loanUSDC); await sleep(40); continue; }
+      const perDex = bestPerDex(fresh);
+      if(!perDex.length){ log(`${sym}: no allowed DEX after filter`); progress(++done,entries.length,loanUSDC); await sleep(30); continue; }
+
+      // debug dump per-DEX prices for last token processed (overwrites each token; expand after a run to see final one)
+      perDexEl.innerHTML = perDex.map(p=>`${sym} :: ${(p.dexId||'').toUpperCase()} | px ${Number(p.priceUsd||0).toFixed(6)} | liq ${fmtUSD(Number(p?.liquidity?.usd||0))}`).join('<br>');
 
       // pick buy/sell across DEX
       let min=Infinity,max=-Infinity,buy=null,sell=null;
@@ -353,11 +365,11 @@ async function scan(){
         const px=Number(p?.priceUsd||NaN); if(!isFinite(px)) continue;
         if(px<min){ min=px; buy=p; } if(px>max){ max=px; sell=p; }
       }
-      if(!(buy&&sell)){ log(`${sym}: could not pick buy/sell`); progress(++done,entries.length,loanUSDC); await sleep(30); continue; }
+      if(!(buy&&sell)){ log(`${sym}: could not pick buy/sell`); progress(++done,entries.length,loanUSDC); await sleep(25); continue; }
 
       const spread=((max-min)/min)*100;
-      if(spread<=0){ progress(++done,entries.length,loanUSDC); await sleep(30); continue; }
-      if(spread>SPREAD_CAP_PCT){ log(`${sym}: spread ${spread.toFixed(2)}% > ${SPREAD_CAP_PCT}% cap`); progress(++done,entries.length,loanUSDC); await sleep(30); continue; }
+      if(spread<=0){ progress(++done,entries.length,loanUSDC); await sleep(20); continue; }
+      if(spread>SPREAD_CAP_PCT){ log(`${sym}: spread ${spread.toFixed(2)}% > ${SPREAD_CAP_PCT}% cap`); progress(++done,entries.length,loanUSDC); await sleep(20); continue; }
 
       // P/L (constant-product approximation)
       const res=computePL({
@@ -367,28 +379,29 @@ async function scan(){
         sellLiq:Number(sell?.liquidity?.usd||0),
         ethUsd:state.ethUsd, gasGwei:state.gasGwei, gasLimit
       });
-      if(!res || res.pnl==null){ progress(++done,entries.length,loanUSDC); await sleep(30); continue; }
+      if(!res || res.pnl==null){ progress(++done,entries.length,loanUSDC); await sleep(20); continue; }
 
       out.push({
         sym,
         buy:{dex:(buy?.dexId||"").toUpperCase(),price:min},
-        sell:{dex:(sell?.dexId||"").toUpperCase(),price:max},
+        sell:{dex:(sell?.dexId||"").toUpperCase(),price=max},
         spreadPct:res.rawPct, usdcBack:res.usdcBack, netPL:res.pnl
       });
 
     }catch(err){ log(`${sym}: error ${err.message||err}`); }
-    progress(++done,entries.length,loanUSDC); await sleep(50);
+    progress(++done,entries.length,loanUSDC); await sleep(40);
   }
 
   out.sort((a,b)=> (b.netPL||-1)-(a.netPL||-1));
   renderRows(out);
-  $("status").textContent=`Done. Listed ${out.length} routes (looser balanced filters).`;
-  if(!out.length) log("No routes after filters — try different loan or time.");
+  $("status").textContent=`Done. Listed ${out.length} route(s).`;
+  if(!out.length) log("No routes after filters — try smaller loan, or wait for busier hours.");
   $("loading").style.display="none";
 }
 function progress(done,total,loan){ $("summary").textContent=`Progress ${done}/${total} • loan ${fmtUSD(loan)}`; }
 
 /* ====== Render / Selection / Preview ====== */
+let renderedRows=[];
 function renderRows(rows){
   tbody.innerHTML=""; renderedRows = rows.slice();
   rows.forEach((r,i)=>{
@@ -441,7 +454,9 @@ $("previewBtn").addEventListener("click",()=>{
 /* ====== Buttons / Init ====== */
 $("scanBtn").addEventListener("click",()=>{ $("stopBtn").disabled=false; scan().finally(()=>$("stopBtn").disabled=true); });
 $("stopBtn").addEventListener("click",()=>{ abort=true; $("status").textContent="Stopping…"; });
-$("countPill").textContent="Tokens: "+Object.keys(TOKENS).length;
+
+/* ====== Hamburger ====== */
+document.getElementById('countPill').textContent="Tokens: "+Object.keys(TOKENS).length;
 </script>
 </body>
 </html>

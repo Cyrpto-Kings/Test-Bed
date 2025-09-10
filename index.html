@@ -1,494 +1,346 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Kings v9.9.15 — Arbitrum Scanner (Extended + Preview)</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Crypto Kings v9.9.5 — Realistic P/L</title>
 <style>
-  :root{
-    --bg:#f6f7fb; --card:#ffffff; --ink:#111827; --muted:#6b7280;
-    --brand1:#3b82f6; --brand2:#9333ea; --ok:#16a34a; --bad:#ef4444;
-    --border:#e5e7eb; --shadow:0 2px 14px rgba(0,0,0,.06);
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  header{background:#111;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  header .brand{display:flex;align-items:center;gap:10px}
-  header .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--brand1),var(--brand2));display:grid;place-items:center;font-weight:900}
-  header nav a{color:#fff;text-decoration:none;margin-left:16px;font-weight:700;opacity:.9}
-  header nav a:hover{opacity:1}
-  .wrap{max-width:1024px;margin:0 auto;padding:18px 12px 40px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input[type="number"],input[readonly]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#111;outline:none}
-  input:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
-  .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media (min-width:760px){ .row-4{grid-template-columns:repeat(4,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} }
-  .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:800;color:white;background:linear-gradient(135deg,var(--brand1),var(--brand2));cursor:pointer}
-  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border)}
-  .btn:disabled{opacity:.6;cursor:not-allowed}
-  .kpi{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-  .pill{background:#eef2ff;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:12px}
-  .muted{color:var(--muted)}
+  :root{--bg:#0b0d12;--panel:#11151f;--ink:#e8eef9;--muted:#aab3c2;--ok:#16a34a;--bad:#ef4444;--chip:#182030;--brand1:#7c5cff;--brand2:#1d9bf0}
+  *{box-sizing:border-box} body{margin:0;background:#0b0d12;color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:980px;margin:0 auto;padding:18px 14px 80px}
+  header{display:flex;align-items:center;gap:12px;padding:10px 0 14px}
+  .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand1),var(--brand2));display:grid;place-items:center;font-weight:800}
+  .badge{font-size:12px;padding:4px 8px;border:1px solid #263044;border-radius:999px;color:var(--muted)}
+  .card{background:var(--panel);border:1px solid #1a2232;border-radius:14px;padding:14px;margin-top:12px}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+  input{width:100%;padding:10px 12px;border:1px solid #2a3347;border-radius:10px;background:#0f1522;color:var(--ink);outline:none}
+  input:focus{border-color:#4a63ff;box-shadow:0 0 0 3px rgba(124,92,255,.25)}
+  .row{display:grid;grid-template-columns:1fr;gap:10px}
+  @media (min-width:720px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} }
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  button{appearance:none;border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--brand1),var(--brand2))}
+  .ghost{background:#0f1522;border:1px solid #2a3347;color:var(--ink)}
+  .pill{display:inline-flex;gap:8px;align-items:center;background:var(--chip);border:1px solid #223049;border-radius:999px;padding:6px 10px;font-size:12px;color:#c9d3e5}
+  .table{width:100%;border-collapse:collapse}
+  .table th,.table td{padding:10px;border-bottom:1px solid #1a2232}
+  .table th{color:#c5cede;text-align:left;font-size:13px}
   .right{text-align:right}
-  table{width:100%;border-collapse:collapse}
-  th,td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;text-align:left}
-  th{color:#374151;background:#fafafa;position:sticky;top:0;z-index:1}
-  .pos{color:var(--ok);font-weight:700}
-  .neg{color:var(--bad);font-weight:700}
-  .log{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#a7f3d0;border-radius:10px;padding:10px;max-height:260px;overflow:auto}
-  footer{background:#111;color:#cbd5e1;padding:22px;margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:22px}
-  footer b{color:#fff}
-  /* Modal */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
-  .modal{background:#fff;color:#111;border-radius:16px;max-width:860px;width:100%;box-shadow:var(--shadow)}
-  .modal header{background:#fff;color:#111;border-bottom:1px solid var(--border);border-radius:16px 16px 0 0;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
-  .modal .content{padding:16px;max-height:72vh;overflow:auto}
-  .close-x{cursor:pointer;border:0;background:transparent;font-weight:900;font-size:18px}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+  .green{color:var(--ok);font-weight:700}
+  .red{color:var(--bad);font-weight:700}
+  .sub{font-size:12px;color:var(--muted);margin-top:6px}
+  .gridKPI{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .kpi{background:var(--chip);border:1px solid #223049;border-radius:12px;padding:8px 10px;font-size:13px}
+  .center{display:flex;justify-content:center;align-items:center}
+  .spinner{border:4px solid rgba(255,255,255,.18);border-top:4px solid var(--brand1);border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite}
+  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">
-    <div class="logo">CK</div>
-    <div>
-      <div style="font-weight:900;">Crypto Kings</div>
-      <div class="muted" style="font-size:12px;">v9.9.15 — Arbitrum</div>
-    </div>
-  </div>
-  <nav>
-    <a href="#">Home</a>
-    <a href="#">Who we are</a>
-    <a href="#">What we do</a>
-    <a href="#">Connect with us</a>
-  </nav>
-</header>
+  <div class="wrap">
+    <header>
+      <div class="logo">CK</div>
+      <h1 style="margin:0;font-size:20px;">Crypto Kings</h1>
+      <span class="badge">v9.9.5 realistic</span>
+      <span class="badge" id="rpcBadge">RPC: —</span>
+      <span class="badge" id="gasBadge">Gas: —</span>
+    </header>
 
-<div class="wrap">
-
-  <!-- Controls -->
-  <div class="card">
-    <div class="row row-4">
-      <div>
-        <label for="loan">Loan Amount (USDC)</label>
-        <input id="loan" type="number" min="1" step="1" value="10000" />
-      </div>
-      <div>
-        <label for="gasLimit">Gas Limit (2 swaps + callback)</label>
-        <input id="gasLimit" type="number" step="1000" value="380000" />
-      </div>
-      <div>
-        <label for="modeNote">Mode</label>
-        <input id="modeNote" value="Extended (~40) • liq≥10k • freshness OFF • spread cap 50%" readonly />
-      </div>
-      <div>
-        <label>&nbsp;</label>
-        <div class="kpi">
-          <div id="rpcPill" class="pill">RPC: —</div>
-          <div id="gasPill" class="pill">Gas: —</div>
-          <div id="ethPill" class="pill">WETH: —</div>
-          <div id="countPill" class="pill">Tokens: —</div>
+    <div class="card">
+      <div class="row row-3">
+        <div>
+          <label>Loan Size (USDC)</label>
+          <input id="loan" type="number" min="100" step="100" value="10000"/>
+          <div class="sub">Used for both legs in simulation.</div>
+        </div>
+        <div>
+          <label>Max raw spread % (cap unreal)</label>
+          <input id="cap" type="number" min="1" step="0.1" value="50"/>
+          <div class="sub">Any pair with raw spread above this is ignored.</div>
+        </div>
+        <div>
+          <label>Liquidity Guard (× loan)</label>
+          <input id="liqGuard" type="number" min="1" step="1" value="10"/>
+          <div class="sub">Pool liquidity (USD) must be ≥ guard × loan.</div>
         </div>
       </div>
-    </div>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-      <button id="scanBtn" class="btn">Scan</button>
-      <button id="stopBtn" class="btn ghost" disabled>Stop</button>
-      <div id="status" class="pill" style="align-self:center">Idle.</div>
-    </div>
-  </div>
-
-  <!-- Results -->
-  <div class="card" id="resultsCard">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <div>
-        <div style="font-weight:800;margin-bottom:6px;">Results</div>
-        <div class="muted" id="summary">—</div>
+      <div class="row row-3" style="margin-top:8px">
+        <div>
+          <label>Gas Price (Gwei)</label>
+          <input id="gasPrice" type="number" step="0.1" placeholder="auto…" />
+        </div>
+        <div>
+          <label>Gas Limit (2 swaps + callback)</label>
+          <input id="gasLimit" type="number" step="1000" value="380000"/>
+        </div>
+        <div>
+          <label>ETH Price (USD, auto)</label>
+          <input id="ethUsd" type="number" step="0.01" placeholder="auto…" />
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button id="selectProfBtn" class="btn ghost" title="Select all profitable rows">Select all profitable</button>
-        <button id="clearSelBtn" class="btn ghost">Clear</button>
-        <div class="pill" id="selTotalPill">Selected total: +$0</div>
-        <button id="previewBtn" class="btn" title="Preview execution of selected">Execute Selected (Preview)</button>
+
+      <div class="btns">
+        <button id="scanBtn">Scan</button>
+        <button class="ghost" id="selAll">Select all profitable</button>
+        <button class="ghost" id="clearSel">Clear</button>
+        <span class="pill" id="sumPill">Selected total: +$0</span>
+      </div>
+      <div class="gridKPI">
+        <span class="kpi" id="kpiNote">Ready.</span>
       </div>
     </div>
-    <div style="overflow:auto;margin-top:8px;">
-      <table>
-        <thead>
-          <tr>
-            <th><input id="selectAll" type="checkbox" /></th>
-            <th>Token</th>
-            <th>Buy DEX</th>
-            <th class="right">Price</th>
-            <th>Sell DEX</th>
-            <th class="right">Price</th>
-            <th class="right">Spread %</th>
-            <th class="right">USDC Back</th>
-            <th class="right">Net P/L</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-  </div>
 
-  <!-- Logs -->
-  <div class="card">
-    <div style="font-weight:800;margin-bottom:6px;">Details / Logs</div>
-    <div id="log" class="log"></div>
-  </div>
-
-  <div class="muted" style="font-size:12px;margin:8px 2px;">
-    Net P/L = (loan ÷ buyPrice × sellPrice) − loan − 0.09% flash fee − est. gas (gasPrice × gasLimit / 1e9 × WETH$).<br>
-    Listing routes after basic filters (DEX allow-list, liq ≥ $10k) with a raw spread sanity cap of 50%.
-  </div>
-</div>
-
-<!-- Footer -->
-<footer>
-  <div><b>Crypto Kings</b><br/>© 2025 All Rights Reserved</div>
-  <div><b>Explore</b><br/>Home<br/>About<br/>Services<br/>Contact</div>
-  <div><b>Legal</b><br/>Privacy<br/>Terms<br/>Disclaimer</div>
-  <div><b>Social</b><br/>Twitter<br/>Telegram<br/>Discord</div>
-</footer>
-
-<!-- Preview Modal -->
-<div id="modalBackdrop" class="modal-backdrop">
-  <div class="modal">
-    <header>
-      <div style="font-weight:800">Execution Preview</div>
-      <button id="modalClose" class="close-x">✕</button>
-    </header>
-    <div class="content">
-      <div id="modalBody" class="mono"></div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
-        <button id="modalClose2" class="btn ghost">Close</button>
-        <button id="modalProceed" class="btn" disabled title="Live execution coming next step">Proceed (disabled)</button>
+    <div class="card" id="resultsCard">
+      <div style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
+        <h3 style="margin:0">Results</h3>
+        <div class="pill" id="progress">—</div>
+      </div>
+      <div id="loading" class="center" style="height:52px;display:none;margin-top:8px"><div class="spinner"></div></div>
+      <div style="overflow:auto;margin-top:6px">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width:38px"></th>
+              <th>Token</th>
+              <th>Buy DEX</th>
+              <th class="right">Buy @</th>
+              <th>Sell DEX</th>
+              <th class="right">Sell @</th>
+              <th class="right">Spread %</th>
+              <th class="right">USDC Back</th>
+              <th class="right">Net P/L</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="sub" style="margin-top:10px">
+        Net P/L = (USDC back − loan) − 0.09% flash fee − gas. Slippage simulated from pool liquidity (constant-product approximation) with per-leg 0.30% DEX fee. Pairs with raw spread &gt; cap or liquidity &lt; guard×loan are ignored.
       </div>
     </div>
   </div>
-</div>
 
 <script>
-// ---------- Config ----------
-const RPCS = [
-  "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez", // your Alchemy (primary)
-  "https://arb1.arbitrum.io/rpc",
-  "https://arbitrum.llamarpc.com",
-  "https://rpc.ankr.com/arbitrum",
-  "https://arbitrum-one.publicnode.com"
-];
-const ALLOW_DEX = new Set(["uniswap-v3","sushiswap","camelot"]); // Dexscreener IDs
-const MIN_LIQ_USD = 10000;     // relaxed for visibility
-const REQUIRE_TXN_M5 = false;  // freshness OFF
-const MIN_VOL24_USD = 0;       // relaxed for visibility
-const MAX_SPREAD_PCT = 50;     // sanity cap
+(async function(){
+  const $ = id => document.getElementById(id);
+  const TOKENS = ["WETH","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","WBTC","RDNT","PENDLE","USDC.e","FRAX","CRV","BAL","LDO","rETH","wstETH","UNI","MKR","SNX","COMP","YFI","TUSD","1INCH","GRT","OP","MAGIC","JONES","HND","RDNT.e","STG","LUSD","BPT","SUSHI","DODO"]; // ~36
+  const ALLOW_DEX = new Set(["uniswap","sushiswap","camelot","balancer","curve"]); // lowercased dexId
+  const DEX_FEE = 0.003; // 0.30% each leg (conservative)
+  const FLASH_FEE = 0.0009; // 0.09%
+  const RPC = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; // your Alchemy RPC
+  $("rpcBadge").textContent = "RPC: arb-mainnet.g.alchemy.com";
 
-// ---------- Extended token set (~40) ----------
-const TOKENS = {
-  WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-  USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-  USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-  DAI :"0xda10009cbd5d07dd0cecc61fc93d7c9000da1",
-  ARB :"0x912CE59144191C1204E64559FE8253a0e49E6548",
-  GMX :"0xfc5a96a8cE62fF190E4A44bD828F3E0eC4A6fBf9",
-  LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
-  WBTC:"0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
-  AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
-  PENDLE:"0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8",
-  RDNT:"0x3082CC23568eA640225c2467653dB90e9250AaA0",
-  MAGIC:"0x539bdE0d7Dbd336b79148AA742883198BBF60342",
-  GNS  :"0x18c11FD286C5EC11c3b683Caa813B77f5163A122",
-  GRAIL:"0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8",
-  DPX  :"0x6c2C06790b3E3E3c38e12Ee22F8183b37a13EE55",
-  rDPX :"0x32Eb7902D4134bf98A28b963D26de779AF92A212",
-  JONES:"0x10393c20975cf177a3513071bc110f7962cd67da",
-  LDO  :"0xFdb794692724153d1488CcdBE0C56c252596735F",
-  BAL  :"0x040d1EdC9569d4Bab2D15287Dc5A4F10F56a56B8",
-  UNI  :"0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0",
-  FRAX :"0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
-  USDCe:"0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
-  wstETH:"0x5979D7b546E38E414F7E9822514be443A4800529",
-  CRV  :"0x11cdb42b0eb46d95f990bedd4695a6e3fa034978",
-  SYN  :"0x080F6AEd32Fc474DD5717105Dba5ea57268F46eb",
-  GRAI :"0x3f56e0c36d275367b8c502090edf38289b3dea0d",
-  SNX  :"0x8700daec35af8ff88c16bd18f1f8d2727f9726e9",
-  YFI  :"0x82e90eb7034c1df7a3e14d6e50e55cdd0d9c9a6a",
-  CVX  :"0xb952a807345991bd529fdced05009f5e80fe8f45",
-  MIM  :"0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
-  RPL  :"0xb766039cc6db368759c1e56b79affe831d0cc507",
-  BADGER:"0x3472a5a71965499acd81997a54bba8d852c6e53d",
-  GRT  :"0x23a941036ae778ac51ab04cea08ed6e2fe103614",
-  COMP :"0xb9d7cb7d0a7f620f2de913c2c9b391d4bdf6eb9f",
-  MKR  :"0x2e9a631abfd0bda2a0e6c7b6bfe7f2ff7a2e5d8d",
-  LUSD :"0x93b346b06a8b4cd6e69f3af6d6f3d3c3c3d3c3c3" // placeholder-safe; skipped if no pools
-};
+  const state = { prices:{}, ethUSD:null, gasGwei:null };
 
-// ---------- Helpers ----------
-const $ = (id)=>document.getElementById(id);
-const logEl = $("log"), tbody = $("tbody");
-function log(msg){ const t=new Date().toLocaleTimeString(); logEl.innerHTML+=`[${t}] ${msg}<br>`; logEl.scrollTop=logEl.scrollHeight; }
-function fmtUSD(n,dp=2){ if(!isFinite(n)) return "—"; return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:dp}); }
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+  // --- helpers
+  const fmtUSD = v => isFinite(v) ? "$"+Number(v).toLocaleString(undefined,{maximumFractionDigits:2}) : "—";
+  const fmt = (v, d=4) => isFinite(v) ? Number(v).toFixed(d) : "—";
 
-// ---------- RPC: gas ----------
-async function fetchGasGwei(){
-  const payload = { jsonrpc:"2.0", id:1, method:"eth_gasPrice", params:[] };
-  let lastErr=null, hostShown=false, firstHost="";
-  for(const url of RPCS){
-    try{
-      const host = new URL(url).host;
-      if(!hostShown){ $("rpcPill").textContent = "RPC: "+ host; firstHost=host; hostShown=true; }
-      const r = await fetch(url,{method:"POST",headers:{ "Content-Type":"application/json"},body:JSON.stringify(payload)});
-      if(!r.ok) { lastErr = new Error("HTTP "+r.status); continue; }
-      const j = await r.json();
-      const wei = parseInt(j?.result,16);
-      if(Number.isFinite(wei)) return { gwei: wei/1e9, rpc:url };
-    }catch(e){ lastErr=e; }
+  function constantProductUSDCtoToken(usdcIn, priceUsd, liqUsd, fee=DEX_FEE){
+    // Approximate a V2 pool with total liquidity liqUsd; assume USDC and token sides each ~liqUsd/2.
+    // tokenReserve = (liqUsd/2)/priceUsd ; usdcReserve = liqUsd/2
+    if(!(usdcIn>0) || !(priceUsd>0) || !(liqUsd>0)) return 0;
+    const Ru = liqUsd/2;             // USDC reserve ($)
+    const Rt_tokens = (liqUsd/2)/priceUsd; // token reserve (units)
+    const usdcAfterFee = usdcIn*(1-fee);
+    // amountOut tokens = Rt * usdcAfterFee / (Ru + usdcAfterFee)
+    const tokenOut = Rt_tokens * (usdcAfterFee / (Ru + usdcAfterFee));
+    return tokenOut;
   }
-  throw lastErr || new Error("gas RPC failed");
-}
+  function constantProductTokentoUSDC(tokenIn, priceUsd, liqUsd, fee=DEX_FEE){
+    if(!(tokenIn>0) || !(priceUsd>0) || !(liqUsd>0)) return 0;
+    const Ru = liqUsd/2;             // USDC reserve ($)
+    const Rt_tokens = (liqUsd/2)/priceUsd;
+    const tokenAfterFee = tokenIn*(1-fee);
+    // amountOut usdc = Ru * tokenAfterFee / (Rt + tokenAfterFee)
+    const usdcOut = Ru * (tokenAfterFee / (Rt_tokens + tokenAfterFee));
+    return usdcOut;
+  }
+  function netPL(loan, buyPx, buyLiq, sellPx, sellLiq, gasUSD){
+    // Simulate USDC -> token on buy, then token -> USDC on sell
+    const tokenOut = constantProductUSDCtoToken(loan, buyPx, buyLiq);
+    const backUSDC = constantProductTokentoUSDC(tokenOut, sellPx, sellLiq);
+    const fee = loan*FLASH_FEE;
+    const pl = backUSDC - loan - fee - (gasUSD||0);
+    const spread = (sellPx - buyPx) / buyPx * 100;
+    return { backUSDC, pl, spread };
+  }
 
-// ---------- Dexscreener ----------
-async function fetchPairsFor(addr){
-  const url = `https://api.dexscreener.com/latest/dex/tokens/${addr}`;
-  const r = await fetch(url,{cache:"no-store"});
-  if(!r.ok) throw new Error("Dexscreener HTTP "+r.status);
-  const j = await r.json();
-  const rows = (j?.pairs||[]).filter(p => {
-    if(p.chainId!=="arbitrum") return false;
-    const dex = (p.dexId||"").toLowerCase();
-    if(!ALLOW_DEX.has(dex)) return false;
-    const liq = Number(p?.liquidity?.usd||0);
-    if(!(liq>=MIN_LIQ_USD)) return false;
-    const vol24 = Number(p?.volume?.h24||0);
-    if(!(vol24>=MIN_VOL24_USD)) return false;
-    if(REQUIRE_TXN_M5){
-      const b = Number(p?.txns?.m5?.buys||0);
-      const s = Number(p?.txns?.m5?.sells||0);
-      if(b+s <= 0) return false;
+  // --- fetch ETH price (for gas USD)
+  async function fetchETHUSD(){
+    try{
+      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
+      const j = await r.json(); const p = j?.ethereum?.usd;
+      if(typeof p === "number") return p;
+    }catch(_){}
+    return null;
+  }
+  // --- fetch gas (gwei) using feeHistory; fallback to gasPrice
+  async function fetchGasGwei(){
+    const payload = { jsonrpc:"2.0", id:1, method:"eth_feeHistory", params:[5,"latest",[10,50,90]] };
+    try{
+      let r = await fetch(RPC,{method:"POST",headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      if(!r.ok) throw new Error("feeHistory http "+r.status);
+      const j = await r.json(); const bh = j?.result; if(!bh?.baseFeePerGas) throw new Error("bad feeHistory");
+      const lastBase = parseInt(bh.baseFeePerGas.at(-1),16)/1e9; // gwei
+      const tip50 = parseInt((bh.reward.at(-1)||[])[1]||"0x0",16)/1e9;
+      return lastBase + tip50;
+    }catch(_){
+      try{
+        const r2 = await fetch(RPC,{method:"POST",headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:"2.0",id:2,method:"eth_gasPrice",params:[]})});
+        const j2 = await r2.json(); const wei = parseInt(j2?.result||"0x0",16); if(wei>0) return wei/1e9;
+      }catch(_){}
     }
-    return true;
-  });
-
-  // best pool per DEX (max liquidity)
-  const byDex = new Map();
-  for(const p of rows){
-    const k = (p.dexId||"").toLowerCase();
-    const liq = Number(p?.liquidity?.usd||0);
-    if(!byDex.has(k) || liq > (byDex.get(k)?.liquidity?.usd||0)) byDex.set(k,p);
-  }
-  return Array.from(byDex.values());
-}
-
-// ---------- Core scan ----------
-let abort=false;
-let renderedRows=[];
-
-async function scan(){
-  abort=false;
-  renderedRows=[];
-  updateSelectionTotal();
-
-  const loan = parseFloat($("loan").value||"0");
-  const gasLimit = parseFloat($("gasLimit").value||"0");
-  $("countPill").textContent = `Tokens: ${Object.keys(TOKENS).length}`;
-
-  $("status").textContent = "Fetching gas & WETH…";
-  tbody.innerHTML=""; $("summary").textContent="—"; logEl.innerHTML="";
-
-  // gas
-  let gasGwei=0, rpcUsed="";
-  try{
-    const g = await fetchGasGwei();
-    gasGwei = g.gwei; rpcUsed = g.rpc;
-    $("gasPill").textContent = `Gas: ${gasGwei.toFixed(2)} gwei`;
-    $("rpcPill").textContent = "RPC: " + new URL(rpcUsed).host;
-    log(`Gas: ${gasGwei.toFixed(2)} gwei via ${new URL(rpcUsed).host}`);
-  }catch(e){
-    log(`<span style="color:#fecaca">Gas fetch failed: ${e.message}</span>`);
-    $("gasPill").textContent = "Gas: error";
+    return null;
   }
 
-  // WETH price (for gas USD)
-  let ethUSD = NaN;
-  try{
-    const ethPairs = await fetchPairsFor(TOKENS.WETH);
-    const bestUSDC = ethPairs.find(p => (p.quoteToken?.symbol||"").toUpperCase().includes("USD"));
-    ethUSD = Number(bestUSDC?.priceUsd);
-    $("ethPill").textContent = isFinite(ethUSD) ? `WETH: ${fmtUSD(ethUSD)}` : "WETH: —";
-  }catch(_e){
-    $("ethPill").textContent = "WETH: —";
-  }
-
-  const gasEth = isFinite(gasGwei)&&isFinite(gasLimit) ? (gasGwei*gasLimit)/1e9 : 0;
-  const gasUSD = isFinite(ethUSD) ? gasEth * ethUSD : 0;
-
-  $("status").textContent = "Scanning tokens…";
-  const out = [];
-  let done = 0, total = Object.keys(TOKENS).length;
-
-  for(const [sym,addr] of Object.entries(TOKENS)){
-    if(abort){ log("Scan aborted."); break; }
+  // --- Dexscreener fetch & process for one token
+  async function scanToken(symbol, loanUSD, guardX, capPct){
+    const chainId = "arbitrum";
+    // quick symbol->address map (extend as needed)
+    const ADDR = {
+      WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+      USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+      DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+      ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",
+      LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
+      GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a",
+      AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
+      WBTC:"0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+      RDNT:"0x3082CC23568eA640225c2467653dB90e9250AaA0",
+      PENDLE:"0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8",
+      "USDC.e":"0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"
+    };
+    const addr = ADDR[symbol]; if(!addr) return null;
     try{
-      const pairs = await fetchPairsFor(addr);
-      if(!pairs.length){ log(`${sym}: no pools after liq/DEX filters`); done++; $("summary").textContent = `Progress ${done}/${total} • loan ${fmtUSD(loan)}`; await sleep(120); continue; }
+      const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`,{cache:"no-store"});
+      if(!r.ok) return null; const j = await r.json(); let pairs = j?.pairs||[];
+      pairs = pairs.filter(p => p.chainId===chainId && p.quoteToken && (p.quoteToken.symbol==="USDC" || p.quoteToken.symbol==="USDC.e"));
+      if(!pairs.length) return { symbol, note:"no USDC pairs" };
 
-      let bestBuy=null, bestSell=null, min=Infinity, max=-Infinity;
-      pairs.forEach(p=>{
-        const pr = Number(p?.priceUsd);
-        if(!isFinite(pr)) return;
-        if(pr < min){ min=pr; bestBuy=p; }
-        if(pr > max){ max=pr; bestSell=p; }
-      });
-
-      if(!bestBuy || !bestSell || !isFinite(min) || !isFinite(max)){
-        log(`${sym}: missing price`);
-      } else {
-        const rawSpreadPct = ((max/min)-1)*100;
-        if(rawSpreadPct > MAX_SPREAD_PCT){
-          log(`${sym}: dropped by cap (raw spread ${rawSpreadPct.toFixed(2)}% > ${MAX_SPREAD_PCT}%)`);
-        } else {
-          const units = loan / min;
-          const usdcBack = units * max;
-          const flashFee = loan * 0.0009; // 0.09%
-          const netPL = usdcBack - loan - flashFee - gasUSD;
-
-          out.push({
-            sym,
-            buy:{ dex:(bestBuy.dexId||"").toUpperCase(), price:min },
-            sell:{ dex:(bestSell.dexId||"").toUpperCase(), price:max },
-            spreadPct: rawSpreadPct,
-            usdcBack,
-            netPL
-          });
-        }
+      // keep one per DEX (highest liquidity)
+      const byDex = new Map();
+      for(const p of pairs){
+        const dex = (p.dexId||"").toLowerCase(); if(!ALLOW_DEX.has(dex)) continue;
+        const liq = Number(p.liquidity?.usd||0);
+        const prev = byDex.get(dex);
+        if(!prev || liq > Number(prev.liquidity?.usd||0)) byDex.set(dex,p);
       }
-    }catch(e){
-      log(`${sym}: error ${e.message}`);
-    }
-    done++; $("summary").textContent = `Progress ${done}/${total} • loan ${fmtUSD(loan)}`;
-    await sleep(120); // gentle on API
+      const list = Array.from(byDex.values());
+      if(!list.length) return { symbol, note:"no allowed dex" };
+
+      // choose best buy (lowest price) & sell (highest price) with guards
+      const guardUSD = guardX * loanUSD;
+      const viable = list.filter(p => Number(p.liquidity?.usd||0) >= guardUSD);
+      if(!viable.length) return { symbol, note:"thin" };
+
+      viable.sort((a,b)=>Number(a.priceUsd)-Number(b.priceUsd));
+      const buy = viable[0];
+      viable.sort((a,b)=>Number(b.priceUsd)-Number(a.priceUsd));
+      const sell = viable[0];
+      if(!buy || !sell || buy.pairAddress===sell.pairAddress) return { symbol, note:"no cross-dex" };
+
+      const buyPx = Number(buy.priceUsd), sellPx = Number(sell.priceUsd);
+      const rawSpread = (sellPx - buyPx)/buyPx*100;
+      if(!(isFinite(rawSpread)) || rawSpread<=0) return { symbol, note:"neg spread" };
+      if(rawSpread > capPct) return { symbol, note:"capped" };
+
+      const buyLiq = Number(buy.liquidity?.usd||0);
+      const sellLiq = Number(sell.liquidity?.usd||0);
+
+      // gas USD
+      const ethUSD = state.ethUSD || Number($("ethUsd").value)||0;
+      const gwei = state.gasGwei || Number($("gasPrice").value)||0;
+      const gasLimit = Number($("gasLimit").value)||380000;
+      const gasUSD = (ethUSD && gwei) ? (gwei*1e-9*gasLimit*ethUSD) : 0;
+
+      const { backUSDC, pl, spread } = netPL(loanUSD, buyPx, buyLiq, sellPx, sellLiq, gasUSD);
+      return {
+        symbol,
+        buyDex:(buy.dexId||"").toUpperCase(),
+        buyPx, sellDex:(sell.dexId||"").toUpperCase(), sellPx,
+        spread, backUSDC, pl
+      };
+    }catch(_){ return null; }
   }
 
-  // render (sort by Net P/L desc)
-  tbody.innerHTML="";
-  out.sort((a,b)=>b.netPL - a.netPL);
-  out.forEach((row, idx)=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><input type="checkbox" class="rowChk" data-i="${idx}" ${row.netPL>0?'checked':''}></td>
-      <td>${row.sym}</td>
-      <td>${row.buy.dex}</td>
-      <td class="right">${fmtUSD(row.buy.price,5)}</td>
-      <td>${row.sell.dex}</td>
-      <td class="right">${fmtUSD(row.sell.price,5)}</td>
-      <td class="right">${row.spreadPct.toFixed(2)}%</td>
-      <td class="right">${fmtUSD(row.usdcBack)}</td>
-      <td class="right ${row.netPL>=0?'pos':'neg'}">${(row.netPL>=0?'+':'')+row.netPL.toFixed(2)}</td>
-    `;
-    tbody.appendChild(tr);
+  function renderRows(rows){
+    const tb = $("tbody"); tb.innerHTML = "";
+    let selSum = 0;
+    rows.forEach(r=>{
+      const tr = document.createElement("tr");
+      const good = r?.pl>0;
+      tr.innerHTML = `
+        <td><input type="checkbox" class="sel"></td>
+        <td>${r.symbol||"—"}</td>
+        <td>${r.buyDex||"—"}</td>
+        <td class="right">${isFinite(r.buyPx)?fmtUSD(r.buyPx):"—"}</td>
+        <td>${r.sellDex||"—"}</td>
+        <td class="right">${isFinite(r.sellPx)?fmtUSD(r.sellPx):"—"}</td>
+        <td class="right">${isFinite(r.spread)?fmt(r.spread,2)+"%":"—"}</td>
+        <td class="right">${isFinite(r.backUSDC)?fmtUSD(r.backUSDC):"—"}</td>
+        <td class="right ${good?"green":"red"}">${isFinite(r.pl)?(good?"+":"")+fmtUSD(r.pl):"—"}</td>
+      `;
+      const cb = tr.querySelector(".sel");
+      cb.addEventListener("change",()=>{
+        selSum += cb.checked ? (r.pl||0) : -(r.pl||0);
+        $("sumPill").textContent = `Selected total: ${(selSum>=0?"+":"")}${fmtUSD(selSum)}`;
+      });
+      tb.appendChild(tr);
+    });
+  }
+
+  // Buttons
+  $("clearSel").addEventListener("click",()=>{
+    document.querySelectorAll(".sel").forEach(ch=>ch.checked=false);
+    $("sumPill").textContent = "Selected total: +$0";
   });
-  renderedRows = out;
+  $("selAll").addEventListener("click",()=>{
+    let sum=0; document.querySelectorAll(".sel").forEach(ch=>{
+      const row = ch.closest("tr"); const last = row?.lastElementChild?.textContent||"";
+      const val = Number(last.replace(/[^0-9.-]/g,""));
+      const positive = /[\+\-]?\$/.test(last) && val>0;
+      ch.checked = positive; if(positive) sum += val;
+    });
+    $("sumPill").textContent = `Selected total: ${(sum>=0?"+":"")}${fmtUSD(sum)}`;
+  });
 
-  $("status").textContent = `Done. Listed ${out.length} routes (fee 0.09% + gas ~ ${fmtUSD(gasUSD,4)}).`;
-  if(!out.length) log("No routes after filters — try later or tweak the token list.");
+  // Scan
+  $("scanBtn").addEventListener("click", async ()=>{
+    const loan = Number($("loan").value)||10000;
+    const cap = Number($("cap").value)||50;
+    const guard = Number($("liqGuard").value)||10;
 
-  // selection events
-  tbody.querySelectorAll(".rowChk").forEach(chk=> chk.addEventListener("change", updateSelectionTotal));
-  $("selectAll").checked = false;
-  updateSelectionTotal();
-}
+    $("loading").style.display = "flex";
+    $("kpiNote").textContent = "Fetching gas & ETH…";
+    // gas + eth
+    state.ethUSD = Number($("ethUsd").value) || await fetchETHUSD();
+    state.gasGwei = Number($("gasPrice").value) || await fetchGasGwei();
+    $("ethUsd").value = state.ethUSD ? String(state.ethUSD) : "";
+    $("gasPrice").value = state.gasGwei ? state.gasGwei.toFixed(2) : "";
+    $("gasBadge").textContent = `Gas: ${state.gasGwei?state.gasGwei.toFixed(2):"—"} gwei`;
 
-// ---------- Selection + Preview ----------
-function updateSelectionTotal(){
-  const chks = Array.from(tbody.querySelectorAll(".rowChk"));
-  let total = 0;
-  chks.forEach(chk=>{
-    if(chk.checked){
-      const i = Number(chk.dataset.i||"-1");
-      const row = renderedRows[i];
-      if(row) total += row.netPL;
+    $("kpiNote").textContent = "Scanning tokens…";
+    $("progress").textContent = `0/${TOKENS.length} • loan ${fmtUSD(loan)}`;
+    const out = [];
+    let i=0;
+    for(const sym of TOKENS){
+      $("progress").textContent = `${++i}/${TOKENS.length} • loan ${fmtUSD(loan)}`;
+      const row = await scanToken(sym, loan, guard, cap);
+      if(row && row.pl!=null) out.push(row);
     }
+    // sort by P/L desc
+    out.sort((a,b)=> (b.pl||-1) - (a.pl||-1));
+    renderRows(out);
+    $("progress").textContent = `Done • ${out.filter(r=>r.pl>0).length} ≥ $0 • loan ${fmtUSD(loan)}`;
+    $("kpiNote").textContent = "Complete.";
+    $("loading").style.display = "none";
   });
-  const sign = total>=0?'+':'';
-  $("selTotalPill").textContent = `Selected total: ${sign}${fmtUSD(Math.abs(total)).replace('$','+$')}`;
-}
 
-$("selectProfBtn").addEventListener("click", ()=>{
-  tbody.querySelectorAll(".rowChk").forEach((chk)=>{
-    const i = Number(chk.dataset.i||"-1");
-    const row = renderedRows[i];
-    chk.checked = !!(row && row.netPL > 0);
-  });
-  $("selectAll").checked = false;
-  updateSelectionTotal();
-});
-$("clearSelBtn").addEventListener("click", ()=>{
-  tbody.querySelectorAll(".rowChk").forEach(chk=> chk.checked=false);
-  $("selectAll").checked = false;
-  updateSelectionTotal();
-});
-$("selectAll").addEventListener("change", (e)=>{
-  const on = e.target.checked;
-  tbody.querySelectorAll(".rowChk").forEach(chk=> chk.checked = on);
-  updateSelectionTotal();
-});
-
-// Preview modal
-const backdrop = $("modalBackdrop");
-const modalBody = $("modalBody");
-function openModal(){ backdrop.style.display="flex"; }
-function closeModal(){ backdrop.style.display="none"; }
-$("modalClose").addEventListener("click", closeModal);
-$("modalClose2").addEventListener("click", closeModal);
-
-$("previewBtn").addEventListener("click", ()=>{
-  const loan = parseFloat($("loan").value||"0");
-  const chks = Array.from(tbody.querySelectorAll(".rowChk")).filter(c=>c.checked);
-  if(!chks.length){ modalBody.innerHTML = "No rows selected."; openModal(); return; }
-
-  let totalPL = 0;
-  let html = `<div><strong>Plan</strong> — ${chks.length} route(s) for loan ${fmtUSD(loan)}</div><br/>`;
-  html += `<table style="width:100%;border-collapse:collapse;font-size:13px">
-    <tr style="background:#f3f4f6">
-      <th style="text-align:left;padding:6px 8px">Token</th>
-      <th style="text-align:left;padding:6px 8px">Buy</th>
-      <th style="text-align:left;padding:6px 8px">Sell</th>
-      <th style="text-align:right;padding:6px 8px">USDC Back</th>
-      <th style="text-align:right;padding:6px 8px">Net P/L</th>
-    </tr>`;
-  chks.forEach(chk=>{
-    const i = Number(chk.dataset.i||"-1");
-    const r = renderedRows[i];
-    if(!r) return;
-    totalPL += r.netPL;
-    html += `<tr>
-      <td style="padding:6px 8px">${r.sym}</td>
-      <td style="padding:6px 8px">${r.buy.dex} @ ${fmtUSD(r.buy.price,5)}</td>
-      <td style="padding:6px 8px">${r.sell.dex} @ ${fmtUSD(r.sell.price,5)}</td>
-      <td style="padding:6px 8px;text-align:right">${fmtUSD(r.usdcBack)}</td>
-      <td style="padding:6px 8px;text-align:right;${r.netPL>=0?'color:#16a34a':'color:#ef4444'}">${(r.netPL>=0?'+':'')+r.netPL.toFixed(2)}</td>
-    </tr>`;
-  });
-  html += `</table><br/>`;
-  html += `<div><strong>Total (selected):</strong> <span style="font-weight:800;${totalPL>=0?'color:#16a34a':'color:#ef4444'}">${(totalPL>=0?'+':'')+totalPL.toFixed(2)} USDC</span></div>`;
-  html += `<br/><div class="muted">Preview only (no blockchain calls). Next: add simulation, then enable live execution.</div>`;
-  modalBody.innerHTML = html;
-  openModal();
-});
-
-// Buttons
-$("scanBtn").addEventListener("click", ()=>{ $("stopBtn").disabled=false; scan().finally(()=>{ $("stopBtn").disabled=true; }); });
-$("stopBtn").addEventListener("click", ()=>{ abort=true; $("status").textContent="Stopping…"; });
-
-// First paint
-$("countPill").textContent = "Tokens: " + Object.keys(TOKENS).length;
-fetchGasGwei().then(g=>{
-  $("gasPill").textContent = `Gas: ${g.gwei.toFixed(2)} gwei`; $("rpcPill").textContent = "RPC: " + new URL(g.rpc).host;
-}).catch(()=>{$("gasPill").textContent="Gas: —";});
+  // init
+  $("kpiNote").textContent = "Ready. Click Scan for realistic, slippage-aware results.";
+})();
 </script>
 </body>
 </html>

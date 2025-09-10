@@ -3,55 +3,94 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings TestBed v9.9.3e — Arbitrum</title>
+<title>Crypto Kings TestBed v9.9.4 — Arbitrum</title>
 <style>
-:root{--bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;--brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-header{background:#111;color:#fff}
-.bar{max-width:1100px;margin:0 auto;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+:root{
+  --bg:#f6f7f9;--surface:#fff;--ink:#111827;--muted:#6b7280;
+  --brand:#7c5cff;--brand2:#1d9bf0;--border:#e5e7eb;--ok:#10b981;--bad:#ef4444
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
+
+/* Header */
+header{background:#111;color:#fff;position:sticky;top:0;z-index:20}
+.head{max-width:1200px;margin:0 auto;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand{display:flex;gap:10px;align-items:center}
-.logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
-.wrap{max-width:1100px;margin:0 auto;padding:16px 12px 80px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;font-weight:900}
+.nav{display:flex;gap:14px;flex-wrap:wrap}
+.nav a{color:#e5e7eb;text-decoration:none;font-size:14px;opacity:.9}
+.nav a:hover{opacity:1;text-decoration:underline}
+.meta{font-size:13px;opacity:.8}
+
+/* Layout */
+.wrap{max-width:1200px;margin:0 auto;padding:16px 12px 90px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 6px 16px rgba(0,0,0,.04)}
-.row{display:grid;grid-template-columns:1fr;gap:8px}
-@media(min-width:760px){.row-5{grid-template-columns:repeat(5,1fr)}}
+.row{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:880px){ .row-5{grid-template-columns:repeat(5,1fr)} }
+
 label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
 input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px}
 button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2))}
 .ghost{background:transparent;color:#111;border:1px solid var(--border)}
+
 .status{display:flex;gap:10px;align-items:center;color:#6b7280;font-size:13px}
 .spin{border:3px solid rgba(0,0,0,.08);border-top:3px solid var(--brand);border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite}
 @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 .pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
+
 .table-wrap{overflow-x:auto;border-radius:12px}
 table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border)}
 th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;white-space:nowrap}
-th{background:#fafafa;position:sticky;top:0}
+th{background:#fafafa}
 .right{text-align:right}.ok{color:var(--ok)}.bad{color:var(--bad)}.hint{color:#6b7280;font-size:12px}
 #log{margin-top:10px;font-size:12px;color:#374151;max-height:260px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
 .notice{background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;border-radius:12px;padding:10px;margin:10px 0;white-space:pre-wrap}
+
+/* Overlay */
 .overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:center;justify-content:center;z-index:50}
-.panel{width:min(680px,92vw);background:#111827;color:#e5e7eb;border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.panel{width:min(720px,92vw);background:#111827;color:#e5e7eb;border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
 .rowmini{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin:8px 0;border-bottom:1px dashed rgba(255,255,255,.12);padding-bottom:8px}
 .small{font-size:12px;color:#9ca3af}
+
+/* Footer */
+footer{background:#111;color:#e5e7eb}
+.foot{max-width:1200px;margin:0 auto;padding:26px 14px}
+.grid4{display:grid;grid-template-columns:1fr;gap:18px}
+@media (min-width:760px){ .grid4{grid-template-columns:repeat(4,1fr)} }
+.foot h4{margin:0 0 8px;font-size:14px}
+.foot ul{list-style:none;margin:0;padding:0}
+.foot li{margin:4px 0;font-size:13px;opacity:.9}
+.copy{margin-top:16px;font-size:12px;opacity:.8;text-align:center}
 </style>
 </head>
 <body>
 <header>
-  <div class="bar">
-    <div class="brand"><div class="logo">CK</div><strong>Crypto Kings</strong><span style="opacity:.75">v9.9.3e</span></div>
-    <div id="walletStatus">Arbitrum One • Majors</div>
+  <div class="head">
+    <div class="brand">
+      <div class="logo">CK</div>
+      <div>
+        <div style="font-weight:800;letter-spacing:.2px">Crypto Kings</div>
+        <div class="meta">TestBed v9.9.4 • Arbitrum One</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#">Home</a>
+      <a href="#">Who we are</a>
+      <a href="#">What we do</a>
+      <a href="#">Connect with us</a>
+    </nav>
   </div>
 </header>
 
 <div class="wrap">
   <div id="notices"></div>
 
+  <!-- Controls -->
   <div class="card">
     <div class="row row-5">
       <div>
         <label for="loan">Loan Amount (USDC)</label>
-        <input id="loan" type="number" value="1000" min="500" step="500"/>
+        <input id="loan" type="number" value="10000" min="500" step="500"/>
       </div>
       <div>
         <label for="threshold">Min Net P/L to show (USDC)</label>
@@ -67,14 +106,14 @@ th{background:#fafafa;position:sticky;top:0}
         </select>
       </div>
       <div>
-        <label for="autoExec">Auto-execute profitable</label>
+        <label for="autoExec">Auto-execute</label>
         <select id="autoExec">
           <option value="0" selected>Off</option>
           <option value="1">On (mock)</option>
         </select>
       </div>
-      <div style="display:flex;align-items:flex-end;gap:8px">
-        <!-- 1) inline onclick fallback -->
+      <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap">
+        <!-- inline onclick fallback -->
         <button id="scanBtn" onclick="window.CK && window.CK.scan()">Scan</button>
         <button id="stopBtn" class="ghost">Stop</button>
         <div class="status"><div id="spinner" class="spin" style="display:none"></div><span id="status">Booting…</span></div>
@@ -87,6 +126,7 @@ th{background:#fafafa;position:sticky;top:0}
     </div>
   </div>
 
+  <!-- Results -->
   <div class="card" style="margin-top:12px">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button id="selectProfitable" class="ghost">Select all ≥ threshold</button>
@@ -111,7 +151,6 @@ th{background:#fafafa;position:sticky;top:0}
         <tbody id="rows"></tbody>
       </table>
     </div>
-
     <details style="margin-top:10px">
       <summary>Details / Logs</summary>
       <div id="log"></div>
@@ -131,8 +170,48 @@ th{background:#fafafa;position:sticky;top:0}
   </div>
 </div>
 
+<footer>
+  <div class="foot">
+    <div class="grid4">
+      <div>
+        <h4>Crypto Kings</h4>
+        <ul>
+          <li>Flash-loan research tooling</li>
+          <li>Arbitrum focus</li>
+          <li>DEX route discovery</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a style="color:#e5e7eb" href="#">About</a></li>
+          <li><a style="color:#e5e7eb" href="#">Careers</a></li>
+          <li><a style="color:#e5e7eb" href="#">Press</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <ul>
+          <li><a style="color:#e5e7eb" href="#">Terms</a></li>
+          <li><a style="color:#e5e7eb" href="#">Privacy</a></li>
+          <li><a style="color:#e5e7eb" href="#">Risk Disclosure</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a style="color:#e5e7eb" href="#">Support</a></li>
+          <li><a style="color:#e5e7eb" href="#">Twitter</a></li>
+          <li><a style="color:#e5e7eb" href="#">Discord</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="copy">© <span id="year"></span> Crypto Kings Limited. All rights reserved.</div>
+  </div>
+</footer>
+
+<!-- Ethers loader (tries cdnjs then jsDelivr) -->
 <script>
-/* Lightweight CDN loader for ethers (tries cdnjs, then jsDelivr) */
 (function loadEthers(){
   function add(src, onload){
     var s=document.createElement('script'); s.src=src; s.async=true; s.onload=onload;
@@ -151,56 +230,59 @@ th{background:#fafafa;position:sticky;top:0}
 
 <script>
 (function(){
+  document.getElementById('year').textContent = new Date().getFullYear();
   const $=id=>document.getElementById(id);
   const fmt=(n,dp=2)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:dp});
   const log=(m)=>{const d=document.createElement('div'); d.textContent=m; $('log').appendChild(d); $('log').scrollTop=$('log').scrollHeight;};
-  const notice=(m)=>{const n=document.createElement('div'); n.className='notice'; n.textContent='App notice\n'+m; $('notices').prepend(n);};
+  const notice=(m)=>{const n=document.createElement('div'); n.className='notice'; n.textContent='App notice\n'+m; const box=$('notices'); box.insertBefore(n, box.firstChild);};
   const setStatus=(t,spin)=>{$('status').textContent=t; $('spinner').style.display=spin?'inline-block':'none';};
-
   window.addEventListener('error', e=> notice(e.message+'\n'+(e.filename||'')+' | '+(e.lineno||0)+':'+(e.colno||0)));
-  console.log('[CK] boot script inserted');
 
-  // Globals so inline onclick can call scan()
+  // Expose scan for inline onclick fallback
   window.CK = { scan: ()=>scanClick() };
 
-  /* RPC/Providers */
+  /* ---------- RPCs (use your paid ones here) ---------- */
   const RPCS=[
-    // TIP: replace with your Alchemy/QuickNode HTTPS for speed & reliability
+    // Replace these two with your Alchemy/QuickNode HTTPS URLs for speed:
+    "https://arb-mainnet.g.alchemy.com/v2/REPLACE_ME",
+    "https://arbitrum-mainnet.infura.io/v3/REPLACE_ME",
+    // Leave some public fallbacks:
     "https://arbitrum-one.publicnode.com",
     "https://1rpc.io/arb",
-    "https://arbitrum.llamarpc.com",
-    "https://arb1.arbitrum.io/rpc",
-    "https://arbitrum.blockpi.network/v1/rpc/public"
+    "https://arbitrum.llamarpc.com"
   ];
   const CHAIN={ name:"arbitrum", chainId:42161 };
   let provider=null, booted=false;
 
   function buildProvider(){
-    const backends = RPCS.map((url,i)=>({ provider: new ethers.providers.StaticJsonRpcProvider({url, timeout:15000}, CHAIN), priority:i+1, stallTimeout:1800, weight:1 }));
+    const backends = RPCS.map((url,i)=>({
+      provider: new ethers.providers.StaticJsonRpcProvider({url, timeout:15000}, CHAIN),
+      priority:i+1, stallTimeout:1800, weight:1
+    }));
     provider = new ethers.providers.FallbackProvider(backends,{quorum:1,polling:false});
     log('provider built');
   }
-
   async function warmupProvider(){
     try{
       const res = await Promise.race([provider.detectNetwork(), provider.getBlockNumber()]);
       const tag = (typeof res==='number') ? '#'+res : 'id '+res.chainId;
-      $('rpcPill').textContent='RPC OK • '+tag;
-      log('RPC warmup OK: '+tag);
-      return true;
-    }catch(e){
-      $('rpcPill').textContent='RPC error';
-      log('RPC warmup failed: '+e.message);
-      return false;
-    }
+      $('rpcPill').textContent='RPC OK • '+tag; log('RPC warmup OK: '+tag); return true;
+    }catch(e){ $('rpcPill').textContent='RPC error'; log('RPC warmup failed: '+e.message); return false; }
   }
 
-  /* ABIs / addresses (same as before) */
+  /* ---------- DEX quoting (majors, Arbitrum) ---------- */
   const WETH="0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
   const USDC="0xaf88d065e77c8C2239327C5EDb3A432268e5831";
   const USDCe="0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
   const USDT="0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9";
-  const TOKENS={ WETH, USDT, DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548", LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4", GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a" };
+  const TOKENS={
+    WETH, USDT,
+    DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+    ARB:"0x912CE59144191C1204E64559FE8253a0e49E6548",
+    LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
+    GMX:"0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a"
+  };
+
   const ERC20_ABI=[ "function decimals() view returns (uint8)" ];
   const V2_ABI=[ "function getAmountsOut(uint amountIn,address[] calldata path) external view returns (uint[] memory)" ];
   const UNI_QV2="0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
@@ -208,7 +290,6 @@ th{background:#fafafa;position:sticky;top:0}
   const SUSHI="0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
   const CAMELOT="0xc873fEcbd354f5A56E00E710B90EF4201db2448d";
   const FEES=[500,3000,10000];
-
   const decCache=new Map();
   async function decimals(addr){ if(decCache.has(addr)) return decCache.get(addr); const d=await new ethers.Contract(addr,ERC20_ABI,provider).decimals(); decCache.set(addr,d); return d; }
   function packPath(hops){ const types=[],values=[]; for(let i=0;i<hops.length;i++){ if(i%2===0){types.push('address');values.push(hops[i]);} else {types.push('uint24');values.push(hops[i]);} } return ethers.utils.solidityPack(types,values); }
@@ -219,8 +300,9 @@ th{background:#fafafa;position:sticky;top:0}
   async function v2Best(router,paths,amt,ms){ let best=null; for(const p of paths){ const out=await v2Out(router,p,amt,ms); if(out && (!best || out.gt(best))) best=out; } return best; }
   const bestBig=(a,b)=> (a&&b) ? (a.gt(b)?a:b) : (a||b||null);
 
-  /* Gas (safe fallback) */
-  let gasUSDC=0; const GAS_LIMIT=380000;
+  /* ---------- Gas & fees ---------- */
+  const FLASH_FEE=0.0009, GAS_LIMIT=380000;
+  let gasUSDC=0;
   async function fetchEthUsdFallback(){
     try{ const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',{cache:'no-store'}); if(!r.ok) return null; const j=await r.json(); return Number(j?.ethereum?.usd)||null; }catch(_){ return null; }
   }
@@ -229,18 +311,19 @@ th{background:#fafafa;position:sticky;top:0}
       const gp=await provider.getGasPrice();
       let ethUsd=null;
       try{
-        const out=await uniBest(WETH,USDC, ethers.utils.parseEther("1"), 2500);
+        const out=await uniBest(WETH,USDC, ethers.utils.parseEther("1"), 2300);
         if(out) ethUsd = Number(ethers.utils.formatUnits(out,6));
       }catch(_){}
       if(ethUsd==null) ethUsd = await fetchEthUsdFallback();
       const gasETH = Number(ethers.utils.formatEther(gp.mul(GAS_LIMIT)));
       gasUSDC = (ethUsd? gasETH*ethUsd : 0.5);
-      $('gasPill').textContent = `Gas ≈ ${fmt(gasUSDC,2)} USDC`;
-      log('Gas OK: ~'+gasUSDC.toFixed(2)+' USDC');
+      $('gasPill').textContent = `Gas ≈ $${fmt(gasUSDC,2)} (gp ${fmt(Number(ethers.utils.formatUnits(gp,'gwei')),1)} gwei)`;
+      log('Gas OK: ~$'+gasUSDC.toFixed(2));
     }catch(e){ gasUSDC=0.5; $('gasPill').textContent='Gas: fallback'; log('Gas failed: '+e.message); }
   }
 
-  const SIZE_SEQ=[1000,2500,5000,10000]; const THIN=0.40;
+  const SIZE_SEQ=[1000,2500,5000,10000];
+  const THIN=0.40;
 
   async function scanToken(sym, addr, maxSize, threshold){
     try{
@@ -249,32 +332,39 @@ th{background:#fafafa;position:sticky;top:0}
       for(const size of SIZE_SEQ){
         if(size>maxSize) continue;
         const amtIn = ethers.utils.parseUnits(String(size),6);
-        // BUY on Uni or Sushi/Camelot (best)
-        const uniBuy = await uniBest(USDC, addr, amtIn, 2600);
-        const uniBuy2= await uniBest(USDCe, addr, amtIn, 2600);
-        const sushiBuy= await v2Best(SUSHI, [[USDC,addr],[USDCe,addr],[USDC,WETH,addr],[USDC,USDT,addr]], amtIn, 2400);
-        const camelBuy= await v2Best(CAMELOT, [[USDC,addr],[USDCe,addr],[USDC,WETH,addr],[USDC,USDT,addr]], amtIn, 2400);
+
+        // BUY (best of Uni(USDC/USDCe), Sushi, Camelot)
+        const uniBuy  = await uniBest(USDC, addr, amtIn, 2400);
+        const uniBuy2 = await uniBest(USDCe, addr, amtIn, 2400);
+        const sushiBuy= await v2Best(SUSHI, [[USDC,addr],[USDCe,addr],[USDC,WETH,addr],[USDC,USDT,addr]], amtIn, 2200);
+        const camelBuy= await v2Best(CAMELOT, [[USDC,addr],[USDCe,addr],[USDC,WETH,addr],[USDC,USDT,addr]], amtIn, 2200);
         const buyOut = [uniBuy,uniBuy2,sushiBuy,camelBuy].filter(Boolean).sort((a,b)=>a.gt(b)?-1:1)[0];
         if(!buyOut){ reason='BUY_FAIL @ '+size; continue; }
-        // SELL back to USDC on other dexes
-        const uniSell  = await uniBest(addr, USDC, buyOut, 2600);
-        const uniSell2 = await uniBest(addr, USDCe, buyOut, 2600);
-        const sushiSell= await v2Best(SUSHI, [[addr,USDC],[addr,USDCe],[addr,WETH,USDC],[addr,USDT,USDC]], buyOut, 2400);
-        const camelSell= await v2Best(CAMELOT, [[addr,USDC],[addr,USDCe],[addr,WETH,USDC],[addr,USDT,USDC]], buyOut, 2400);
-        // decide which were “cross-DEX” by amount only (we don’t have names here)
+
+        // SELL (best of Uni(USDC/USDCe), Sushi, Camelot)
+        const uniSell   = await uniBest(addr, USDC,  buyOut, 2400);
+        const uniSell2  = await uniBest(addr, USDCe, buyOut, 2400);
+        const sushiSell = await v2Best(SUSHI, [[addr,USDC],[addr,USDCe],[addr,WETH,USDC],[addr,USDT,USDC]], buyOut, 2200);
+        const camelSell = await v2Best(CAMELOT, [[addr,USDC],[addr,USDCe],[addr,WETH,USDC],[addr,USDT,USDC]], buyOut, 2200);
         const outs = [uniSell,uniSell2,sushiSell,camelSell].filter(Boolean);
         if(!outs.length){ reason='SELL_FAIL @ '+size; continue; }
+
         const bestBack = outs.sort((a,b)=>a.gt(b)?-1:1)[0];
-        const backNum = Number(ethers.utils.formatUnits(bestBack,6));
+        const backNum  = Number(ethers.utils.formatUnits(bestBack,6));
         if(backNum < THIN*size){ reason='THIN @ '+size; continue; }
-        const net = (backNum-size) - size*0.0009 - gasUSDC;
+
+        const net = (backNum-size) - size*FLASH_FEE - gasUSDC;
         const tokenOutNum = Number(ethers.utils.formatUnits(buyOut, tDec));
         best = (!best || net>best.net) ? { tokenOut:tokenOutNum, back:backNum, size, net } : best;
         if(best.net>=threshold) break;
       }
       if(!best) return { sym, error:reason };
-      // We no longer show DEX names here (to minimize moving parts). That’s OK for proving click + flow.
-      return { sym, buyDex:'—', sellDex:'—', tokenOut:best.tokenOut, usdcBack:best.back, spreadPct:((best.back-best.size)/best.size)*100, net:best.net, size:best.size };
+      return {
+        sym, buyDex:'—', sellDex:'—',
+        tokenOut:best.tokenOut, usdcBack:best.back,
+        spreadPct: ((best.back-best.size)/best.size)*100,
+        net:best.net, size:best.size
+      };
     }catch(e){ return { sym, error:e.message }; }
   }
 
@@ -290,10 +380,10 @@ th{background:#fafafa;position:sticky;top:0}
       <td class="right ${r.net>0?'ok':'bad'}">${r.net.toFixed(2)}</td>
       <td class="right">${fmt(r.size,0)}</td>`;
     tb.appendChild(tr);
+    tr.querySelector('.routeCheck')?.addEventListener('change',sumSelected);
+    sumSelected();
   }
-
   function sumSelected(){ let s=0; document.querySelectorAll('.routeCheck:checked').forEach(cb=>s+=Number(cb.dataset.net||0)); $('totalNet').textContent=(s>=0?'+':'')+'$'+fmt(s,2); }
-  function renderRows(rows, thr){ $('rows').innerHTML=''; rows.forEach(r=>renderRow(r,thr)); document.querySelectorAll('.routeCheck').forEach(cb=>cb.addEventListener('change',sumSelected)); sumSelected(); }
 
   async function scanAll(){
     const loan = parseFloat($('loan').value||'0');
@@ -306,12 +396,9 @@ th{background:#fafafa;position:sticky;top:0}
     if(!window.__ethersReady || typeof ethers==='undefined'){
       notice('ethers not loaded yet — network or CDN blocked?'); setStatus('Script error.',false); return;
     }
+    if(!booted){ buildProvider(); booted=true; }
 
-    if(!booted){ buildProvider(); booted=true; log('booted'); }
-
-    const ok = await warmupProvider();
-    if(!ok) log('Continuing despite RPC warmup error…');
-
+    await warmupProvider();
     await refreshGas();
 
     setStatus('Quoting (majors)…',true);
@@ -320,33 +407,58 @@ th{background:#fafafa;position:sticky;top:0}
       log('Scanning '+sym+' …');
       const r=await scanToken(sym,addr,loan,thr);
       out.push(r);
+      renderRow(r,thr); // stream rows as they arrive
     }
-    renderRows(out,thr);
     setStatus('Done.',false);
+
+    // auto-select ≥ threshold
+    document.querySelectorAll('.routeCheck').forEach(cb=>{
+      cb.checked = Number(cb.dataset.net||0) >= Math.max(0,thr);
+    });
+    sumSelected();
+
+    if($('autoExec').value==='1'){ executeSelectedMock(); }
   }
 
+  // Mock execution overlay
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  function showOverlay(on){ $('execOverlay').style.display=on?'flex':'none'; }
+  function line(text, ok=null){ const row=document.createElement('div'); row.className='rowmini'; row.innerHTML=`<div>${text}</div><div>${ok===null?'<div class="spin" style="width:16px;height:16px;border-width:2px"></div>': ok?'<span class="ok">OK</span>':'<span class="bad">Fail</span>'}</div>`; $('execBody').appendChild(row); return row; }
+  async function executeSelectedMock(){
+    const picks=[...document.querySelectorAll('.routeCheck:checked')];
+    if(!picks.length) return;
+    $('execBody').innerHTML=''; showOverlay(true);
+    let total=0;
+    for(const cb of picks){
+      const net=Number(cb.dataset.net);
+      total+=net;
+      const a=line(`Flash-loan route`); await sleep(250); a.lastChild.innerHTML='<span class="ok">OK</span>';
+      const b=line(`→ Buy on DEX A`); await sleep(350); b.lastChild.innerHTML='<span class="ok">OK</span>';
+      const c=line(`→ Sell on DEX B`); await sleep(350); c.lastChild.innerHTML='<span class="ok">OK</span>';
+      const d=line(`→ Repay + fee (0.09%)`); await sleep(250); d.lastChild.innerHTML='<span class="ok">OK</span>';
+      const e=line(`→ Profit: ${net>=0?'+':''}$${net.toFixed(2)}`, net>=0); await sleep(180);
+    }
+    line(`TOTAL: ${total>=0?'+':''}$${total.toFixed(2)}`, total>=0);
+  }
+  $('closeExec').addEventListener('click',()=>showOverlay(false));
+
+  // UI bindings (listener + inline onclick fallback already set)
   function bindUI(){
-    // 2) standard listener
     $('scanBtn').addEventListener('click', scanClick);
     $('stopBtn').addEventListener('click',()=>{ setStatus('Idle.',false); });
     $('selectProfitable').addEventListener('click',()=>{ const thr=parseFloat($('threshold').value||'0'); document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=(Number(cb.dataset.net||0)>=thr)); sumSelected(); });
     $('clearSelection').addEventListener('click',()=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=false); sumSelected(); });
     $('masterCheck').addEventListener('change',e=>{ document.querySelectorAll('.routeCheck').forEach(cb=>cb.checked=e.target.checked); sumSelected(); });
-    console.log('[CK] UI bound');
-    log('UI bound');
     $('status').textContent='Ready.';
   }
-
   async function scanClick(){
-    console.log('[CK] scan click');
-    log('Scan clicked');
-    setStatus('Starting scan…',true);
-    try{ await scanAll(); }catch(e){ notice('Scan error: '+e.message); setStatus('Error.',false); }
+    try{ setStatus('Starting scan…',true); await scanAll(); }catch(e){ notice('Scan error: '+e.message); setStatus('Error.',false); }
   }
 
-  // 3) ensure binding happens
   document.addEventListener('DOMContentLoaded', ()=>{
-    try{ bindUI(); }catch(e){ notice('bindUI error: '+e.message); }
+    bindUI();
+    // Auto-scan once on load (remove this line if you prefer manual)
+    setTimeout(()=>{ if(window.CK) window.CK.scan(); }, 600);
   });
 })();
 </script>

@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Crypto Kings v9.9.18 — Arbitrum Scanner (Balanced)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Crypto Kings v9.9.19 — Arbitrum Scanner (Looser Balanced)</title>
 <style>
   :root{
     --bg:#f6f7fb; --card:#ffffff; --ink:#111827; --muted:#6b7280;
@@ -20,7 +20,6 @@
   nav{display:flex;gap:16px;align-items:center}
   nav a{color:#fff;text-decoration:none;font-weight:700;opacity:.9}
   nav a:hover{opacity:1}
-  /* Hamburger */
   .hamb{display:none;cursor:pointer;width:36px;height:36px;border-radius:8px;border:1px solid #333;display:grid;place-items:center}
   .hamb span{display:block;width:18px;height:2px;background:#fff;position:relative}
   .hamb span:before,.hamb span:after{content:"";position:absolute;left:0;height:2px;width:18px;background:#fff}
@@ -30,7 +29,6 @@
     nav.open{display:flex}
     .hamb{display:grid}
   }
-
   .wrap{max-width:1024px;margin:0 auto;padding:18px 12px 40px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -64,7 +62,7 @@
     <div class="logo">CK</div>
     <div class="title">
       <div style="font-weight:900;">Crypto Kings</div>
-      <div class="v">v9.9.18 — Arbitrum (Balanced)</div>
+      <div class="v">v9.9.19 — Arbitrum (Looser Balanced)</div>
     </div>
   </div>
   <div class="hamb" id="hamb"><span></span></div>
@@ -90,7 +88,7 @@
       </div>
       <div>
         <label for="modeNote">Profile</label>
-        <input id="modeNote" value="liq≥3×loan • fresh≤15m • spread cap 12% • 0.3%+0.2% per leg" readonly/>
+        <input id="modeNote" value="liq≥2×loan • fresh≤30m • spread cap 12% • 0.3%+0.2% per leg" readonly/>
       </div>
       <div>
         <label>&nbsp;</label>
@@ -156,7 +154,7 @@
 
   <div class="muted" style="font-size:12px;margin:8px 2px;">
     Net P/L = (loan ÷ buyPrice × sellPrice) − per-leg DEX fee (0.3%) − slippage buffer (0.2%/leg) − flash (0.09%) − gas (gwei×limit/1e9×ETH$).
-    Pools must be liquid (≥ 3× loan), fresh (≤ 15m), and raw spread ≤ 12%.
+    Pools must be liquid (≥ 2× loan), fresh (≤ 30m), and raw spread ≤ 12%.
   </div>
 </div>
 
@@ -170,17 +168,16 @@
 <script>
 /* ====== Mobile hamburger ====== */
 document.getElementById('hamb').addEventListener('click',()=>{
-  const nav=document.getElementById('nav');
-  nav.classList.toggle('open');
+  document.getElementById('nav').classList.toggle('open');
 });
 
-/* ====== Profile (Balanced) ====== */
+/* ====== Profile (Looser Balanced) ====== */
 const FLASH_FEE = 0.0009;        // 0.09% Aave v3
 const DEX_FEE_PER_LEG = 0.003;   // 0.30% per swap
 const SLIPPAGE_BUF = 0.002;      // 0.20% per leg buffer
 const GAS_LIMIT_DEFAULT = 380000;
-const LIQ_MULTIPLIER = 3;        // ≥ 3× loan
-const FRESH_MAX_MIN = 15;        // ≤ 15 minutes
+const LIQ_MULTIPLIER = 2;        // ≥ 2× loan
+const FRESH_MAX_MIN = 30;        // ≤ 30 minutes
 const SPREAD_CAP_PCT = 12;       // ≤ 12% raw spread
 const MIN_NET_USD = 5;           // ignore dust profits for auto-select
 
@@ -193,8 +190,6 @@ function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 /* ====== RPC & tokens ====== */
 const RPCS = [
-  // Put your Alchemy RPC first for best results (optional)
-  //"https://arb-mainnet.g.alchemy.com/v2/YOUR_KEY_HERE",
   "https://arb1.arbitrum.io/rpc",
   "https://arbitrum.llamarpc.com",
   "https://rpc.ankr.com/arbitrum",
@@ -237,7 +232,7 @@ const TOKENS = {
   BADGER:"0xe4e43864ea18d5e5211352a4b810383460ab7fcf",
   DODO:"0x69e8b9528cabda89fe846c67675b5d73d463a916",
   BNT :"0x4d5bd4bb54efc5b10f2beabf0c1b62de5a5d3a1a",
-  OP  :"0x4200000000000000000000000000000000000042" /* may not have deep pools on Arb */
+  OP  :"0x4200000000000000000000000000000000000042"
 };
 
 /* ====== Math (realistic) ====== */
@@ -255,7 +250,6 @@ function bestPerDex(pairs){
   return Array.from(by.values());
 }
 function cp_USDC_to_TOKEN(loanUSDC, priceUsd, liqUsd, perLegCost){
-  // constant product approx using USD split reserves
   if(!(loanUSDC>0&&priceUsd>0&&liqUsd>0)) return 0;
   const Ru=liqUsd/2, Rt=(liqUsd/2)/priceUsd;
   const usdcIn=loanUSDC*(1-perLegCost);
@@ -322,7 +316,7 @@ async function scan(){
   $("loading").style.display="flex"; tbody.innerHTML=""; $("summary").textContent="—"; logEl.innerHTML="";
   $("status").textContent="Fetching gas & ETH…";
 
-  // defaults shown
+  // defaults
   $("ethPill").textContent="WETH: "+fmtUSD(state.ethUsd);
   $("gasPill").textContent=`Gas: ${state.gasGwei.toFixed(2)} gwei`;
 
@@ -332,7 +326,7 @@ async function scan(){
 
   const loanUSDC = Number($("loan").value)||10000;
   const gasLimit = Number($("gasLimit").value)||GAS_LIMIT_DEFAULT;
-  const requiredLiq = Math.max(50000, LIQ_MULTIPLIER*loanUSDC);
+  const requiredLiq = Math.max(30000, LIQ_MULTIPLIER*loanUSDC); // keep a sensible floor
 
   $("status").textContent="Scanning tokens…";
   const out=[]; const entries=Object.entries(TOKENS); let done=0;
@@ -343,29 +337,29 @@ async function scan(){
       const all=await fetchPairs(addr);
       if(!all.length){ log(`${sym}: no pools on Arbitrum`); progress(++done,entries.length,loanUSDC); await sleep(50); continue; }
 
-      // freshness filter & basic liq
-      const fresh = all.filter(p => {
-        const ts = p?.updatedAt || p?.info?.lastUpdatedAt || p?.pairCreatedAt;
-        return isFresh(ts) && Number(p?.liquidity?.usd||0) >= requiredLiq;
+      const filtered = all.filter(p=>{
+        const liq = Number(p?.liquidity?.usd||0);
+        const ts  = p?.updatedAt || p?.info?.lastUpdatedAt || p?.pairCreatedAt;
+        return liq >= requiredLiq && isFresh(ts);
       });
-      if(!fresh.length){ log(`${sym}: thin or stale (liq<${(LIQ_MULTIPLIER)}×loan or >${FRESH_MAX_MIN}m old)`); progress(++done,entries.length,loanUSDC); await sleep(40); continue; }
+      if(!filtered.length){ log(`${sym}: thin or stale (liq<${LIQ_MULTIPLIER}×loan or >${FRESH_MAX_MIN}m old)`); progress(++done,entries.length,loanUSDC); await sleep(40); continue; }
 
-      const perDex = bestPerDex(fresh);
+      const perDex = bestPerDex(filtered);
       if(!perDex.length){ log(`${sym}: no allowed DEX after filter`); progress(++done,entries.length,loanUSDC); await sleep(40); continue; }
 
       // pick buy/sell across DEX
-      let min=Infinity, max=-Infinity, buy=null, sell=null;
+      let min=Infinity,max=-Infinity,buy=null,sell=null;
       for(const p of perDex){
         const px=Number(p?.priceUsd||NaN); if(!isFinite(px)) continue;
         if(px<min){ min=px; buy=p; } if(px>max){ max=px; sell=p; }
       }
-      if(!(buy&&sell)){ log(`${sym}: could not pick buy/sell`); progress(++done,entries.length,loanUSDC); await sleep(40); continue; }
+      if(!(buy&&sell)){ log(`${sym}: could not pick buy/sell`); progress(++done,entries.length,loanUSDC); await sleep(30); continue; }
 
       const spread=((max-min)/min)*100;
       if(spread<=0){ progress(++done,entries.length,loanUSDC); await sleep(30); continue; }
       if(spread>SPREAD_CAP_PCT){ log(`${sym}: spread ${spread.toFixed(2)}% > ${SPREAD_CAP_PCT}% cap`); progress(++done,entries.length,loanUSDC); await sleep(30); continue; }
 
-      // P/L
+      // P/L (constant-product approximation)
       const res=computePL({
         loanUSDC,
         buyPx:min, sellPx:max,
@@ -388,7 +382,7 @@ async function scan(){
 
   out.sort((a,b)=> (b.netPL||-1)-(a.netPL||-1));
   renderRows(out);
-  $("status").textContent=`Done. Listed ${out.length} routes (balanced filters).`;
+  $("status").textContent=`Done. Listed ${out.length} routes (looser balanced filters).`;
   if(!out.length) log("No routes after filters — try different loan or time.");
   $("loading").style.display="none";
 }
@@ -399,9 +393,9 @@ function renderRows(rows){
   tbody.innerHTML=""; renderedRows = rows.slice();
   rows.forEach((r,i)=>{
     const tr=document.createElement("tr");
-    const good=r?.netPL>0;
+    const good=r?.netPL>=MIN_NET_USD;
     tr.innerHTML=`
-      <td><input type="checkbox" class="rowChk" data-i="${i}" ${(good && r.netPL>=MIN_NET_USD)?'checked':''}></td>
+      <td><input type="checkbox" class="rowChk" data-i="${i}" ${good?'checked':''}></td>
       <td>${r.sym}</td>
       <td>${r.buy.dex}</td>
       <td class="right">${fmtUSD(r.buy.price,5)}</td>
@@ -409,7 +403,7 @@ function renderRows(rows){
       <td class="right">${fmtUSD(r.sell.price,5)}</td>
       <td class="right">${r.spreadPct.toFixed(2)}%</td>
       <td class="right">${fmtUSD(r.usdcBack)}</td>
-      <td class="right ${good?'pos':'neg'}">${(good?'+':'')+(isFinite(r.netPL)?r.netPL.toFixed(2):'0.00')}</td>
+      <td class="right ${r.netPL>=0?'pos':'neg'}">${(r.netPL>=0?'+':'')+(isFinite(r.netPL)?r.netPL.toFixed(2):'0.00')}</td>
     `;
     tbody.appendChild(tr);
   });

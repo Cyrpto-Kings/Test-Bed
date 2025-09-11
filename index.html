@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings · TestBed v9.9.23 (Arbitrum)</title>
+<title>Crypto Kings · TestBed v9.9.24 (Arbitrum)</title>
 <style>
   :root{
     --bg:#f6f8fb;--panel:#ffffff;--ink:#0f172a;--muted:#6b7280;--line:#e5e7eb;
@@ -69,7 +69,7 @@
       <div class="logo-badge">CK</div>
       <div>
         <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div style="opacity:.8;font-size:12px">TestBed v9.9.23 • Arbitrum</div>
+        <div style="opacity:.8;font-size:12px">TestBed v9.9.24 • Arbitrum</div>
       </div>
     </div>
     <span class="spacer"></span>
@@ -174,7 +174,7 @@
 <script>
 (()=>{"use strict";
 
-/* ========== Diagnostics banner ========== */
+/* ====== Diagnostics banner ====== */
 const showNotice = (msg) => {
   const box = document.getElementById('appNotice');
   if (!box) return;
@@ -184,7 +184,7 @@ const showNotice = (msg) => {
 window.addEventListener('error', (e)=> showNotice(String(e.message||e)));
 window.addEventListener('unhandledrejection', (e)=> showNotice('Promise rejection: ' + (e.reason?.message||e.reason)));
 
-/* ========== UI helpers ========== */
+/* ====== UI helpers ====== */
 const $ = id => document.getElementById(id);
 const log = (m)=>{ const L=$("logs"); L.textContent += (m + "\\n"); L.scrollTop=L.scrollHeight; };
 const setStatus = (t)=>{ $("status").textContent = t; };
@@ -192,22 +192,25 @@ const fmtUSD = (v,dp=2)=> (isFinite(v)? "$"+Number(v).toLocaleString(undefined,{
 const percent = (a)=> (a*100).toFixed(2)+"%";
 const time = ()=> new Date().toLocaleTimeString();
 
-/* ========== Mobile menu ========== */
+/* ====== Mobile menu ====== */
 $("hamb")?.addEventListener("click",()=> $("menu").classList.toggle("open"));
 
-/* ========== Config (Arbitrum) ========== */
+/* ====== Config (Arbitrum) ====== */
 const DEX_ALLOW = new Set(["uniswap","sushiswap","camelot"]);
-const TOKENS = [
+
+/* Core pinned tokens (always scanned) */
+const CORE_TOKENS = [
   "WETH","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","WBTC","RDNT",
   "PENDLE","FRAX","CRV","BAL","LDO","UNI","wstETH","SNX","COMP","YFI",
   "GRT","STG","MAGIC"
-]; // ~23; adjust anytime
+];
 
+/* Addresses */
 const ADDR = {
   WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
   USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-  DAI :"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", /* ✅ fixed */
+  DAI :"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", /* fixed */
   ARB :"0x912CE59144191C1204E64559FE8253a0e49E6548",
   LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
   GMX :"0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a",
@@ -229,24 +232,24 @@ const ADDR = {
   MAGIC:"0x539bdE0d7Dbd336b79148AA742883198BBF60342",
 };
 
-$("tokPill").textContent = "Tokens: " + TOKENS.length;
-
 /* Fees/assumptions */
 const DEX_FEE_PER_LEG = 0.003;   // 0.30% per leg
 const SLIP_PER_LEG    = 0.0005;  // 0.05% per leg
 const FLASH_FEE       = 0.0009;  // 0.09% total
 const SPREAD_CAP      = 0.25;    // raw spread ≤ 25%
 
-/* Realism filters (loosened so you get rows) */
-const FRESH_MINUTES   = 60;      // was 15—wider so m5 outages don't kill pools
-const ALT_MIN_TXNS24  = 10;      // OR ≥10 txns/24h counts as active
-const LIQ_MULT        = 1.25;    // ≥1.25× loan (was 1.5)
+/* Realism filters */
+const FRESH_MINUTES   = 60;      // last update ≤ 60m
+const ALT_MIN_TXNS24  = 10;      // or ≥10 swaps in 24h
+const LIQ_MULT        = 1.25;    // liquidity ≥ 1.25× loan
+const MAX_SYMBOLS     = 40;      // cap total tokens scanned
 
 /* State */
 let abortFlag = false;
 let ETH_USD   = 3600; // fallback; will update
+$("tokPill").textContent = "Tokens: —";
 
-/* ========== Network helpers ========== */
+/* ====== Helpers ====== */
 function timeoutFetch(url, ms = 10000, opts = {}){
   const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),ms);
   return fetch(url,{...opts,signal:ctl.signal,cache:"no-store"}).finally(()=>clearTimeout(t));
@@ -259,14 +262,44 @@ async function getETHUSD(){
     if(isFinite(p)){ ETH_USD=p; $("ethPill").textContent="WETH: "+fmtUSD(p); }
   }catch(e){ log(`[${time()}] ETH price fallback: ${e.message}`); }
 }
-async function fetchDexscreener(addr){
+async function fetchDexscreenerByAddress(addr){
   const url=`https://api.dexscreener.com/latest/dex/tokens/${addr}`;
   const r=await timeoutFetch(url,12000);
   if(!r.ok) throw new Error("Dexscreener HTTP "+r.status);
   return r.json();
 }
 
-/* ========== Filters & math ========== */
+/* --- discovery: try to fetch top-liquidity Arbitrum bases (hybrid) --- */
+async function discoverTopSymbols(limit=24){
+  try{
+    // Dexscreener search API: sort by liquidity, Arbitrum only
+    const url = "https://api.dexscreener.com/latest/dex/search?q=chain:arbitrum%20sort:liquidity";
+    const r = await timeoutFetch(url, 12000);
+    if(!r.ok) throw new Error("search HTTP "+r.status);
+    const j = await r.json();
+    const pairs = Array.isArray(j?.pairs) ? j.pairs : [];
+    const syms = [];
+    const seen = new Set();
+    for(const p of pairs){
+      const base = (p?.baseToken?.symbol || "").toUpperCase();
+      const price = Number(p?.priceUsd || 0);
+      const liq = Number(p?.liquidity?.usd || 0);
+      const isStable = ["USDC","USDT","DAI","LUSD","FRAX","USDD","GUSD","TUSD"].includes(base);
+      if(!base || seen.has(base)) continue;
+      if(!isFinite(price) || price<=0) continue;
+      if(liq < 50000) continue; // basic sanity
+      if(isStable) continue;    // skip stable bases for arb scanning
+      seen.add(base); syms.push(base);
+      if(syms.length >= limit) break;
+    }
+    return syms;
+  }catch(e){
+    log(`[${time()}] discovery failed: ${e.message}`);
+    return [];
+  }
+}
+
+/* Freshness & per-DEX selection */
 function poolFresh(p){
   const t5=p?.txns?.m5?.lastAt || p?.priceChange?.m5?.timestamp || p?.updatedAt;
   if(t5){
@@ -291,6 +324,8 @@ function bestPerDex(pairs){
   }
   return Array.from(map.values());
 }
+
+/* P/L */
 function computeNetPL({loanUSD,buyPrice,sellPrice,gasGwei,gasLimit}){
   const units     = loanUSD / buyPrice;
   const grossBack = units * sellPrice;
@@ -311,7 +346,7 @@ units: ${br.units.toFixed(6)}
 gross back: $${br.grossBack.toFixed(2)}`;
 }
 
-/* ========== Render helpers ========== */
+/* Render */
 function pushRow(rec){
   const tr=document.createElement("tr");
   tr.innerHTML = `
@@ -331,9 +366,22 @@ function recalcSelected(){
   $("selTotal").textContent = (total>=0?"+":"")+fmtUSD(total);
 }
 
-/* ========== Scan flow ========== */
+/* Build final symbol set (hybrid) */
+async function getSymbolSet(){
+  // start with pinned core
+  const pinned = CORE_TOKENS.slice();
+  // try discovery to auto-extend
+  const discovered = await discoverTopSymbols(30);
+  const combined = [];
+  const seen=new Set();
+  for(const s of pinned){ const u=s.toUpperCase(); if(!seen.has(u)){ combined.push(u); seen.add(u);} }
+  for(const s of discovered){ const u=s.toUpperCase(); if(!seen.has(u)){ combined.push(u); seen.add(u);} }
+  // cap to MAX_SYMBOLS
+  return combined.slice(0, MAX_SYMBOLS);
+}
+
+/* Scan flow */
 async function startScan(){
-  abortFlag=false;
   $("appNotice").style.display="none"; $("appNotice").textContent="";
   $("tbody").innerHTML=""; $("loading").classList.remove("hidden");
   $("progress").textContent="—"; setStatus("CLICK → START");
@@ -343,24 +391,28 @@ async function startScan(){
   const gasLimit= Number($("gasLimit").value||150000);
   if(!(loan>0)){ setStatus("Enter a positive loan size."); $("loading").classList.add("hidden"); return; }
 
-  log(`[${time()}] CLICK Scan; tokens=${TOKENS.length}; loan=${loan}; gas=${gasGwei} gwei x ${gasLimit}`);
-
+  log(`[${time()}] CLICK Scan; loan=${loan}; gas=${gasGwei} gwei x ${gasLimit}`);
   await getETHUSD();
 
+  const symbols = await getSymbolSet();
+  $("tokPill").textContent = "Tokens: " + symbols.length;
+
   let done=0, hits=0;
-  for(const sym of TOKENS){
+  abortFlag=false;
+
+  for(const sym of symbols){
     if(abortFlag){ setStatus("Stopped."); break; }
-    $("progress").textContent = `Progress ${++done}/${TOKENS.length} • loan ${fmtUSD(loan)} • ETH ~$${ETH_USD.toFixed(2)}`;
+    $("progress").textContent = `Progress ${++done}/${symbols.length} • loan ${fmtUSD(loan)} • ETH ~$${ETH_USD.toFixed(2)}`;
 
     const addr=ADDR[sym];
-    if(!addr){ log(`[${time()}] ${sym}: no address in map`); continue; }
+    if(!addr){ log(`[${time()}] ${sym}: no address in map (skipping direct token lookup, relies on discovery routes only)`); continue; }
 
     try{
-      const j=await fetchDexscreener(addr);
+      const j=await fetchDexscreenerByAddress(addr);
       let pairs=(j?.pairs||[]).filter(p=>p.chainId==="arbitrum");
       if(!pairs.length){ log(`[${time()}] ${sym}: no pools on Arbitrum`); continue; }
 
-      // USD-price-based filter (no need to enforce USDC/USDT only)
+      // USD-price-based filter
       const filtered = pairs.filter(p=>{
         const price=Number(p?.priceUsd||0);
         const liq  =Number(p?.liquidity?.usd||0);
@@ -370,7 +422,7 @@ async function startScan(){
       });
       if(filtered.length<2){ log(`[${time()}] ${sym}: not enough liquid/fresh pools after filter`); continue; }
 
-      // choose best per DEX then best buy/sell
+      // choose one best per DEX, then best buy/sell
       const perDex=bestPerDex(filtered);
       if(perDex.length<2){ log(`[${time()}] ${sym}: need ≥2 DEX after per-DEX pick`); continue; }
 
@@ -393,10 +445,10 @@ async function startScan(){
 
   $("loading").classList.add("hidden");
   setStatus(`Done. Found ${hits} route(s).`);
-  if(hits===0) log(`[${time()}] No routes met filters. Try smaller loan, widen filters, or different time of day.`);
+  if(hits===0) log(`[${time()}] No routes met filters. Try smaller loan, widen filters slightly, or different time of day.`);
 }
 
-/* ========== Wire buttons ========== */
+/* Wire buttons */
 $("scanBtn").addEventListener("click", ()=>{ try{ startScan(); }catch(e){ showNotice("startScan error: "+e.message); }});
 $("stopBtn").addEventListener("click", ()=>{ abortFlag=true; setStatus("Stopping…"); });
 $("checkAll").addEventListener("change",(e)=>{ const on=e.target.checked; document.querySelectorAll(".pick").forEach(c=>c.checked=on); recalcSelected(); });
@@ -408,7 +460,7 @@ $("execBtn").addEventListener("click", ()=>{
   alert(`Preview only.\n\nWould execute selected routes.\nAggregate expected P/L: ${total}\n\n(Fees: 0.3%/leg, slip 0.05%/leg, flash 0.09%, gas from inputs.)`);
 });
 
-/* ========== Init ========== */
+/* Init */
 $("rpcPill").textContent = "RPC: arb-mainnet.g.alchemy.com";
 getETHUSD();
 

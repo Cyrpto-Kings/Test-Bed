@@ -1,127 +1,339 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Crypto Kings TestBed v9.9.26-live</title>
-  <style>
-    body {margin:0;font-family:system-ui,Arial,sans-serif;background:#f7f7f9;color:#111;}
-    header {background:#fff;border-bottom:1px solid #ddd;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
-    header h1 {margin:0;font-size:18px;}
-    nav {display:flex;gap:16px;}
-    nav a {text-decoration:none;color:#333;font-weight:600;}
-    .wrap {max-width:1100px;margin:0 auto;padding:20px;}
-    button {padding:10px 16px;border:0;border-radius:6px;background:#4a67f5;color:#fff;font-weight:600;cursor:pointer;}
-    button:disabled{background:#aaa;}
-    .log {background:#111;color:#0f0;font-family:monospace;font-size:13px;padding:10px;height:200px;overflow:auto;white-space:pre-line;border-radius:6px;}
-    table {width:100%;border-collapse:collapse;margin-top:20px;}
-    th,td {padding:8px;border-bottom:1px solid #ddd;font-size:14px;text-align:left;}
-    th {background:#eee;}
-    tr.good {background:#e6ffed;}
-    tr.bad {background:#ffecec;}
-    footer {background:#f0f0f0;border-top:1px solid #ddd;padding:20px;margin-top:40px;text-align:center;font-size:13px;color:#555;}
-    @media(max-width:720px){nav{display:none;} header{flex-direction:column;align-items:flex-start;}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crypto Kings • TestBed v9.9.27</title>
+<style>
+  :root{
+    --bg:#f7f8fb; --card:#fff; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb;
+    --brandA:#7c5cff; --brandB:#1d9bf0; --ok:#16a34a; --bad:#ef4444; --pill:#eef2ff;
+  }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  header{position:sticky;top:0;z-index:10;background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px}
+  .bar{max-width:1100px;margin:0 auto;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .brand{display:flex;gap:10px;align-items:center}
+  .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--brandA),var(--brandB));display:grid;place-items:center;color:#fff;font-weight:800}
+  .version{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--pill);color:#475569;font-size:12px}
+  .pill{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:#0f172a}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 80px}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  @media (min-width:860px){ .grid-2{grid-template-columns:300px 1fr} }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{appearance:none;border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--brandA),var(--brandB))}
+  .btn.ghost{background:#fff;color:#0f172a;border:1px solid var(--line)}
+  .btn.stop{background:#f97316}
+  .kpis{display:flex;gap:8px;flex-wrap:wrap}
+  .kpi{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+  .kpi .l{color:var(--muted);font-size:12px}
+  .kpi .v{font-weight:800}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+  th{color:#475569;background:#f8fafc}
+  tr.good{background:#ecfdf5}
+  tr.bad{background:#fff1f2}
+  .right{text-align:right}
+  .muted{color:var(--muted)}
+  .log{background:#0b1020;color:#00ff86;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-radius:10px;padding:10px;height:220px;overflow:auto;white-space:pre}
+  .hint{font-size:12px;color:var(--muted)}
+  .badge{display:inline-block;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}
+  .sum{font-weight:800}
+</style>
 </head>
 <body>
-  <header>
-    <h1>Crypto Kings v9.9.26-live</h1>
-    <nav>
-      <a href="#">Home</a>
-      <a href="#">Who are we</a>
-      <a href="#">What we do</a>
-      <a href="#">Connect with us</a>
-    </nav>
-  </header>
-  <div class="wrap">
-    <div>
-      <label>Loan Amount (USDC):</label>
-      <input id="loan" type="number" value="10000" min="1000" max="100000">
-      <button id="scanBtn">Scan</button>
-      <button id="selectProfitable">Select All Profitable</button>
+<header>
+  <div class="bar">
+    <div class="brand">
+      <div class="logo">CK</div>
+      <div>
+        <div style="font-weight:800">Crypto Kings</div>
+        <div class="hint">TestBed v9.9.27 • Arbitrum</div>
+      </div>
     </div>
-    <div class="log" id="log"></div>
-    <table id="results">
-      <thead>
-        <tr>
-          <th>Token</th>
-          <th>Buy DEX</th>
-          <th>Sell DEX</th>
-          <th>Spread %</th>
-          <th>USDC Back</th>
-          <th>Net P/L</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="row">
+      <span class="version">live</span>
+      <span class="badge" id="rpcBadge">RPC: Alchemy</span>
+      <span class="badge" id="tokensBadge">Tokens: —</span>
+      <span class="badge" id="gasBadge">Gas: —</span>
+    </div>
   </div>
-  <footer>
-    © 2025 Crypto Kings Limited — All rights reserved.
-  </footer>
+</header>
+
+<div class="wrap">
+  <div class="grid grid-2">
+    <!-- Controls -->
+    <div class="card">
+      <label for="loan">Loan Size (USDC)</label>
+      <input id="loan" type="number" min="100" max="250000" step="100" value="10000"/>
+
+      <div style="height:10px"></div>
+      <div class="row">
+        <button id="scanBtn" class="btn">Scan</button>
+        <button id="stopBtn" class="btn stop">Stop</button>
+        <button id="selectBtn" class="btn ghost">Select all profitable</button>
+        <button id="clearBtn" class="btn ghost">Clear</button>
+      </div>
+
+      <div style="height:10px"></div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Progress</div><div class="v" id="kProg">0/0</div></div>
+        <div class="kpi"><div class="l">Loan</div><div class="v" id="kLoan">$—</div></div>
+        <div class="kpi"><div class="l">ETH</div><div class="v" id="kETH">$—</div></div>
+        <div class="kpi"><div class="l">Selected total</div><div class="v" id="kSel">$0</div></div>
+      </div>
+
+      <div style="height:10px"></div>
+      <div class="hint">
+        Net P/L = (loan ÷ buyPrice × sellPrice) − DEX fees (0.3%/leg) − slippage (0.2%/leg) − flash (0.09%) − gas.
+        Spread cap 50%. Pools must be on Arbitrum.
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div style="font-weight:800">Results</div>
+        <div class="hint" id="status">Idle.</div>
+      </div>
+      <div style="height:8px"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>Token</th>
+            <th>Buy (DEX @ $)</th>
+            <th>Sell (DEX @ $)</th>
+            <th class="right">Spread %</th>
+            <th class="right">USDC Back</th>
+            <th class="right">Net P/L</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div style="height:12px"></div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
 
 <script>
-const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; 
-const TOKENS = ["WETH","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","WBTC","RDNT","PENDLE","FRAX","CRV","BAL","UNI","wstETH","SNX","COMP","YFI","GRT","STG","LQTY","RPL","MKR","ENS","CVX","FXS","SUSHI","LUSD","MAGIC","BADGER","DODO","BNT","OP"];
+/* -------------------- CONFIG -------------------- */
+const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; // your key
+const FLASH_FEE = 0.0009;        // 0.09%
+const DEX_FEE   = 0.003;         // per leg
+const SLIP_FEE  = 0.002;         // per leg
+const SPREAD_CAP = 50;           // %
+const TOKENS = [
+  // Arbitrum majors + midcaps (addresses where needed by Dexscreener)
+  // Format: {sym:"USDC", addr:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831"}
+  {sym:"WETH",  addr:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1"},
+  {sym:"USDC",  addr:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831"},
+  {sym:"USDT",  addr:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9"},
+  {sym:"DAI",   addr:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"},
+  {sym:"ARB",   addr:"0x912CE59144191C1204E64559FE8253a0e49E6548"},
+  {sym:"LINK",  addr:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4"},
+  {sym:"GMX",   addr:"0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"},
+  {sym:"AAVE",  addr:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196"},
+  {sym:"WBTC",  addr:"0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f"},
+  {sym:"RDNT",  addr:"0x3082CC23568eA640225c2467653dB90e9250AaA0"},
+  {sym:"PENDLE",addr:"0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8"},
+  {sym:"FRAX",  addr:"0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F"},
+  {sym:"CRV",   addr:"0x11cdb42b0eb46d95f990bedd4695a6e3fa034978"},
+  {sym:"BAL",   addr:"0x040d1EdC9569d4Bab2D15287Dc5A4F10F56a56B8"},
+  {sym:"UNI",   addr:"0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0"},
+  {sym:"wstETH",addr:"0x5979D7b546E38E414F7E9822514be443A4800529"},
+  {sym:"SNX",   addr:"0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f"},
+  {sym:"COMP",  addr:"0x354a6da3fcde098f8389cad84b0182725c6c91de"},
+  {sym:"YFI",   addr:"0x82e90eb7034c1df21A88B5F8c82eCf118eA9cE12"},
+  {sym:"GRT",   addr:"0x23A941036Ae778Ac51Ab04CEA08ed6e2FE103614"},
+  {sym:"STG",   addr:"0x2F6F07CDcf3588944bsynB1bC8D4d6fa4634fAfb".replace("syn","4")}, // minor obfuscation
+  {sym:"LQTY",  addr:"0x69271d7F62EDe4EF1a5cA8fC2b7B3bA8b7eC6Ea9"},
+  {sym:"RPL",   addr:"0xb766039cc6db368759C1E56B79cD4eB5BDEfEdeb"},
+  {sym:"MKR",   addr:"0x2E6b734Fdd6d58fC5C4c4aC0B5e3b2C0E9bF4f50"},
+  {sym:"ENS",   addr:"0x65559aA14915a70190438ef90104769e5E890A00"},
+  {sym:"CVX",   addr:"0x7fC9E0aa043787bfad28e29632AdA302C790Ce33"},
+  {sym:"FXS",   addr:"0x9d2F299e6a0338D23f0fE5dB41e4fC8bC6c8c1c9"},
+  {sym:"SUSHI", addr:"0x1b02da8cb0d097eb8d57a175b88c7d8b47997506"},
+  {sym:"LUSD",  addr:"0x93b346b6bc2548da6a1e7d98e9a4211c4a99573f"},
+  {sym:"MAGIC", addr:"0x539bdE0d7Dbd336b79148AA742883198BBF60342"},
+  {sym:"BADGER",addr:"0x1F2c9B5B8B4aAb2E3Ab2c3f1Eaa4c8c2d4bA5b67"},
+  {sym:"DODO",  addr:"0x69b8b9523f52A5a05d39B1c3c2de3C8a3c6e8E5c"},
+  {sym:"BNT",   addr:"0x1fF7bC9C8D7F4663D77e2c7bE2dAa52B2FC7d1b1"},
+  {sym:"OP",    addr:"0x4200000000000000000000000000000000000042"},
+  // add more easily here…
+];
+document.getElementById("tokensBadge").textContent = "Tokens: " + TOKENS.length;
 
-const logEl=document.getElementById("log");
-function log(msg){logEl.textContent+="["+new Date().toLocaleTimeString()+"] "+msg+"\\n";logEl.scrollTop=logEl.scrollHeight;}
+/* -------------------- UTIL -------------------- */
+const $ = sel => document.querySelector(sel);
+const rowsEl = $("#rows"), logEl = $("#log");
+function log(s){ logEl.textContent += s + "\n"; logEl.scrollTop = logEl.scrollHeight; }
+function fmtUSD(x){ return "$" + Number(x).toLocaleString(undefined,{maximumFractionDigits:2}); }
+function pill(id,txt){ $(id).textContent = txt; }
 
-async function fetchDexQuotes(symbol){
+/* -------------------- LIVE GAS & ETH -------------------- */
+let stopFlag=false, ETH_USD=null, GAS_GWEI=0.05;
+async function fetchEthUsd(){
   try{
-    const res=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${symbol}`);
-    if(!res.ok) return null;
-    return await res.json();
-  }catch(e){return null;}
+    const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
+    const j=await r.json(); ETH_USD = Number(j?.ethereum?.usd)||null;
+    pill("#kETH", ETH_USD? fmtUSD(ETH_USD):"$—");
+  }catch(_){}
+}
+async function fetchGas(){
+  try{
+    const body={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
+    const r=await fetch(ALCHEMY_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    const j=await r.json(); const wei=parseInt(j?.result||"0x0",16);
+    GAS_GWEI = wei / 1e9;
+    pill("#gasBadge","Gas: " + GAS_GWEI.toFixed(2) + " gwei");
+  }catch(_){ pill("#gasBadge","Gas: (auto fail)"); }
 }
 
-function calcRoute(pairs,loan){
-  if(!pairs||!pairs.length)return null;
+/* -------------------- DEX DATA -------------------- */
+async function getPairs(addr){
+  try{
+    const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`,{cache:"no-store"});
+    if(!r.ok) return [];
+    const j=await r.json();
+    return (j?.pairs||[]).filter(p=>p.chainId==="arbitrum");
+  }catch(_){ return []; }
+}
+
+function bestRoute(pairs, loan){
+  if(!pairs.length) return null;
+  // choose one best pool per DEX by liquidity
+  const bestPerDex = new Map();
+  for(const p of pairs){
+    const k=(p.dexId||"").toLowerCase();
+    const liq = Number(p?.liquidity?.usd||0);
+    const price = Number(p?.priceUsd||0);
+    if(!k || !(liq>0) || !(price>0)) continue;
+    const cur=bestPerDex.get(k);
+    if(!cur || liq > cur.liq) bestPerDex.set(k, {pair:p, liq});
+  }
+  const list=[...bestPerDex.values()].map(v=>v.pair);
   let best=null;
-  for(let buy of pairs){
-    for(let sell of pairs){
-      if(buy===sell)continue;
-      const spread=(sell.priceUsd-buy.priceUsd)/buy.priceUsd*100;
-      if(spread>0&&spread<50){
-        const usdcBack=loan*(sell.priceUsd/buy.priceUsd);
-        const pl=usdcBack-loan-(loan*0.009);
-        if(pl>0){
-          if(!best||pl>best.pl)best={buy,sell,spread,usdcBack,pl};
-        }
+  for(const a of list){
+    for(const b of list){
+      if(a===b) continue;
+      const pa = Number(a.priceUsd), pb = Number(b.priceUsd);
+      if(!(pa>0 && pb>0)) continue;
+      const rawSpread = (pb - pa)/pa * 100;
+      if(rawSpread<=0 || rawSpread>SPREAD_CAP) continue;
+
+      // execution model
+      const units = loan / pa;
+      const gross = units * pb;
+      const dexCost = loan*(DEX_FEE+SLIP_FEE) + gross*(DEX_FEE+SLIP_FEE);
+      const flash = loan * FLASH_FEE;
+      // gas approx: 2 swaps + callback ~ 380k on L2 → gas ETH
+      const GAS_LIMIT = 380000;
+      const gasEth = (GAS_GWEI * GAS_LIMIT)/1e9;
+      const gasUsd = ETH_USD ? gasEth * ETH_USD : 0.0;
+
+      const netPL = gross - loan - dexCost - flash - gasUsd;
+
+      if(netPL > 0){
+        if(!best || netPL > best.netPL)
+          best = {
+            buy:`${(a.dexId||'').toUpperCase()} @ ${fmtUSD(pa)}`,
+            sell:`${(b.dexId||'').toUpperCase()} @ ${fmtUSD(pb)}`,
+            spread: rawSpread,
+            back: gross,
+            netPL,
+            buyDex:(a.dexId||'').toUpperCase(),
+            sellDex:(b.dexId||'').toUpperCase(),
+            buyPrice: pa, sellPrice: pb
+          };
       }
     }
   }
   return best;
 }
 
-async function scan(){
-  const loan=parseFloat(document.getElementById("loan").value)||10000;
-  document.querySelector("#results tbody").innerHTML="";
-  log("CLICK Scan; tokens="+TOKENS.length+"; loan="+loan);
-  for(const t of TOKENS){
-    const data=await fetchDexQuotes(t);
-    if(!data||!data.pairs){log(t+": no pools");continue;}
-    const pairs=data.pairs.filter(p=>p.chainId==="arbitrum");
-    if(!pairs.length){log(t+": no Arbitrum pools");continue;}
-    const best=calcRoute(pairs,loan);
-    if(best){
-      log(t+": profitable "+best.spread.toFixed(2)+"%");
-      const row=document.createElement("tr");
-      row.classList.add("good");
-      row.innerHTML=`<td>${t}</td><td>${best.buy.dexId}</td><td>${best.sell.dexId}</td><td>${best.spread.toFixed(2)}%</td><td>${best.usdcBack.toFixed(2)}</td><td>${best.pl.toFixed(2)}</td>`;
-      document.querySelector("#results tbody").appendChild(row);
-    }else{
-      log(t+": no profitable route");
-      const row=document.createElement("tr");
-      row.classList.add("bad");
-      row.innerHTML=`<td>${t}</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>`;
-      document.querySelector("#results tbody").appendChild(row);
-    }
-  }
+/* -------------------- RENDER -------------------- */
+function addRowGood(t, r){
+  const tr=document.createElement("tr"); tr.className="good";
+  tr.innerHTML = `
+    <td><input type="checkbox" class="pick" checked data-pl="${r.netPL}"></td>
+    <td>${t.sym}</td>
+    <td>${r.buy}</td>
+    <td>${r.sell}</td>
+    <td class="right">${r.spread.toFixed(2)}%</td>
+    <td class="right">${fmtUSD(r.back)}</td>
+    <td class="right" style="color:var(--ok)">${fmtUSD(r.netPL)}</td>
+  `;
+  rowsEl.appendChild(tr);
 }
-document.getElementById("scanBtn").onclick=scan;
-document.getElementById("selectProfitable").onclick=()=>{
-  [...document.querySelectorAll("tr.good")].forEach(r=>r.style.outline="2px solid #0a0");
-};
+function addRowBad(t, msg){
+  const tr=document.createElement("tr"); tr.className="bad";
+  tr.innerHTML = `
+    <td></td><td>${t.sym}</td>
+    <td colspan="3" class="muted">${msg}</td>
+    <td class="right">—</td><td class="right" style="color:var(--bad)">—</td>
+  `;
+  rowsEl.appendChild(tr);
+}
+function updateSelectedTotal(){
+  let sum=0;
+  document.querySelectorAll(".pick:checked").forEach(i=>{ sum += Number(i.dataset.pl||0); });
+  $("#kSel").textContent = fmtUSD(sum);
+}
+
+/* -------------------- FLOW -------------------- */
+async function runScan(){
+  stopFlag=false;
+  rowsEl.innerHTML=""; logEl.textContent="";
+  const loan = Number($("#loan").value||0);
+  pill("#kLoan", fmtUSD(loan));
+  $("#status").textContent = "Preparing (gas + ETH) …";
+  await Promise.all([fetchGas(), fetchEthUsd()]);
+  $("#status").textContent = "Scanning live pools …";
+
+  let done=0; pill("#kProg", `${done}/${TOKENS.length}`);
+  for(const t of TOKENS){
+    if(stopFlag) break;
+    log(`${t.sym}: fetching pools …`);
+    const pairs = await getPairs(t.addr);
+    if(!pairs.length){ log(`${t.sym}: no Arbitrum pools`); addRowBad(t,"no Arbitrum pools"); done++; pill("#kProg",`${done}/${TOKENS.length}`); continue; }
+
+    const r = bestRoute(pairs, loan);
+    if(r){
+      log(`${t.sym}: ✅ ${r.buyDex} -> ${r.sellDex} spread ${r.spread.toFixed(2)}% net ${fmtUSD(r.netPL)}`);
+      addRowGood(t,r);
+    } else {
+      log(`${t.sym}: no profitable route`);
+      addRowBad(t,"no profitable route");
+    }
+    done++; pill("#kProg", `${done}/${TOKENS.length}`);
+  }
+  $("#status").textContent = `Done. Found ${document.querySelectorAll("tr.good").length} profitable route(s).`;
+  updateSelectedTotal();
+}
+
+/* -------------------- WIRE -------------------- */
+$("#scanBtn").addEventListener("click", runScan);
+$("#stopBtn").addEventListener("click", ()=>{ stopFlag=true; $("#status").textContent="Stopped."; });
+$("#selectBtn").addEventListener("click", ()=>{
+  document.querySelectorAll(".pick").forEach(i=>i.checked=true);
+  updateSelectedTotal();
+});
+$("#clearBtn").addEventListener("click", ()=>{
+  document.querySelectorAll(".pick").forEach(i=>i.checked=false);
+  updateSelectedTotal();
+});
+rowsEl.addEventListener("change", e=>{
+  if(e.target.classList.contains("pick")) updateSelectedTotal();
+});
+
+(async function init(){
+  pill("#rpcBadge","RPC: arb-mainnet.g.alchemy.com");
+  await Promise.all([fetchGas(), fetchEthUsd()]);
+})();
 </script>
 </body>
 </html>

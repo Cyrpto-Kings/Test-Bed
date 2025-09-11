@@ -1,106 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Crypto Kings TestBed v9.9.25-exec</title>
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crypto Kings TestBed v9.9.26-live</title>
   <style>
-    body {margin:0; font-family:system-ui, sans-serif; background:#f5f5f7; color:#111;}
-    header {background:#222; color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;}
-    header h1 {margin:0; font-size:18px;}
-    main {max-width:1000px; margin:20px auto; padding:0 16px;}
-    button {padding:10px 16px; border:none; border-radius:6px; cursor:pointer; font-weight:600;}
-    #scanBtn {background:#7c5cff; color:#fff;}
-    #selectAllBtn {background:#34d399; color:#fff; margin-left:10px;}
-    table {width:100%; border-collapse:collapse; margin-top:20px;}
-    th,td {padding:10px; border-bottom:1px solid #ddd; font-size:14px;}
-    th {background:#eee; text-align:left;}
-    tr.profit {background:#e6ffed;}
-    #log {margin-top:20px; padding:10px; background:#111; color:#0f0; font-family:monospace; height:200px; overflow:auto; border-radius:6px;}
-    footer {margin-top:40px; padding:20px; background:#222; color:#aaa; font-size:13px; text-align:center;}
+    body {margin:0;font-family:system-ui,Arial,sans-serif;background:#f7f7f9;color:#111;}
+    header {background:#fff;border-bottom:1px solid #ddd;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
+    header h1 {margin:0;font-size:18px;}
+    nav {display:flex;gap:16px;}
+    nav a {text-decoration:none;color:#333;font-weight:600;}
+    .wrap {max-width:1100px;margin:0 auto;padding:20px;}
+    button {padding:10px 16px;border:0;border-radius:6px;background:#4a67f5;color:#fff;font-weight:600;cursor:pointer;}
+    button:disabled{background:#aaa;}
+    .log {background:#111;color:#0f0;font-family:monospace;font-size:13px;padding:10px;height:200px;overflow:auto;white-space:pre-line;border-radius:6px;}
+    table {width:100%;border-collapse:collapse;margin-top:20px;}
+    th,td {padding:8px;border-bottom:1px solid #ddd;font-size:14px;text-align:left;}
+    th {background:#eee;}
+    tr.good {background:#e6ffed;}
+    tr.bad {background:#ffecec;}
+    footer {background:#f0f0f0;border-top:1px solid #ddd;padding:20px;margin-top:40px;text-align:center;font-size:13px;color:#555;}
+    @media(max-width:720px){nav{display:none;} header{flex-direction:column;align-items:flex-start;}}
   </style>
 </head>
 <body>
-<header>
-  <h1>Crypto Kings TestBed v9.9.25-exec</h1>
-  <nav>
-    <button id="scanBtn">Scan</button>
-    <button id="selectAllBtn">Select All Profitable</button>
-  </nav>
-</header>
-
-<main>
-  <label>Loan Amount (USDC): <input id="loanAmount" type="number" value="10000"></label>
-  <table id="results">
-    <thead>
-      <tr><th>Token</th><th>Buy @ DEX</th><th>Sell @ DEX</th><th>Spread %</th><th>Profit (USDC)</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <div id="log"></div>
-</main>
-
-<footer>
-  © 2025 Crypto Kings Limited. All rights reserved.
-</footer>
+  <header>
+    <h1>Crypto Kings v9.9.26-live</h1>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">Who are we</a>
+      <a href="#">What we do</a>
+      <a href="#">Connect with us</a>
+    </nav>
+  </header>
+  <div class="wrap">
+    <div>
+      <label>Loan Amount (USDC):</label>
+      <input id="loan" type="number" value="10000" min="1000" max="100000">
+      <button id="scanBtn">Scan</button>
+      <button id="selectProfitable">Select All Profitable</button>
+    </div>
+    <div class="log" id="log"></div>
+    <table id="results">
+      <thead>
+        <tr>
+          <th>Token</th>
+          <th>Buy DEX</th>
+          <th>Sell DEX</th>
+          <th>Spread %</th>
+          <th>USDC Back</th>
+          <th>Net P/L</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <footer>
+    © 2025 Crypto Kings Limited — All rights reserved.
+  </footer>
 
 <script>
-const RPC = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
-const TOKENS = ["WETH","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","WBTC","RDNT","PENDLE"];
-const DEXES = ["UniswapV3","SushiSwap","Camelot"];
-const FLASH_FEE = 0.0009; // 0.09%
-const DEX_FEE = 0.003;    // 0.3% per leg
-const SLIPPAGE = 0.0002;  // 0.02% per leg
-const SPREAD_CAP = 0.25;  // 25%
+const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; 
+const TOKENS = ["WETH","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","WBTC","RDNT","PENDLE","FRAX","CRV","BAL","UNI","wstETH","SNX","COMP","YFI","GRT","STG","LQTY","RPL","MKR","ENS","CVX","FXS","SUSHI","LUSD","MAGIC","BADGER","DODO","BNT","OP"];
 
-function log(msg){ const el=document.getElementById("log"); el.textContent += msg+"\\n"; el.scrollTop=el.scrollHeight; }
+const logEl=document.getElementById("log");
+function log(msg){logEl.textContent+="["+new Date().toLocaleTimeString()+"] "+msg+"\\n";logEl.scrollTop=logEl.scrollHeight;}
 
-async function fetchPrice(token,dex){
-  // fake live prices (demo) — replace with real on-chain query
-  const base = 1 + (Math.random()-0.5)*0.01;
-  return {price: base*(1+(dex==="Camelot"?0.002:0)), liq: 1e6};
+async function fetchDexQuotes(symbol){
+  try{
+    const res=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${symbol}`);
+    if(!res.ok) return null;
+    return await res.json();
+  }catch(e){return null;}
 }
 
-async function scan(){
-  const loan = Number(document.getElementById("loanAmount").value)||0;
-  document.querySelector("#results tbody").innerHTML="";
-  document.getElementById("log").textContent="";
-  log(`[${new Date().toLocaleTimeString()}] Starting scan with loan ${loan} USDC`);
-  for(const t of TOKENS){
-    let best=null;
-    for(const b of DEXES){
-      for(const s of DEXES){
-        if(b===s) continue;
-        const buy=await fetchPrice(t,b);
-        const sell=await fetchPrice(t,s);
-        const spread=(sell.price-buy.price)/buy.price;
-        if(spread<=0||spread>SPREAD_CAP) continue;
-        const gross=loan/buy.price*sell.price;
-        const fees=loan*FLASH_FEE + loan*DEX_FEE*2 + loan*SLIPPAGE*2;
-        const profit=gross-loan-fees;
-        if(profit>0 && (!best||profit>best.profit)){
-          best={token:t,buyDex:b,sellDex:s,spread:spread*100,profit};
+function calcRoute(pairs,loan){
+  if(!pairs||!pairs.length)return null;
+  let best=null;
+  for(let buy of pairs){
+    for(let sell of pairs){
+      if(buy===sell)continue;
+      const spread=(sell.priceUsd-buy.priceUsd)/buy.priceUsd*100;
+      if(spread>0&&spread<50){
+        const usdcBack=loan*(sell.priceUsd/buy.priceUsd);
+        const pl=usdcBack-loan-(loan*0.009);
+        if(pl>0){
+          if(!best||pl>best.pl)best={buy,sell,spread,usdcBack,pl};
         }
       }
     }
+  }
+  return best;
+}
+
+async function scan(){
+  const loan=parseFloat(document.getElementById("loan").value)||10000;
+  document.querySelector("#results tbody").innerHTML="";
+  log("CLICK Scan; tokens="+TOKENS.length+"; loan="+loan);
+  for(const t of TOKENS){
+    const data=await fetchDexQuotes(t);
+    if(!data||!data.pairs){log(t+": no pools");continue;}
+    const pairs=data.pairs.filter(p=>p.chainId==="arbitrum");
+    if(!pairs.length){log(t+": no Arbitrum pools");continue;}
+    const best=calcRoute(pairs,loan);
     if(best){
-      const tr=document.createElement("tr");
-      tr.className="profit";
-      tr.innerHTML=`<td>${best.token}</td><td>${best.buyDex}</td><td>${best.sellDex}</td>
-                    <td>${best.spread.toFixed(2)}%</td><td>${best.profit.toFixed(2)}</td>`;
-      document.querySelector("#results tbody").appendChild(tr);
-      log(`${t}: Borrow ${loan} → Buy on ${best.buyDex} → Sell on ${best.sellDex} → Repay → Net ${best.profit.toFixed(2)} USDC`);
-    } else {
-      log(`${t}: no profitable route`);
+      log(t+": profitable "+best.spread.toFixed(2)+"%");
+      const row=document.createElement("tr");
+      row.classList.add("good");
+      row.innerHTML=`<td>${t}</td><td>${best.buy.dexId}</td><td>${best.sell.dexId}</td><td>${best.spread.toFixed(2)}%</td><td>${best.usdcBack.toFixed(2)}</td><td>${best.pl.toFixed(2)}</td>`;
+      document.querySelector("#results tbody").appendChild(row);
+    }else{
+      log(t+": no profitable route");
+      const row=document.createElement("tr");
+      row.classList.add("bad");
+      row.innerHTML=`<td>${t}</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>`;
+      document.querySelector("#results tbody").appendChild(row);
     }
   }
 }
-
-document.getElementById("scanBtn").addEventListener("click",scan);
-document.getElementById("selectAllBtn").addEventListener("click",()=>{
-  [...document.querySelectorAll("#results tr.profit")].forEach(r=>r.style.background="#b3ffb3");
-  log("All profitable routes auto-selected.");
-});
+document.getElementById("scanBtn").onclick=scan;
+document.getElementById("selectProfitable").onclick=()=>{
+  [...document.querySelectorAll("tr.good")].forEach(r=>r.style.outline="2px solid #0a0");
+};
 </script>
 </body>
 </html>

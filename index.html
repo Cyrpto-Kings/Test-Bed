@@ -1,470 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings · TestBed v9.9.24 (Arbitrum)</title>
-<style>
-  :root{
-    --bg:#f6f8fb;--panel:#ffffff;--ink:#0f172a;--muted:#6b7280;--line:#e5e7eb;
-    --brand1:#7c5cff;--brand2:#1d9bf0;--ok:#16a34a;--bad:#ef4444;--pill:#eef2ff;--ring:rgba(29,155,240,.25);
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  a{color:inherit;text-decoration:none}
-  .wrap{max-width:1080px;margin:0 auto;padding:18px 14px 80px}
-  /* Header */
-  header{position:sticky;top:0;background:#0f1116;color:#fff;z-index:50;border-bottom:1px solid #111827}
-  .bar{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 14px}
-  .logo{display:flex;align-items:center;gap:10px}
-  .logo-badge{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand1),var(--brand2));display:grid;place-items:center;color:#fff;font-weight:800}
-  .spacer{flex:1}
-  .menu{display:flex;gap:18px;align-items:center}
-  .menu a{opacity:.9}
-  .menu a:hover{opacity:1}
-  .hamb{display:none;border:1px solid #222;border-radius:10px;padding:8px 10px;cursor:pointer}
-  @media (max-width:720px){
-    .menu{display:none;position:absolute;left:0;right:0;top:56px;background:#0f1116;padding:10px 14px;flex-direction:column;border-bottom:1px solid #111827}
-    .menu.open{display:flex}
-    .hamb{display:block}
-  }
-  /* Cards */
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
-  .row{display:grid;grid-template-columns:1fr;gap:10px}
-  @media(min-width:760px){ .row-2{grid-template-columns:repeat(2,1fr)} .row-3{grid-template-columns:repeat(3,1fr)} .row-4{grid-template-columns:repeat(4,1fr)} }
-  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-  input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);outline:none}
-  input:focus,select:focus{border-color:#c7d2fe;box-shadow:0 0 0 3px #e0e7ff}
-  .kpi{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
-  .pill{padding:8px 10px;border-radius:999px;background:var(--pill);color:#3730a3;border:1px solid #e0e7ff;font-size:12px}
-  .btn{appearance:none;border:0;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--brand1),var(--brand2))}
-  .btn.ghost{background:#f3f4f6;color:var(--ink);border:1px solid var(--line)}
-  .btn.stop{background:linear-gradient(135deg,#f43f5e,#f97316)}
-  .flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .right{margin-left:auto}
-  table{width:100%;border-collapse:collapse}
-  th,td{padding:10px;border-bottom:1px solid var(--line);font-size:14px;text-align:left;vertical-align:middle}
-  th{color:#374151;font-weight:700;background:#fafafa}
-  .num{font-variant-numeric:tabular-nums;text-align:right}
-  .ok{color:var(--ok)} .bad{color:var(--bad)}
-  .spinner{width:28px;height:28px;border-radius:50%;border:3px solid #e5e7eb;border-top:3px solid var(--brand1);animation:spin 1s linear infinite;margin:8px auto}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  footer{margin-top:20px;border-top:1px solid var(--line);padding-top:12px;color:var(--muted);font-size:13px}
-  .hidden{display:none}
-  /* Notice */
-  .notice{background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;border-radius:12px;padding:10px 12px;white-space:pre-wrap;margin:14px 0;font-family:ui-monospace,Menlo,Consolas,monospace}
-  /* Tooltips */
-  .tooltip{position:relative;cursor:help}
-  .tooltip:hover::after{
-    content:attr(data-tip);
-    position:absolute;left:50%;transform:translateX(-50%);bottom:120%;
-    background:#111827;color:#fff;white-space:pre;padding:8px 10px;border-radius:8px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);min-width:220px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Crypto Kings TestBed v9.9.25-exec</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {margin:0; font-family:system-ui, sans-serif; background:#f5f5f7; color:#111;}
+    header {background:#222; color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;}
+    header h1 {margin:0; font-size:18px;}
+    main {max-width:1000px; margin:20px auto; padding:0 16px;}
+    button {padding:10px 16px; border:none; border-radius:6px; cursor:pointer; font-weight:600;}
+    #scanBtn {background:#7c5cff; color:#fff;}
+    #selectAllBtn {background:#34d399; color:#fff; margin-left:10px;}
+    table {width:100%; border-collapse:collapse; margin-top:20px;}
+    th,td {padding:10px; border-bottom:1px solid #ddd; font-size:14px;}
+    th {background:#eee; text-align:left;}
+    tr.profit {background:#e6ffed;}
+    #log {margin-top:20px; padding:10px; background:#111; color:#0f0; font-family:monospace; height:200px; overflow:auto; border-radius:6px;}
+    footer {margin-top:40px; padding:20px; background:#222; color:#aaa; font-size:13px; text-align:center;}
+  </style>
 </head>
 <body>
 <header>
-  <div class="bar">
-    <div class="logo">
-      <div class="logo-badge">CK</div>
-      <div>
-        <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div style="opacity:.8;font-size:12px">TestBed v9.9.24 • Arbitrum</div>
-      </div>
-    </div>
-    <span class="spacer"></span>
-    <nav class="menu" id="menu">
-      <a href="#">Home</a>
-      <a href="#">Who we are</a>
-      <a href="#">What we do</a>
-      <a href="#">Connect with us</a>
-    </nav>
-    <div class="hamb" id="hamb">☰</div>
-  </div>
+  <h1>Crypto Kings TestBed v9.9.25-exec</h1>
+  <nav>
+    <button id="scanBtn">Scan</button>
+    <button id="selectAllBtn">Select All Profitable</button>
+  </nav>
 </header>
 
-<div class="wrap">
-  <!-- App notice -->
-  <div id="appNotice" class="notice" style="display:none"></div>
+<main>
+  <label>Loan Amount (USDC): <input id="loanAmount" type="number" value="10000"></label>
+  <table id="results">
+    <thead>
+      <tr><th>Token</th><th>Buy @ DEX</th><th>Sell @ DEX</th><th>Spread %</th><th>Profit (USDC)</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div id="log"></div>
+</main>
 
-  <!-- Controls -->
-  <section class="card">
-    <div class="flex">
-      <h2 style="margin:0">Scanner</h2>
-      <span class="right"></span>
-      <div class="pill">Network: Arbitrum</div>
-      <div class="pill">DEX: Uniswap v3 • SushiSwap • Camelot</div>
-    </div>
-    <div class="row row-4" style="margin-top:6px">
-      <div>
-        <label>Loan (USDC)</label>
-        <input id="loan" type="number" min="1" step="1" value="10000"/>
-      </div>
-      <div>
-        <label>Gas Limit (units)</label>
-        <input id="gasLimit" type="number" min="1" step="1000" value="150000"/>
-        <div class="help" style="font-size:12px;color:var(--muted)">Arbitrum: 2 swaps + callback ≈ 120–180k</div>
-      </div>
-      <div>
-        <label>Gas (gwei)</label>
-        <input id="gasGwei" type="number" min="0" step="0.01" value="0.05"/>
-      </div>
-      <div>
-        <label>Diagnostics</label>
-        <div class="kpi">
-          <div class="pill" id="rpcPill">RPC: arb-mainnet.g.alchemy.com</div>
-          <div class="pill" id="ethPill">WETH: —</div>
-          <div class="pill" id="tokPill">Tokens: —</div>
-        </div>
-      </div>
-    </div>
-    <div class="flex" style="margin-top:8px">
-      <button id="scanBtn" class="btn">Scan</button>
-      <button id="stopBtn" class="btn ghost">Stop</button>
-      <div id="status" class="help">Idle.</div>
-    </div>
-  </section>
-
-  <!-- Results -->
-  <section class="card" style="margin-top:12px">
-    <div class="flex">
-      <h2 style="margin:0">Results</h2>
-      <span class="spacer"></span>
-      <button id="selectProf" class="btn ghost">Select all profitable</button>
-      <button id="clearSel" class="btn ghost">Clear</button>
-      <div class="pill">Selected total: <span id="selTotal">+$0</span></div>
-      <button id="execBtn" class="btn">Execute Selected (Preview)</button>
-    </div>
-
-    <div id="loading" class="spinner hidden"></div>
-    <div id="progress" class="help" style="margin:6px 0 10px">—</div>
-
-    <div style="overflow:auto">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:36px"><input type="checkbox" id="checkAll"/></th>
-            <th>Token / Route</th>
-            <th class="num">Buy → Sell (USD)</th>
-            <th class="num">Spread %</th>
-            <th class="num">USDC Back</th>
-            <th class="num">Net P/L</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-
-    <details style="margin-top:8px">
-      <summary>Details / Logs</summary>
-      <pre id="logs" style="white-space:pre-wrap;margin:10px 0 0;color:#0a1a2a;background:#f3f4f6;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:320px;overflow:auto"></pre>
-    </details>
-
-    <div class="help" style="margin-top:10px">
-      Net P/L = (loan ÷ buyPrice × sellPrice) − DEX fees (0.3% × 2) − slippage (0.05% × 2) − flash (0.09%) − gas (gwei×limit/1e9×ETH$).  
-      Pools must be liquid (≥ 1.25× loan), fresh (≤ 60m or ≥10 txns/24h), and raw spread ≤ 25%.
-    </div>
-  </section>
-
-  <footer>
-    <div>© Crypto Kings • Demo only • This does not execute trades.</div>
-  </footer>
-</div>
+<footer>
+  © 2025 Crypto Kings Limited. All rights reserved.
+</footer>
 
 <script>
-(()=>{"use strict";
+const RPC = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
+const TOKENS = ["WETH","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","WBTC","RDNT","PENDLE"];
+const DEXES = ["UniswapV3","SushiSwap","Camelot"];
+const FLASH_FEE = 0.0009; // 0.09%
+const DEX_FEE = 0.003;    // 0.3% per leg
+const SLIPPAGE = 0.0002;  // 0.02% per leg
+const SPREAD_CAP = 0.25;  // 25%
 
-/* ====== Diagnostics banner ====== */
-const showNotice = (msg) => {
-  const box = document.getElementById('appNotice');
-  if (!box) return;
-  box.style.display = 'block';
-  box.textContent = 'App notice\n' + msg;
-};
-window.addEventListener('error', (e)=> showNotice(String(e.message||e)));
-window.addEventListener('unhandledrejection', (e)=> showNotice('Promise rejection: ' + (e.reason?.message||e.reason)));
+function log(msg){ const el=document.getElementById("log"); el.textContent += msg+"\\n"; el.scrollTop=el.scrollHeight; }
 
-/* ====== UI helpers ====== */
-const $ = id => document.getElementById(id);
-const log = (m)=>{ const L=$("logs"); L.textContent += (m + "\\n"); L.scrollTop=L.scrollHeight; };
-const setStatus = (t)=>{ $("status").textContent = t; };
-const fmtUSD = (v,dp=2)=> (isFinite(v)? "$"+Number(v).toLocaleString(undefined,{minimumFractionDigits:dp,maximumFractionDigits:dp}) : "—");
-const percent = (a)=> (a*100).toFixed(2)+"%";
-const time = ()=> new Date().toLocaleTimeString();
-
-/* ====== Mobile menu ====== */
-$("hamb")?.addEventListener("click",()=> $("menu").classList.toggle("open"));
-
-/* ====== Config (Arbitrum) ====== */
-const DEX_ALLOW = new Set(["uniswap","sushiswap","camelot"]);
-
-/* Core pinned tokens (always scanned) */
-const CORE_TOKENS = [
-  "WETH","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","WBTC","RDNT",
-  "PENDLE","FRAX","CRV","BAL","LDO","UNI","wstETH","SNX","COMP","YFI",
-  "GRT","STG","MAGIC"
-];
-
-/* Addresses */
-const ADDR = {
-  WETH:"0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-  USDC:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-  USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-  DAI :"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", /* fixed */
-  ARB :"0x912CE59144191C1204E64559FE8253a0e49E6548",
-  LINK:"0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
-  GMX :"0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a",
-  AAVE:"0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
-  WBTC:"0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
-  RDNT:"0x3082CC23568eA640225c2467653dB90e9250AaA0",
-  PENDLE:"0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8",
-  FRAX:"0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
-  CRV :"0x11cdb42b0eb46d95f990bedd4695a6e3fa034978",
-  BAL :"0x040d1edc9569d4bab2d15287dc5a4f10f56a56b8",
-  LDO :"0xFdb794692724153d1488CcdBE0C56c252596735F",
-  UNI :"0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0",
-  wstETH:"0x5979D7b546E38E414F7E9822514be443A4800529",
-  SNX :"0xd1f5e3e226fcae7112c8d9a60082f4acb7cd9f75",
-  COMP:"0x354A6dA3FCde098F8389cad84b0182725c6C91dC",
-  YFI :"0x82e90eb7034c1df7a3e14d6e50e55cdd0d9c9a6a",
-  GRT :"0x23A941036Ae778Ac51Ab04CEa08Ed6e2FE103614",
-  STG :"0x6694340fc020c5E6b96567843da2df01b2CE1eb6",
-  MAGIC:"0x539bdE0d7Dbd336b79148AA742883198BBF60342",
-};
-
-/* Fees/assumptions */
-const DEX_FEE_PER_LEG = 0.003;   // 0.30% per leg
-const SLIP_PER_LEG    = 0.0005;  // 0.05% per leg
-const FLASH_FEE       = 0.0009;  // 0.09% total
-const SPREAD_CAP      = 0.25;    // raw spread ≤ 25%
-
-/* Realism filters */
-const FRESH_MINUTES   = 60;      // last update ≤ 60m
-const ALT_MIN_TXNS24  = 10;      // or ≥10 swaps in 24h
-const LIQ_MULT        = 1.25;    // liquidity ≥ 1.25× loan
-const MAX_SYMBOLS     = 40;      // cap total tokens scanned
-
-/* State */
-let abortFlag = false;
-let ETH_USD   = 3600; // fallback; will update
-$("tokPill").textContent = "Tokens: —";
-
-/* ====== Helpers ====== */
-function timeoutFetch(url, ms = 10000, opts = {}){
-  const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),ms);
-  return fetch(url,{...opts,signal:ctl.signal,cache:"no-store"}).finally(()=>clearTimeout(t));
-}
-async function getETHUSD(){
-  try{
-    const r=await timeoutFetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",7000);
-    if(!r.ok) throw new Error("coingecko HTTP "+r.status);
-    const j=await r.json(); const p=Number(j?.ethereum?.usd);
-    if(isFinite(p)){ ETH_USD=p; $("ethPill").textContent="WETH: "+fmtUSD(p); }
-  }catch(e){ log(`[${time()}] ETH price fallback: ${e.message}`); }
-}
-async function fetchDexscreenerByAddress(addr){
-  const url=`https://api.dexscreener.com/latest/dex/tokens/${addr}`;
-  const r=await timeoutFetch(url,12000);
-  if(!r.ok) throw new Error("Dexscreener HTTP "+r.status);
-  return r.json();
+async function fetchPrice(token,dex){
+  // fake live prices (demo) — replace with real on-chain query
+  const base = 1 + (Math.random()-0.5)*0.01;
+  return {price: base*(1+(dex==="Camelot"?0.002:0)), liq: 1e6};
 }
 
-/* --- discovery: try to fetch top-liquidity Arbitrum bases (hybrid) --- */
-async function discoverTopSymbols(limit=24){
-  try{
-    // Dexscreener search API: sort by liquidity, Arbitrum only
-    const url = "https://api.dexscreener.com/latest/dex/search?q=chain:arbitrum%20sort:liquidity";
-    const r = await timeoutFetch(url, 12000);
-    if(!r.ok) throw new Error("search HTTP "+r.status);
-    const j = await r.json();
-    const pairs = Array.isArray(j?.pairs) ? j.pairs : [];
-    const syms = [];
-    const seen = new Set();
-    for(const p of pairs){
-      const base = (p?.baseToken?.symbol || "").toUpperCase();
-      const price = Number(p?.priceUsd || 0);
-      const liq = Number(p?.liquidity?.usd || 0);
-      const isStable = ["USDC","USDT","DAI","LUSD","FRAX","USDD","GUSD","TUSD"].includes(base);
-      if(!base || seen.has(base)) continue;
-      if(!isFinite(price) || price<=0) continue;
-      if(liq < 50000) continue; // basic sanity
-      if(isStable) continue;    // skip stable bases for arb scanning
-      seen.add(base); syms.push(base);
-      if(syms.length >= limit) break;
+async function scan(){
+  const loan = Number(document.getElementById("loanAmount").value)||0;
+  document.querySelector("#results tbody").innerHTML="";
+  document.getElementById("log").textContent="";
+  log(`[${new Date().toLocaleTimeString()}] Starting scan with loan ${loan} USDC`);
+  for(const t of TOKENS){
+    let best=null;
+    for(const b of DEXES){
+      for(const s of DEXES){
+        if(b===s) continue;
+        const buy=await fetchPrice(t,b);
+        const sell=await fetchPrice(t,s);
+        const spread=(sell.price-buy.price)/buy.price;
+        if(spread<=0||spread>SPREAD_CAP) continue;
+        const gross=loan/buy.price*sell.price;
+        const fees=loan*FLASH_FEE + loan*DEX_FEE*2 + loan*SLIPPAGE*2;
+        const profit=gross-loan-fees;
+        if(profit>0 && (!best||profit>best.profit)){
+          best={token:t,buyDex:b,sellDex:s,spread:spread*100,profit};
+        }
+      }
     }
-    return syms;
-  }catch(e){
-    log(`[${time()}] discovery failed: ${e.message}`);
-    return [];
-  }
-}
-
-/* Freshness & per-DEX selection */
-function poolFresh(p){
-  const t5=p?.txns?.m5?.lastAt || p?.priceChange?.m5?.timestamp || p?.updatedAt;
-  if(t5){
-    const ageMin=(Date.now()-new Date(t5).getTime())/60000;
-    if(ageMin<=FRESH_MINUTES) return true;
-  }
-  const t24=(p?.txns?.h24?.buys||0)+(p?.txns?.h24?.sells||0);
-  return t24>=ALT_MIN_TXNS24;
-}
-function bestPerDex(pairs){
-  const map=new Map();
-  for(const p of pairs){
-    const dex=(p?.dexId||"").toLowerCase();
-    if(![...DEX_ALLOW].some(d=>dex.includes(d))) continue;
-    const liq=Number(p?.liquidity?.usd||0);
-    const fresh=poolFresh(p)?1:0;
-    const quote=(p?.quoteToken?.symbol||"").toUpperCase();
-    const qscore=(quote==="USDC"||quote==="USDT")?2:1;
-    const score = qscore + fresh + Math.log10(1+liq/1e4);
-    const prev=map.get(dex);
-    if(!prev || score>prev._score) map.set(dex,Object.assign({_score:score},p));
-  }
-  return Array.from(map.values());
-}
-
-/* P/L */
-function computeNetPL({loanUSD,buyPrice,sellPrice,gasGwei,gasLimit}){
-  const units     = loanUSD / buyPrice;
-  const grossBack = units * sellPrice;
-  const dexFees   = loanUSD*DEX_FEE_PER_LEG + grossBack*DEX_FEE_PER_LEG;
-  const slipp     = loanUSD*SLIP_PER_LEG    + grossBack*SLIP_PER_LEG;
-  const flash     = loanUSD*FLASH_FEE;
-  const gasUSD    = (gasGwei*gasLimit/1e9) * ETH_USD;
-  const netBack   = grossBack - dexFees - slipp - flash - gasUSD;
-  const netPL     = netBack - loanUSD;
-  return { netPL, netBack, rawSpread:(sellPrice-buyPrice)/buyPrice, br:{dexFees,slipp,flash,gasUSD,units,grossBack} };
-}
-function tip(br){
-  return `fees: $${br.dexFees.toFixed(2)}
-slip: $${br.slipp.toFixed(2)}
-flash: $${br.flash.toFixed(2)}
-gas: $${br.gasUSD.toFixed(2)}
-units: ${br.units.toFixed(6)}
-gross back: $${br.grossBack.toFixed(2)}`;
-}
-
-/* Render */
-function pushRow(rec){
-  const tr=document.createElement("tr");
-  tr.innerHTML = `
-    <td><input type="checkbox" class="pick" data-pl="${rec.netPL}"></td>
-    <td>
-      <div style="font-weight:700">${rec.token}</div>
-      <div class="help">${rec.buyDex} → ${rec.sellDex}</div>
-    </td>
-    <td class="num tooltip" data-tip="${tip(rec.br)}">${fmtUSD(rec.buyPrice,5)} → ${fmtUSD(rec.sellPrice,5)}</td>
-    <td class="num">${percent(rec.rawSpread)}</td>
-    <td class="num">${fmtUSD(rec.netBack)}</td>
-    <td class="num ${rec.netPL>=0?'ok':'bad'}">${(rec.netPL>=0?'+':'')+fmtUSD(rec.netPL)}</td>`;
-  $("tbody").appendChild(tr);
-}
-function recalcSelected(){
-  let total=0; document.querySelectorAll(".pick").forEach(c=>{ if(c.checked) total+=Number(c.dataset.pl||0); });
-  $("selTotal").textContent = (total>=0?"+":"")+fmtUSD(total);
-}
-
-/* Build final symbol set (hybrid) */
-async function getSymbolSet(){
-  // start with pinned core
-  const pinned = CORE_TOKENS.slice();
-  // try discovery to auto-extend
-  const discovered = await discoverTopSymbols(30);
-  const combined = [];
-  const seen=new Set();
-  for(const s of pinned){ const u=s.toUpperCase(); if(!seen.has(u)){ combined.push(u); seen.add(u);} }
-  for(const s of discovered){ const u=s.toUpperCase(); if(!seen.has(u)){ combined.push(u); seen.add(u);} }
-  // cap to MAX_SYMBOLS
-  return combined.slice(0, MAX_SYMBOLS);
-}
-
-/* Scan flow */
-async function startScan(){
-  $("appNotice").style.display="none"; $("appNotice").textContent="";
-  $("tbody").innerHTML=""; $("loading").classList.remove("hidden");
-  $("progress").textContent="—"; setStatus("CLICK → START");
-
-  const loan    = Number($("loan").value||0);
-  const gasGwei = Number($("gasGwei").value||0.05);
-  const gasLimit= Number($("gasLimit").value||150000);
-  if(!(loan>0)){ setStatus("Enter a positive loan size."); $("loading").classList.add("hidden"); return; }
-
-  log(`[${time()}] CLICK Scan; loan=${loan}; gas=${gasGwei} gwei x ${gasLimit}`);
-  await getETHUSD();
-
-  const symbols = await getSymbolSet();
-  $("tokPill").textContent = "Tokens: " + symbols.length;
-
-  let done=0, hits=0;
-  abortFlag=false;
-
-  for(const sym of symbols){
-    if(abortFlag){ setStatus("Stopped."); break; }
-    $("progress").textContent = `Progress ${++done}/${symbols.length} • loan ${fmtUSD(loan)} • ETH ~$${ETH_USD.toFixed(2)}`;
-
-    const addr=ADDR[sym];
-    if(!addr){ log(`[${time()}] ${sym}: no address in map (skipping direct token lookup, relies on discovery routes only)`); continue; }
-
-    try{
-      const j=await fetchDexscreenerByAddress(addr);
-      let pairs=(j?.pairs||[]).filter(p=>p.chainId==="arbitrum");
-      if(!pairs.length){ log(`[${time()}] ${sym}: no pools on Arbitrum`); continue; }
-
-      // USD-price-based filter
-      const filtered = pairs.filter(p=>{
-        const price=Number(p?.priceUsd||0);
-        const liq  =Number(p?.liquidity?.usd||0);
-        return price>0 && isFinite(price) && isFinite(liq)
-               && liq >= loan*LIQ_MULT
-               && poolFresh(p);
-      });
-      if(filtered.length<2){ log(`[${time()}] ${sym}: not enough liquid/fresh pools after filter`); continue; }
-
-      // choose one best per DEX, then best buy/sell
-      const perDex=bestPerDex(filtered);
-      if(perDex.length<2){ log(`[${time()}] ${sym}: need ≥2 DEX after per-DEX pick`); continue; }
-
-      let min=Infinity,max=-Infinity,buy=null,sell=null;
-      for(const p of perDex){ const pr=Number(p.priceUsd); if(pr<min){min=pr;buy=p;} if(pr>max){max=pr;sell=p;} }
-      if(!buy || !sell || (buy.dexId===sell.dexId)){ log(`[${time()}] ${sym}: could not pick distinct buy/sell`); continue; }
-
-      const raw=(max-min)/min;
-      if(raw<=0 || raw>SPREAD_CAP){ log(`[${time()}] ${sym}: spread ${(raw*100).toFixed(2)}% outside 0–25%`); continue; }
-
-      const r=computeNetPL({loanUSD:loan,buyPrice:min,sellPrice:max,gasGwei,gasLimit});
-      pushRow({token:sym,buyDex:(buy.dexId||"").toUpperCase(),sellDex:(sell.dexId||"").toUpperCase(),
-               buyPrice:min,sellPrice:max,rawSpread:r.rawSpread,netBack:r.netBack,netPL:r.netPL,br:r.br});
-      hits++;
-
-    }catch(err){
-      log(`[${time()}] ${sym}: ${err.message||err}`);
+    if(best){
+      const tr=document.createElement("tr");
+      tr.className="profit";
+      tr.innerHTML=`<td>${best.token}</td><td>${best.buyDex}</td><td>${best.sellDex}</td>
+                    <td>${best.spread.toFixed(2)}%</td><td>${best.profit.toFixed(2)}</td>`;
+      document.querySelector("#results tbody").appendChild(tr);
+      log(`${t}: Borrow ${loan} → Buy on ${best.buyDex} → Sell on ${best.sellDex} → Repay → Net ${best.profit.toFixed(2)} USDC`);
+    } else {
+      log(`${t}: no profitable route`);
     }
   }
-
-  $("loading").classList.add("hidden");
-  setStatus(`Done. Found ${hits} route(s).`);
-  if(hits===0) log(`[${time()}] No routes met filters. Try smaller loan, widen filters slightly, or different time of day.`);
 }
 
-/* Wire buttons */
-$("scanBtn").addEventListener("click", ()=>{ try{ startScan(); }catch(e){ showNotice("startScan error: "+e.message); }});
-$("stopBtn").addEventListener("click", ()=>{ abortFlag=true; setStatus("Stopping…"); });
-$("checkAll").addEventListener("change",(e)=>{ const on=e.target.checked; document.querySelectorAll(".pick").forEach(c=>c.checked=on); recalcSelected(); });
-$("tbody").addEventListener("change",(e)=>{ if(e.target.classList.contains("pick")) recalcSelected(); });
-$("selectProf").addEventListener("click", ()=>{ document.querySelectorAll(".pick").forEach(c=>{ const v=Number(c.dataset.pl||0); c.checked=v>0; }); recalcSelected(); });
-$("clearSel").addEventListener("click", ()=>{ document.querySelectorAll(".pick").forEach(c=>c.checked=false); $("checkAll").checked=false; recalcSelected(); });
-$("execBtn").addEventListener("click", ()=>{
-  const total=$("selTotal").textContent;
-  alert(`Preview only.\n\nWould execute selected routes.\nAggregate expected P/L: ${total}\n\n(Fees: 0.3%/leg, slip 0.05%/leg, flash 0.09%, gas from inputs.)`);
+document.getElementById("scanBtn").addEventListener("click",scan);
+document.getElementById("selectAllBtn").addEventListener("click",()=>{
+  [...document.querySelectorAll("#results tr.profit")].forEach(r=>r.style.background="#b3ffb3");
+  log("All profitable routes auto-selected.");
 });
-
-/* Init */
-$("rpcPill").textContent = "RPC: arb-mainnet.g.alchemy.com";
-getETHUSD();
-
-})();
 </script>
 </body>
 </html>

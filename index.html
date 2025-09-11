@@ -2,284 +2,244 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Crypto Kings • TestBed v9.9.28</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crypto Kings • TestBed v9.9.29</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f7f8fb; --card:#fff; --ink:#0f172a; --sub:#475569;
-    --muted:#94a3b8; --line:#eef0f4; --ok:#059669; --bad:#e11d48;
-    --pill:#eef2ff; --brand1:#6d28d9; --brand2:#2563eb;
+    --bg:#f7f8fb; --card:#ffffff; --ink:#0f172a; --sub:#475569; --muted:#94a3b8;
+    --line:#e9edf3; --ok:#059669; --bad:#e11d48; --chip:#eef2ff;
+    --g1:#6d28d9; --g2:#2563eb;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
-  .ck-wrap{max-width:1100px;margin:0 auto;padding:16px}
-  header{display:flex;align-items:center;gap:12px}
-  .logo{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#4f46e5,#22c55e);display:grid;place-items:center;color:#fff;font-weight:800}
-  .badge{background:#f1f5f9;color:#0f172a;border:1px solid #e2e8f0;padding:4px 10px;border-radius:999px;font-size:12px}
-  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
-  .pill{background:var(--pill);border:1px solid #e7e9ff;color:#334155;border-radius:999px;padding:6px 10px;font-size:12px}
-  .btn{border:none;border-radius:12px;padding:10px 16px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand1),var(--brand2));box-shadow:0 6px 18px rgba(37,99,235,.18);cursor:pointer}
-  .btn.secondary{background:#e2e8f0;color:#0f172a;font-weight:600;box-shadow:none}
-  .card{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--line)}
-  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-  .input{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;min-width:160px}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:800;background:linear-gradient(135deg,#4f46e5,#22c55e)}
+  .title{font-weight:800}
+  .sub{color:var(--muted);font-size:12px}
+  .pills{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+  .pill{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#f1f5f9;color:#0f172a;font-size:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .input{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;min-width:180px}
+  .btn{border:none;border-radius:12px;padding:12px 16px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 8px 22px rgba(37,99,235,.18)}
+  .btn.ghost{background:#e2e8f0;color:#0f172a;box-shadow:none}
   .hint{color:var(--sub);font-size:12px}
-  .results-card{overflow:hidden;border-radius:14px}
-  .results-table{width:100%;border-collapse:collapse;table-layout:fixed}
-  .results-table thead th{font-weight:700;color:#334155;background:#f6f7fb}
-  .results-table th,.results-table td{padding:10px 12px;border-bottom:1px solid #eef0f4}
+  .resultsCard{padding:0;overflow:hidden;margin-top:12px}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px;border-bottom:1px solid var(--line)}
+  .toolbar .btn{padding:10px 14px}
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
+  thead th{background:#f6f7fb;border-bottom:1px solid var(--line);padding:10px 12px;font-weight:700;color:#334155}
+  tbody td{border-bottom:1px solid var(--line);padding:10px 12px}
   .right{text-align:right}
   .mono{font-variant-numeric:tabular-nums}
   .row-ok{background:#f2fff7}
-  .row-bad{background:#fff6f6}
+  .row-bad{background:#fff7f8}
   .ok{color:var(--ok)} .bad{color:var(--bad)}
-  .chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 12px}
-  .chips .pill.ghost{background:#fff;border-color:var(--line)}
-  .sticky-head{position:sticky;top:0;z-index:5}
-
-  /* Mobile layout */
-  @media (max-width:720px){
-    .results-table thead{display:none}
-    .results-table tbody tr{
-      display:grid;grid-template-columns:1fr 1fr;grid-row-gap:6px;padding:10px 12px;border-bottom:1px solid #eef0f4
-    }
-    .results-table tbody tr>td{border:0;padding:0}
-    .cell{display:flex;justify-content:space-between;gap:8px}
-    .lbl{color:#64748b;font-size:12px;margin-right:8px}
-    .val{text-align:right}
-    .select-td{grid-column:1/-1;order:-2;margin-bottom:4px}
-    .token-td{grid-column:1/-1;font-weight:700;order:-1}
-    .buy-td,.sell-td,.spread-td,.back-td,.pl-td{grid-column:auto}
-    .btn{width:100%}
-  }
-
   .log{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
        background:#0b1220;color:#a7f3d0;border-radius:12px;padding:10px;white-space:pre-wrap;border:1px solid #0f1b34}
   footer{color:#64748b;text-align:center;margin:20px 0}
+
+  /* Mobile table */
+  @media (max-width:720px){
+    thead{display:none}
+    tbody tr{display:grid;grid-template-columns:1fr 1fr;grid-row-gap:6px;padding:10px 12px}
+    tbody td{border:0;padding:0}
+    .sel{grid-column:1/-1;order:-2}
+    .tok{grid-column:1/-1;font-weight:700;order:-1}
+    .cell{display:flex;justify-content:space-between}
+    .lbl{color:#64748b;font-size:12px;margin-right:8px}
+    .val{text-align:right}
+    .right{text-align:right}
+    .toolbar .btn{width:100%}
+  }
 </style>
 </head>
 <body>
-  <div class="ck-wrap">
-    <header>
-      <div class="logo">CK</div>
-      <div>
-        <div style="font-weight:800">Crypto Kings</div>
-        <div class="hint">TestBed v9.9.28 • Arbitrum</div>
-      </div>
-      <span class="badge" id="rpcBadge">RPC: custom</span>
-      <span class="badge" id="tokensBadge">Tokens: —</span>
-    </header>
+<div class="wrap">
+  <header>
+    <div class="logo">CK</div>
+    <div>
+      <div class="title">Crypto Kings</div>
+      <div class="sub">TestBed v9.9.29 • Arbitrum</div>
+    </div>
+    <div class="pills">
+      <span class="pill" id="rpcPill">RPC: custom</span>
+      <span class="pill" id="tokensPill">Tokens: —</span>
+    </div>
+  </header>
 
-    <div class="card">
-      <div class="controls">
-        <label class="hint">Loan Amount (USDC):</label>
-        <input id="loanInput" class="input mono" type="number" step="100" min="100" value="10000" />
-        <button id="scanBtn" class="btn">Scan</button>
-        <button id="stopBtn" class="btn secondary">Stop</button>
-      </div>
-      <div class="chips">
-        <span class="pill ghost" id="gasPill">Gas: —</span>
-        <span class="pill ghost" id="ethPill">ETH: —</span>
-        <span class="pill ghost" id="progressPill">—</span>
-      </div>
-
-      <div class="results-card card" style="padding:0;margin-top:10px">
-        <div class="chips" style="padding:12px">
-          <button id="selectAllProfitableBtn" class="btn secondary" style="color:#0f172a">Select all profitable</button>
-          <button id="clearBtn" class="btn secondary">Clear</button>
-          <span id="selectedTotalPill" class="pill">++$0</span>
-          <button id="execPreviewBtn" class="btn" style="margin-left:auto">Execute Selected (Preview)</button>
-        </div>
-
-        <table class="results-table">
-          <thead class="sticky-head">
-            <tr>
-              <th style="width:42px"></th>
-              <th>Token</th>
-              <th>Buy (DEX @ $)</th>
-              <th>Sell (DEX @ $)</th>
-              <th class="right">Spread %</th>
-              <th class="right">USDC Back</th>
-              <th class="right">Net P/L</th>
-            </tr>
-          </thead>
-          <tbody id="resultsBody">
-            <!-- rows injected -->
-          </tbody>
-        </table>
-      </div>
-
-      <div style="margin-top:12px">
-        <div id="log" class="log">Ready.\n</div>
-      </div>
-
-      <div class="hint" style="margin-top:10px">
-        Net P/L = (loan ÷ buyPrice × sellPrice) − per-leg DEX fees (0.3%/leg) − slippage buffer (0.2%/leg) − flash (0.09%) − gas. Pools must be on Arbitrum.
-      </div>
+  <div class="card">
+    <div class="row">
+      <label class="hint">Loan Amount (USDC):</label>
+      <input id="loan" class="input mono" type="number" min="100" step="100" value="10000" />
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="scanBtn" class="btn" style="flex:1">Scan</button>
+      <button id="stopBtn" class="btn ghost">Stop</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <span class="pill" id="gasPill">Gas: —</span>
+      <span class="pill" id="ethPill">ETH: —</span>
+      <span class="pill" id="progressPill">—</span>
     </div>
 
-    <footer>© 2025 Crypto Kings Limited — All rights reserved.</footer>
+    <div class="card resultsCard">
+      <div class="toolbar">
+        <button id="selectProfitable" class="btn ghost">Select all profitable</button>
+        <button id="clearSel" class="btn ghost">Clear</button>
+        <span id="selTotal" class="pill">++$0</span>
+        <button id="execPreview" class="btn" style="margin-left:auto">Execute Selected (Preview)</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:42px"></th>
+            <th>Token</th>
+            <th>Buy (DEX @ $)</th>
+            <th>Sell (DEX @ $)</th>
+            <th class="right">Spread %</th>
+            <th class="right">USDC Back</th>
+            <th class="right">Net P/L</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:12px">
+      <div id="log" class="log">Ready.\n</div>
+    </div>
+
+    <div class="hint" style="margin-top:10px">
+      Net P/L = (loan ÷ buyPrice × sellPrice) − per-leg DEX fees (0.3%/leg) − slippage buffer (0.2%/leg) − flash (0.09%) − gas. Pools must be on Arbitrum.
+    </div>
   </div>
 
+  <footer>© 2025 Crypto Kings Limited — All rights reserved.</footer>
+</div>
+
 <script>
-/* ============================
-   1) Expanded token universe
-   ============================ */
+/* ========= 1) Token coverage ========= */
 const TOKENS = [
   "WETH","WBTC","USDC","USDCe","USDT","DAI","ARB","wstETH","FRAX","LUSD",
   "AAVE","UNI","CRV","BAL","SNX","COMP","MKR","CVX","LDO","RPL","FXS",
   "GMX","GNS","MAGIC","RDNT","PENDLE","JONES","GRAIL","DPX","PLS","SUSHI",
-  "LINK","GRT","ENS","STG","LQTY","HOP","BOND","ALCX",
-  "RAM","CAMELOT","TRADERJOE","SADDLE",
-  "AURA","ANGLE","VELO","PERP","1INCH","BADGER","BNT","DODO","OP",
-  "SPA","GNO","RDPX","UMAMI","TCR"
+  "LINK","GRT","ENS","STG","LQTY","HOP","BOND","ALCX","AURA","ANGLE","VELO",
+  "PERP","1INCH","BADGER","BNT","DODO","OP","SPA","GNO","RDPX","UMAMI","TCR"
 ].filter((v,i,a)=>a.indexOf(v)===i);
 
-document.querySelector("#tokensBadge").textContent = `Tokens: ${TOKENS.length}`;
+document.querySelector('#tokensPill').textContent = `Tokens: ${TOKENS.length}`;
+window.DEFAULT_TOKENS = TOKENS;   // expose for external scanner
 
-/* Expose to an existing scanner (if you have one wired elsewhere) */
-window.DEFAULT_TOKENS = TOKENS;
-window.SCAN_TOKENS = TOKENS;
+/* ========= 2) Helpers ========= */
+const $ = s=>document.querySelector(s);
+const tbody = $('#tbody');
+const logEl = $('#log');
+function log(line){ logEl.textContent += (line.endsWith('\n')?line:line+'\n'); logEl.scrollTop = logEl.scrollHeight; }
+function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
+function now(){ return new Date().toTimeString().slice(0,8); }
 
-/* ============================
-   2) Utilities
-   ============================ */
-const logEl = document.getElementById('log');
-function log(line){ logEl.textContent += (line.endsWith('\n')? line : line+'\n'); logEl.scrollTop = logEl.scrollHeight; }
-function toNum(s){ if(s==null) return NaN; const n = String(s).replace(/[,$+\s]/g,''); return Number(n); }
-function fmtUSD(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
-function pill(id, text){ const el=document.getElementById(id); if(el) el.textContent=text; }
-
-/* ============================
-   3) Rendering & sorting
-   ============================ */
-const tbody = document.getElementById('resultsBody');
-
-function renderRows(routes){
-  // routes: [{token,buyDex,buyPrice,sellDex,sellPrice,usdcBack,netPL}]
+/* ========= 3) Rendering ========= */
+function render(routes){
   tbody.innerHTML = '';
-  for(const r of routes){
-    const tr = document.createElement('tr');
-    tr.dataset.netpl = r.netPL;
-    tr.className = (r.netPL>0)? 'row-ok':'row-bad';
-    tr.innerHTML = `
-      <td class="select-td"><input type="checkbox" class="row-cb"></td>
-      <td class="token-td">${r.token}</td>
-      <td class="buy-td"><span class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex} @ ${Number(r.buyPrice).toLocaleString(undefined,{maximumFractionDigits:5})}</span></span></td>
-      <td class="sell-td"><span class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex} @ ${Number(r.sellPrice).toLocaleString(undefined,{maximumFractionDigits:5})}</span></span></td>
-      <td class="spread-td right mono">${(r.spreadPct??((r.sellPrice-r.buyPrice)/r.buyPrice*100)).toFixed(2)}%</td>
-      <td class="back-td right mono">${fmtUSD(r.usdcBack)}</td>
-      <td class="pl-td right mono ${r.netPL>0?'ok':'bad'}">${(r.netPL>=0?'+':'-')+fmtUSD(Math.abs(r.netPL)).replace('$','')}</td>
-    `;
-    tbody.appendChild(tr);
-  }
-  sortRows();              // profit-first ordering
-  wireCheckHandlers();     // keep selected total in sync
-}
-
-function sortRows(){
-  const rows = Array.from(tbody.querySelectorAll('tr'));
-  rows.forEach(tr=>{
-    const pl = Number(tr.dataset.netpl||-1e99);
-    const cell = tr.querySelector('.pl-td');
-    tr.classList.toggle('row-ok', pl>0);
-    tr.classList.toggle('row-bad', pl<=0);
-    if(cell){ cell.classList.toggle('ok', pl>0); cell.classList.toggle('bad', pl<=0); }
-  });
-  rows.sort((a,b)=>{
-    const pa = Number(a.dataset.netpl||-1e99), pb = Number(b.dataset.netpl||-1e99);
+  // Profit-first sort
+  routes.sort((a,b)=>{
+    const pa = Number(a.netPL ?? a.net ?? a.plUSD ?? -1e99);
+    const pb = Number(b.netPL ?? b.net ?? b.plUSD ?? -1e99);
     const ap = pa>0, bp = pb>0;
     if(ap!==bp) return bp-ap;
     return pb-pa;
   });
-  rows.forEach(tr=>tbody.appendChild(tr));
-  updateSelectedTotal();
-}
 
-function updateSelectedTotal(){
-  const cbs = tbody.querySelectorAll('.row-cb:checked');
-  let sum = 0;
-  cbs.forEach(cb=>{
-    const tr = cb.closest('tr');
-    const v = Number(tr?.dataset?.netpl||0);
-    if(isFinite(v)) sum += v;
-  });
-  const pillEl = document.getElementById('selectedTotalPill');
-  if(pillEl){
-    pillEl.textContent = (sum>=0? '++$':'−$') + Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
+  for(const r of routes){
+    const pl = Number(r.netPL ?? r.net ?? r.plUSD ?? 0);
+    const spreadPct = (r.spreadPct!=null)? r.spreadPct :
+      ((Number(r.sellPrice)-Number(r.buyPrice))/Number(r.buyPrice))*100;
+
+    const tr = document.createElement('tr');
+    tr.dataset.netpl = pl;
+    tr.className = (pl>0)? 'row-ok':'row-bad';
+    tr.innerHTML = `
+      <td class="sel"><input type="checkbox" class="cb"></td>
+      <td class="tok">${r.token}</td>
+      <td><div class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex} @ ${Number(r.buyPrice).toLocaleString(undefined,{maximumFractionDigits:6})}</span></div></td>
+      <td><div class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex} @ ${Number(r.sellPrice).toLocaleString(undefined,{maximumFractionDigits:6})}</span></div></td>
+      <td class="right mono">${(spreadPct||0).toFixed(2)}%</td>
+      <td class="right mono">${usd(r.usdcBack ?? 0)}</td>
+      <td class="right mono ${pl>0?'ok':'bad'}">${(pl>=0?'+':'-')+usd(Math.abs(pl)).replace('$','')}</td>
+    `;
+    tbody.appendChild(tr);
   }
+  wireRowChecks();
+  updateSelectedTotal();
 }
 
-function wireCheckHandlers(){
-  tbody.querySelectorAll('.row-cb').forEach(cb=>{
-    cb.addEventListener('change', updateSelectedTotal);
+function wireRowChecks(){
+  tbody.querySelectorAll('.cb').forEach(cb=>cb.addEventListener('change', updateSelectedTotal));
+}
+function updateSelectedTotal(){
+  let sum=0;
+  tbody.querySelectorAll('.cb:checked').forEach(cb=>{
+    const tr = cb.closest('tr'); sum += Number(tr.dataset.netpl||0);
   });
+  $('#selTotal').textContent = (sum>=0?'++$':'−$') + Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
 }
 
-/* “Select all profitable” & Clear */
-document.getElementById('selectAllProfitableBtn').addEventListener('click',()=>{
-  tbody.querySelectorAll('tr').forEach(tr=>{
-    const cb = tr.querySelector('.row-cb');
-    if(cb) cb.checked = Number(tr.dataset.netpl||-1e99) > 0;
-  });
-  updateSelectedTotal();
-});
-document.getElementById('clearBtn').addEventListener('click',()=>{
-  tbody.querySelectorAll('.row-cb').forEach(cb=>cb.checked=false);
-  updateSelectedTotal();
-});
-
-/* ============================
-   4) Scan wiring
-   ============================ */
+/* ========= 4) Scan button wiring ========= */
 let scanning=false;
-document.getElementById('scanBtn').addEventListener('click', async ()=>{
+$('#scanBtn').addEventListener('click', async ()=>{
   if(scanning) return;
   scanning=true;
   tbody.innerHTML=''; updateSelectedTotal();
-  const loan = Number(document.getElementById('loanInput').value||10000);
-  pill('progressPill','Scanning…'); log(`[${new Date().toTimeString().slice(0,8)}] CLICK Scan; tokens=${TOKENS.length}; loan=${loan.toLocaleString()}`);
-  try{
-    /* ------------------------------------------
-       TODO: call your real scanner here.
-       It should return an array of:
-       { token, buyDex, buyPrice, sellDex, sellPrice, usdcBack, netPL, spreadPct? }
-       ------------------------------------------ */
+  const loan = Number($('#loan').value||10000);
+  $('#progressPill').textContent = 'Scanning…';
+  log(`[${now()}] CLICK Scan; tokens=${TOKENS.length}; loan=${loan.toLocaleString()}`);
 
-    let routes = [];
-    if (typeof window.fetchRoutes === 'function'){
-      // If you already wired a live scanner elsewhere, we call it
-      routes = await window.fetchRoutes({tokens:TOKENS, loan});
-    }else{
-      // Minimal fallback: empty (no mock data)
-      routes = [];
+  try{
+    // Find any existing live scanner you already have:
+    const scanner =
+      window.fetchRoutes || window.scanRoutes || window.scanArbRoutes || window.runScan;
+
+    if(typeof scanner !== 'function'){
+      log('No scanner function found (expected one of fetchRoutes / scanRoutes / scanArbRoutes / runScan).');
+      $('#progressPill').textContent = 'No scanner found.';
+      scanning=false; return;
     }
 
-    // Render (and auto sort by profit)
-    renderRows(routes);
+    // Call your live scanner; must return [{token,buyDex,buyPrice,sellDex,sellPrice,usdcBack,netPL,spreadPct?}, …]
+    const routes = await scanner({ tokens:TOKENS, loan });
 
-    // Progress
-    pill('progressPill', `Done. Found ${routes.length} route(s).`);
+    render(Array.isArray(routes)?routes:[]);
+    $('#progressPill').textContent = `Done. Found ${Array.isArray(routes)?routes.length:0} route(s).`;
   }catch(err){
     console.error(err);
     log(`Error: ${err.message||err}`);
-    pill('progressPill','Error.');
+    $('#progressPill').textContent = 'Error.';
   }finally{
     scanning=false;
   }
 });
 
-document.getElementById('stopBtn').addEventListener('click',()=>{ scanning=false; pill('progressPill','Stopped.'); });
+$('#stopBtn').addEventListener('click', ()=>{ scanning=false; $('#progressPill').textContent='Stopped.'; });
 
-/* ============================
-   5) Exec preview stub
-   ============================ */
-document.getElementById('execPreviewBtn').addEventListener('click', ()=>{
-  const selected = Array.from(tbody.querySelectorAll('.row-cb:checked')).map(cb=>{
-    const tr = cb.closest('tr');
-    const tds = tr.querySelectorAll('td');
+/* ========= 5) Tool buttons ========= */
+$('#selectProfitable').addEventListener('click', ()=>{
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const cb = tr.querySelector('.cb'); if(!cb) return;
+    cb.checked = Number(tr.dataset.netpl||-1e99) > 0;
+  });
+  updateSelectedTotal();
+});
+$('#clearSel').addEventListener('click', ()=>{
+  tbody.querySelectorAll('.cb').forEach(cb=>cb.checked=false);
+  updateSelectedTotal();
+});
+$('#execPreview').addEventListener('click', ()=>{
+  const picked = Array.from(tbody.querySelectorAll('.cb:checked')).map(cb=>{
+    const tds = cb.closest('tr').querySelectorAll('td');
     return {
       token: tds[1].textContent.trim(),
       buy:   tds[2].innerText.replace(/\n/g,' ').trim(),
@@ -289,17 +249,20 @@ document.getElementById('execPreviewBtn').addEventListener('click', ()=>{
       pl:     tds[6].textContent.trim()
     };
   });
-  if(!selected.length){ alert('Select at least one profitable route first.'); return; }
-  let msg = 'Preview — routes to execute:\n\n';
-  selected.forEach((r,i)=>{ msg += `${i+1}. ${r.token}: ${r.buy} → ${r.sell} | back ${r.back} | P/L ${r.pl}\n`; });
+  if(!picked.length){ alert('Select at least one profitable route first.'); return; }
+  let msg='Preview — routes to execute:\n\n';
+  picked.forEach((r,i)=>{ msg+=`${i+1}. ${r.token}: ${r.buy} → ${r.sell} | ${r.back} | ${r.pl}\n`; });
   alert(msg);
 });
 
-/* ============================
-   6) Optional: expose a helper to your live scanner
-   ============================ */
-window.renderRows = renderRows;   // you can call renderRows(routes) from your live code
-window.ckLog      = log;          // and ckLog('line') to append to the UI log
+/* ========= 6) Optional: show RPC/gas/ETH if you expose them ========= */
+if (window.CK_RPC_URL) document.querySelector('#rpcPill').textContent = `RPC: ${window.CK_RPC_URL.includes('alchemy')?'alchemy':'custom'}`;
+if (window.CK_ETH_PRICE) document.querySelector('#ethPill').textContent = `ETH: ${usd(window.CK_ETH_PRICE)}`;
+if (window.CK_GAS_GWEI) document.querySelector('#gasPill').textContent = `Gas: ${window.CK_GAS_GWEI} gwei`;
+
+/* Also expose a renderer if you prefer to push results in from your code */
+window.renderRows = render;
+window.ckLog = log;
 </script>
 </body>
 </html>

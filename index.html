@@ -3,25 +3,21 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.30 • UniV3 On-Chain Quotes</title>
+<title>Crypto Kings • TestBed v9.9.30R3 (exec-only)</title>
 <style>
   :root{
-    color-scheme: light;
     --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
     --card:#f9fafb; --ok:#059669; --bad:#e11d48;
-    --g1:#2563eb; --g2:#7c3aed; --chip:#eef2f7;
+    --g1:#2563eb; --g2:#7c3aed;
   }
   *{box-sizing:border-box}
-  html,body{background:var(--bg);color:var(--ink)}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-
-  /* Header (hamburger only) */
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  /* Header */
   header{background:#111;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
   .brand{display:flex;gap:10px;align-items:center}
   .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#4f46e5,#22c55e);display:grid;place-items:center;font-weight:800}
   .burger{font-size:22px;cursor:pointer;user-select:none}
-
-  /* Page + panels */
+  /* Page container + panels */
   .container{max-width:1100px;margin:0 auto;padding:16px}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -29,29 +25,21 @@
   input[type=number]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:160px}
   button{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
   .btn-primary{color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 8px 24px rgba(37,99,235,.2)}
-  .btn-ghost{background:var(--chip);color:#111}
+  .btn-ghost{background:#eef2f7;color:#111}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   .pill{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;color:#111}
-
   /* Results table */
   .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:10px}
   table{width:100%;border-collapse:collapse;table-layout:fixed}
   thead th{background:#f3f4f6;border-bottom:1px solid var(--line);padding:10px 12px;color:#374151;font-weight:700}
-  tbody td{border-bottom:1px solid var(--line);padding:10px 12px;vertical-align:middle}
+  tbody td{border-bottom:1px solid var(--line);padding:10px 12px}
   .right{text-align:right}
   .mono{font-variant-numeric:tabular-nums}
   tr.profit{background:#ecfdf5}
   tr.loss{background:#fff1f2}
   .ok{color:var(--ok)} .bad{color:var(--bad)}
-
-  /* Mobile friendliness */
-  .cell{display:flex;justify-content:space-between;gap:8px;align-items:center}
-  .lbl{color:#6b7280;font-size:12px;margin-right:8px;white-space:nowrap}
-  .val{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-
   /* Logs */
   .logs{background:#0b1220;color:#a7f3d0;border:1px solid #0f1b34;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:220px;overflow:auto}
-
   /* Footer (4 columns) */
   footer{background:#111;color:#ddd;padding:24px}
   .foot{max-width:1100px;margin:0 auto;display:grid;gap:18px;grid-template-columns:repeat(4,1fr)}
@@ -60,15 +48,16 @@
   footer li{margin:6px 0}
   @media(max-width:800px){ .foot{grid-template-columns:1fr 1fr} }
   @media(max-width:560px){ .foot{grid-template-columns:1fr} }
-
-  /* Mobile table → cards */
+  /* Mobile table -> cards */
   @media(max-width:720px){
     thead{display:none}
     tbody tr{display:grid;grid-template-columns:1fr 1fr;grid-row-gap:6px;padding:10px 12px}
     tbody td{border:0;padding:0}
-    td.sel{grid-column:1/-1;order:-3;margin-bottom:4px}
-    td.tok{grid-column:1/-1;font-weight:700;order:-2}
-    td.spread, td.usdc, td.net{order:-1}
+    td.sel{grid-column:1/-1;order:-2;margin-bottom:4px}
+    td.tok{grid-column:1/-1;font-weight:700;order:-1}
+    .cell{display:flex;justify-content:space-between;gap:8px}
+    .lbl{color:#6b7280;font-size:12px;margin-right:8px}
+    .val{text-align:right;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
     .toolbar .btn-primary,.toolbar .btn-ghost{width:100%}
   }
 </style>
@@ -79,7 +68,7 @@
       <div class="logo">CK</div>
       <div>
         <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div class="hint">TestBed v9.9.30 • Arbitrum • UniV3 on-chain quotes</div>
+        <div class="hint">TestBed v9.9.30R3 • Arbitrum</div>
       </div>
     </div>
     <div class="burger" title="Menu">&#9776;</div>
@@ -108,7 +97,7 @@
       <div class="toolbar">
         <button id="selectProfitable" class="btn-ghost">Select all profitable</button>
         <button id="clearSel" class="btn-ghost">Clear</button>
-        <span id="selTotal" class="pill">++$0.00</span>
+        <span id="selTotal" class="pill">++$0</span>
         <button id="execPreview" class="btn-primary" style="margin-left:auto">Execute Selected (Preview)</button>
       </div>
       <table id="results">
@@ -131,7 +120,7 @@
     <div class="panel">
       <div class="row" style="justify-content:space-between">
         <div style="font-weight:700">Details / Logs</div>
-        <span class="hint">Live only — UniV3 on-chain, others via Dexscreener</span>
+        <span class="hint">Executable only — Uniswap v3 on-chain (both legs)</span>
       </div>
       <div id="log" class="logs">Ready.</div>
     </div>
@@ -158,16 +147,20 @@
     </div>
   </footer>
 
-<!-- Ethers.js (v5) -->
+<!-- Ethers for ABI + callStatic (v5) -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 <script>
-/* ======= CONFIG (live) ======= */
-const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; // per your request
-const SPREAD_CAP = 50;       // drop absurd API spreads
-const FLASH_FEE = 0.0009;    // 0.09%
-const DEX_FEE   = 0.003;     // per leg
-const SLIP_FEE  = 0.002;     // per leg
-const GAS_LIMIT = 380000;    // ~2 swaps + callback
+/* =================== CONFIG (live, executable) =================== */
+const RPC_URL  = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; // as requested
+const CHAIN_ID = 42161;                // Arbitrum One
+const USDC     = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // native USDC
+const QUOTERV2 = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"; // Uniswap v3 QuoterV2
+const V3_FEES  = [500, 3000, 10000];   // 0.05%, 0.3%, 1%
+const FLASH_FEE = 0.0009;              // 0.09%
+const DEX_FEE   = 0.003;               // per leg (Uniswap v3 swap fee is in pool, we still keep a buffer)
+const SLIP_FEE  = 0.002;               // per leg slippage buffer (conservative)
+const SPREAD_CAP = 50;                 // max % spread we trust
+const GAS_LIMIT  = 380000;             // two swaps + callback on L2
 const TOKENS = [
   "WETH","WBTC","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","RDNT",
   "PENDLE","FRAX","CRV","BAL","UNI","wstETH","SNX","COMP","YFI","GRT",
@@ -177,117 +170,124 @@ const TOKENS = [
 ]; // 50
 document.getElementById("tokensPill").textContent = "Tokens: "+TOKENS.length;
 
-/* ======= Chain consts (Arbitrum) ======= */
-const ADDR = {
-  USDC: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-  USDT: "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-  WETH: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-  UNI_V3_QUOTER_V2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"
-};
-const UNI_V3_FEE_TIERS = [500, 3000, 10000]; // 0.05%, 0.3%, 1%
+/* =================== Helpers & state =================== */
+const { ethers } = window.ethers;
+const provider = new ethers.providers.JsonRpcProvider(RPC_URL, { chainId: CHAIN_ID, name: "arbitrum" });
 
-/* ======= Helpers ======= */
+const QUOTER_ABI = [
+  "function quoteExactInputSingle((address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) view returns (uint256 amountOut,uint160, uint32, uint256)",
+  "function quoteExactOutputSingle((address tokenIn,address tokenOut,uint24 fee,uint256 amountOut,uint160 sqrtPriceLimitX96)) view returns (uint256 amountIn,uint160, uint32, uint256)"
+];
+const quoter = new ethers.Contract(QUOTERV2, QUOTER_ABI, provider);
+
 const $ = s=>document.querySelector(s);
 const tbody = $("#tbody"), logEl = $("#log");
 function log(m){ logEl.textContent += (m.endsWith("\n")?m:m+"\n"); logEl.scrollTop=logEl.scrollHeight; }
 function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
+function fmt(n,dp=6){ return Number(n).toLocaleString(undefined,{maximumFractionDigits:dp}); }
 
-/* ======= Live ETH & Gas ======= */
+/* Live ETH & gas */
 let ETH_USD = null, GAS_GWEI = null;
 async function fetchEthUsd(){
   try{
     const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
-    const j=await r.json();
-    ETH_USD = Number(j?.ethereum?.usd)||null;
+    ETH_USD = Number((await r.json())?.ethereum?.usd)||null;
     $("#ethPill").textContent = "ETH: " + (ETH_USD? usd(ETH_USD):"—");
   }catch(_){ $("#ethPill").textContent="ETH: (fail)"; }
 }
 async function fetchGasGwei(){
   try{
-    const body={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
-    const r=await fetch(ALCHEMY_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-    const j=await r.json(); const wei=parseInt(j?.result||"0x0",16);
-    GAS_GWEI = wei/1e9;
+    const j=await provider.send("eth_gasPrice",[]);
+    GAS_GWEI = parseInt(j,16)/1e9;
     $("#gasPill").textContent = "Gas: " + GAS_GWEI.toFixed(2) + " gwei";
-  }catch(_){ $("#gasPill").textContent="Gas: (fail)"; GAS_GWEI = 0.05; }
+  }catch(_){ GAS_GWEI = 0.05; $("#gasPill").textContent = "Gas: 0.05 gwei*"; }
 }
 
-/* ======= Dexscreener (address discovery + other DEX prices) ======= */
-async function fetchPairsForSymbol(sym){
+/* Dexscreener address resolver (by symbol) */
+async function resolveTokenAddress(symbol){
   try{
-    const url = "https://api.dexscreener.com/latest/dex/search?q="+encodeURIComponent(sym);
-    const r = await fetch(url,{cache:"no-store"});
-    if(!r.ok) return [];
-    const j = await r.json();
-    const pairs = (j?.pairs||[]).filter(p=>{
-      const base = (p?.baseToken?.symbol||"").toUpperCase();
-      return p?.chainId==="arbitrum" && base===sym.toUpperCase();
-    });
-    // keep one best by liquidity per dex
-    const byDex = new Map();
+    const q = "https://api.dexscreener.com/latest/dex/search?q="+encodeURIComponent(symbol);
+    const r = await fetch(q,{cache:"no-store"});
+    if(!r.ok) return null;
+    const pairs = (await r.json())?.pairs||[];
+    // choose most liquid Uniswap v3 pair on Arbitrum where base symbol matches exactly
+    let best=null; let addr=null;
     for(const p of pairs){
-      const k=(p?.dexId||"").toLowerCase();
-      const liq=Number(p?.liquidity?.usd||0);
-      const price=Number(p?.priceUsd||0);
-      if(!k||!(liq>0)||!(price>0)) continue;
-      const cur=byDex.get(k);
-      if(!cur || liq>cur.liq) byDex.set(k,{pair:p,liq});
+      if(p.chainId!=="arbitrum") continue;
+      const base = (p?.baseToken?.symbol||"").toUpperCase();
+      if(base !== symbol.toUpperCase()) continue;
+      if((p?.dexId||"").toLowerCase()!=="uniswap-v3") continue;
+      const liq = Number(p?.liquidity?.usd||0);
+      if(liq>0 && (!best || liq>best)){ best=liq; addr=p?.baseToken?.address; }
     }
-    return Array.from(byDex.values()).map(v=>v.pair);
-  }catch(_){ return []; }
-}
-async function getTokenAddressFromDexscreener(sym){
-  const pairs = await fetchPairsForSymbol(sym);
-  const p = pairs[0];
-  return p?.baseToken?.address || null;
+    return addr || null;
+  }catch(_){ return null; }
 }
 
-/* ======= Ethers provider + UniV3 quoter ======= */
-const provider = new ethers.providers.JsonRpcProvider(ALCHEMY_URL);
-const QUOTER_ABI = [
-  "function quoteExactInputSingle(tuple(address tokenIn,address tokenOut,uint256 amountIn,uint24 fee,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut,uint160,uint32,uint256)"
-];
-const quoter = new ethers.Contract(ADDR.UNI_V3_QUOTER_V2, QUOTER_ABI, provider);
-
-// Quote UniV3 best of common fee tiers; returns {amountOut, feeTier} or null
-async function uniV3BestOut(tokenIn, tokenOut, amountIn){
-  let best = null;
-  for(const ft of UNI_V3_FEE_TIERS){
+/* Uniswap v3 quotes (on-chain) */
+async function quoteV3_USDC_to_TOKEN(tokenAddr, amountInUSDC){
+  // amountIn is USDC decimals = 6
+  const results=[];
+  for(const fee of V3_FEES){
     try{
-      const params = [ [tokenIn, tokenOut, amountIn.toString(), ft, 0] ];
-      const res = await quoter.quoteExactInputSingle(params);
-      const out = ethers.BigNumber.isBigNumber(res?.[0]) ? res[0] : ethers.BigNumber.from(res?.amountOut||0);
-      if(out.gt(0)){
-        if(!best || out.gt(best.amountOut)) best = { amountOut: out, feeTier: ft };
-      }
-    }catch(_e){ /* ignore non-existent pool/fee */ }
+      const out = await quoter.callStatic.quoteExactInputSingle(
+        { tokenIn: USDC, tokenOut: tokenAddr, fee, amountIn: ethers.BigNumber.from(Math.floor(amountInUSDC*1e6).toString()), sqrtPriceLimitX96: 0 }
+      );
+      const amountOut = Number(ethers.BigNumber.from(out[0]).toString()); // token decimals unknown here
+      results.push({fee, amountOut});
+    }catch(_){/* no pool */}
   }
-  return best; // could be null
+  return results;
+}
+async function quoteV3_TOKEN_to_USDC(tokenAddr, amountInTokens, tokenDecimals){
+  const results=[];
+  const amt = ethers.BigNumber.from(
+    ethers.utils.parseUnits(String(amountInTokens), tokenDecimals).toString()
+  );
+  for(const fee of V3_FEES){
+    try{
+      const out = await quoter.callStatic.quoteExactInputSingle(
+        { tokenIn: tokenAddr, tokenOut: USDC, fee, amountIn: amt, sqrtPriceLimitX96: 0 }
+      );
+      const amountOut = Number(ethers.BigNumber.from(out[0]).toString()); // USDC (6)
+      results.push({fee, amountOut});
+    }catch(_){/* no pool */}
+  }
+  return results;
 }
 
-/* ======= Route computation ======= */
-function computeNetPL({ loanUSDC, buyPrice, sellPrice }){
-  const units = loanUSDC / buyPrice;
-  const gross = units * sellPrice;
-  const dexCost = loanUSDC*(DEX_FEE+SLIP_FEE) + gross*(DEX_FEE+SLIP_FEE);
-  const flash = loanUSDC*FLASH_FEE;
-  const gasEth = ((GAS_GWEI||0.05) * GAS_LIMIT) / 1e9;
-  const gasUsd = (ETH_USD? gasEth*ETH_USD : 0);
-  const netPL = gross - loanUSDC - dexCost - flash - gasUsd;
-  const spreadPct = (sellPrice/buyPrice - 1) * 100;
-  return { netPL, spreadPct, usdcBack: gross };
+/* ERC20 decimals (on-chain) */
+const ERC20_ABI = ["function decimals() view returns (uint8)"];
+async function fetchDecimals(addr){
+  try{
+    const c=new ethers.Contract(addr, ERC20_ABI, provider);
+    return await c.decimals();
+  }catch(_){ return 18; }
 }
 
-/* ======= Render ======= */
+/* Route computation (exec-only, both legs v3) */
+function computePL({buyPrice, sellPrice, loan}){
+  const spreadPct = (sellPrice - buyPrice) / buyPrice * 100;
+  if(!(spreadPct>0) || spreadPct>SPREAD_CAP) return null;
+
+  const units = loan / buyPrice;
+  const gross  = units * sellPrice;
+  const dexCost = loan*(DEX_FEE+SLIP_FEE) + gross*(DEX_FEE+SLIP_FEE);
+  const flash   = loan * FLASH_FEE;
+  const gasEth  = ((GAS_GWEI||0.05) * GAS_LIMIT) / 1e9;
+  const gasUsd  = (ETH_USD? gasEth*ETH_USD : 0);
+  const netPL   = gross - loan - dexCost - flash - gasUsd;
+
+  return {spreadPct, gross, netPL};
+}
+
+/* Rendering */
 function renderRows(rows){
   rows.sort((a,b)=>{
-    const pa=a.netPL||-1e99, pb=b.netPL||-1e99;
-    const ap=pa>0, bp=pb>0;
-    if(ap!==bp) return bp-ap; // profitable first
-    return pb-pa;
+    const ap=a.netPL>0, bp=b.netPL>0;
+    if(ap!==bp) return ap? -1: 1;
+    return (b.netPL||0) - (a.netPL||0);
   });
-
-  const tbody = document.getElementById("tbody");
   tbody.innerHTML="";
   for(const r of rows){
     const tr=document.createElement("tr");
@@ -295,12 +295,12 @@ function renderRows(rows){
     tr.dataset.netpl = r.netPL;
     tr.innerHTML = `
       <td class="sel"><input type="checkbox" class="pick" ${r.netPL>0?"checked":""}></td>
-      <td class="tok">${r.token}</td>
-      <td><div class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex} @ ${Number(r.buyPrice).toLocaleString(undefined,{maximumFractionDigits:6})}</span></div></td>
-      <td><div class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex} @ ${Number(r.sellPrice).toLocaleString(undefined,{maximumFractionDigits:6})}</span></div></td>
-      <td class="right mono spread">${r.spreadPct.toFixed(2)}%</td>
-      <td class="right mono usdc">${usd(r.usdcBack)}</td>
-      <td class="right mono ${r.netPL>0?'ok':'bad'} net">${(r.netPL>=0?'+':'-')+usd(Math.abs(r.netPL)).replace('$','')}</td>
+      <td class="tok">${r.symbol}</td>
+      <td><div class="cell"><span class="lbl">Buy</span><span class="val">UNISWAP V3 @ ${fmt(r.buyPrice,6)} (fee ${r.buyFee/10000}%)</span></div></td>
+      <td><div class="cell"><span class="lbl">Sell</span><span class="val">UNISWAP V3 @ ${fmt(r.sellPrice,6)} (fee ${r.sellFee/10000}%)</span></div></td>
+      <td class="right mono">${r.spreadPct.toFixed(2)}%</td>
+      <td class="right mono">${usd(r.gross)}</td>
+      <td class="right mono ${r.netPL>0?'ok':'bad'}">${(r.netPL>=0?'+':'-')+usd(Math.abs(r.netPL)).replace('$','')}</td>
     `;
     tbody.appendChild(tr);
   }
@@ -308,137 +308,84 @@ function renderRows(rows){
 }
 function updateSelectedTotal(){
   let sum=0;
-  document.querySelectorAll("#tbody .pick:checked").forEach(cb=>{
+  tbody.querySelectorAll(".pick:checked").forEach(cb=>{
     const tr=cb.closest("tr"); sum += Number(tr.dataset.netpl||0);
   });
-  document.getElementById("selTotal").textContent = (sum>=0?'++$':'−$') + Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
+  $("#selTotal").textContent = (sum>=0?'++$':'−$') + Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
 }
 
-/* ======= Scan flow ======= */
+/* Scan (sequential with small concurrency) */
 let stopFlag=false, scanning=false;
-
 async function runScan(){
   if(scanning) return;
   scanning = true; stopFlag=false;
-  document.getElementById("progPill").textContent="Preparing (gas, ETH)…";
-  document.getElementById("tbody").innerHTML=""; updateSelectedTotal(); logEl.textContent="Ready.\n";
+  tbody.innerHTML=""; updateSelectedTotal(); logEl.textContent="Ready.\n";
 
-  const loan = Number(document.getElementById("loan").value||10000);
+  const loan = Number($("#loan").value||10000);
+  $("#progPill").textContent="Preparing (gas, ETH)…";
   await Promise.all([fetchEthUsd(), fetchGasGwei()]);
-  document.getElementById("progPill").textContent="Scanning live pools…";
+  $("#progPill").textContent="Scanning (Uni v3 exec-only)…";
   log(`[${new Date().toLocaleTimeString()}] CLICK Scan; tokens=${TOKENS.length}; loan=${loan.toLocaleString()}`);
 
-  const found = [];
-
+  const results=[];
   for(let i=0;i<TOKENS.length;i++){
     if(stopFlag) break;
-    const sym = TOKENS[i].toUpperCase();
-    document.getElementById("progPill").textContent = `Scanning ${i+1}/${TOKENS.length} — ${sym}`;
-    log(`${sym}: resolving address…`);
+    const sym = TOKENS[i];
+    $("#progPill").textContent = `Resolving ${i+1}/${TOKENS.length}: ${sym}`;
+    try{
+      const addr = await resolveTokenAddress(sym);
+      if(!addr){ log(`${sym}: no Uniswap v3 Arbitrum pools`); continue; }
+      const decimals = await fetchDecimals(addr);
 
-    const tokenAddr = await getTokenAddressFromDexscreener(sym);
-    if(!tokenAddr){ log(`${sym}: no Arbitrum address found`); continue; }
+      // leg 1: USDC -> Token for USDC loan
+      const buyQuotes = await quoteV3_USDC_to_TOKEN(addr, loan);
+      if(!buyQuotes.length){ log(`${sym}: no BUY leg on v3`); continue; }
+      // choose best price (max tokens out)
+      buyQuotes.sort((a,b)=>b.amountOut-a.amountOut);
+      const bestBuy = buyQuotes[0];
+      const tokenOut = bestBuy.amountOut / (10**decimals);
+      const buyPrice = loan / tokenOut; // USDC per token
 
-    // 1) On-chain UniV3 BUY: USDC -> TOKEN for loan size (with fee tier search)
-    const amountInUSDC = ethers.utils.parseUnits(String(loan), 6); // USDC 6dp
-    const buyOutBest = await uniV3BestOut(ADDR.USDC, tokenAddr, amountInUSDC);
-    let buyFrom = null, buyPrice = null, tokenAmount = null;
-    if(buyOutBest){
-      tokenAmount = buyOutBest.amountOut; // decimals unknown; we’ll estimate price via reverse quote too
-      // Derive buy price as (loan USDC)/(tokens out) using a second quote TOKEN->USDC for a small probe to infer decimals.
-      // Better: build price directly from amountIn/amountOut with assumed decimals; but address decimals require an ERC20 call (extra RPC).
-      // Use reciprocal sell quote with tiny amount to approximate price scale:
-      buyFrom = `UniV3(${(buyOutBest.feeTier/10000).toFixed(2)}%)`;
-      // compute buyPrice more exactly using amountInUSDC / tokenOut (requires token decimals).
-      // We’ll fetch token decimals just once:
-      const erc20 = new ethers.Contract(tokenAddr, ["function decimals() view returns (uint8)"], provider);
-      let dec=18;
-      try{ dec = await erc20.decimals(); }catch(_){}
-      buyPrice = (loan) / Number(ethers.utils.formatUnits(tokenAmount, dec));
+      // leg 2: Token -> USDC (sell back all tokens)
+      const sellQuotes = await quoteV3_TOKEN_to_USDC(addr, tokenOut, decimals);
+      if(!sellQuotes.length){ log(`${sym}: no SELL leg on v3`); continue; }
+      sellQuotes.sort((a,b)=>b.amountOut-a.amountOut);
+      const bestSell = sellQuotes[0];
+      const usdcBack = bestSell.amountOut / 1e6; // USDC decimals 6
+      const sellPrice = usdcBack / tokenOut;     // USDC per token
+
+      // compute P/L & filters
+      const pl = computePL({buyPrice, sellPrice, loan});
+      if(!pl){ log(`${sym}: spread too small or > cap`); continue; }
+
+      results.push({
+        symbol: sym,
+        buyFee: bestBuy.fee, sellFee: bestSell.fee,
+        buyPrice, sellPrice,
+        spreadPct: pl.spreadPct, gross: pl.gross, netPL: pl.netPL
+      });
+      log(`${sym}: ✅ v3 ${bestBuy.fee/10000}%→${bestSell.fee/10000}% | spread ${pl.spreadPct.toFixed(2)}% | net ${usd(pl.netPL)}`);
+    }catch(e){
+      log(`${sym}: error ${e.message||e}`);
     }
-
-    // 2) Candidate SELL quotes: other DEXes via Dexscreener mid-price + UniV3 on-chain sell
-    const pairs = await fetchPairsForSymbol(sym);
-    if(!pairs.length && !buyOutBest){ log(`${sym}: no pools`); continue; }
-
-    // Always include a UniV3 on-chain SELL for realism (TOKEN -> USDC) using the tokenAmount we got
-    let sellChoices = [];
-    if(buyOutBest && tokenAmount){
-      try{
-        const erc20 = new ethers.Contract(tokenAddr, ["function decimals() view returns (uint8)"], provider);
-        let dec=18; try{ dec = await erc20.decimals(); }catch(_){}
-        const sellIn = tokenAmount; // same tokens from buy
-        const sellOutBest = await uniV3BestOut(tokenAddr, ADDR.USDC, sellIn);
-        if(sellOutBest && sellOutBest.amountOut.gt(0)){
-          const usdcBack = Number(ethers.utils.formatUnits(sellOutBest.amountOut, 6));
-          const units = Number(ethers.utils.formatUnits(tokenAmount, dec));
-          const sellPx = usdcBack / units;
-          sellChoices.push({ dex:`UniV3(${(sellOutBest.feeTier/10000).toFixed(2)}%)`, price: sellPx });
-        }
-      }catch(_){}
-    }
-
-    // Add best per-DEX from Dexscreener (mid) for comparison
-    for(const p of pairs){
-      const dex = (p?.dexId||"").toUpperCase();
-      const pr  = Number(p?.priceUsd||0);
-      if(pr>0) sellChoices.push({ dex, price: pr });
-    }
-
-    // Require we have at least buy and one sell
-    if(!(buyPrice>0) || sellChoices.length<1){ log(`${sym}: no executable buy or sell choices`); continue; }
-
-    // Pick best sell (highest price)
-    sellChoices.sort((a,b)=> b.price - a.price);
-    const sellBest = sellChoices[0];
-
-    // Cap spreads to avoid absurd dexscreener outliers
-    const rawSpread = (sellBest.price/buyPrice - 1) * 100;
-    if(rawSpread <= 0 || rawSpread > SPREAD_CAP){
-      log(`${sym}: spread ${rawSpread.toFixed(2)}% out of bounds`);
-      continue;
-    }
-
-    // Net P/L calc (loan-sized, depth-aware on UniV3 legs)
-    const { netPL, spreadPct, usdcBack } = computeNetPL({
-      loanUSDC: loan, buyPrice, sellPrice: sellBest.price
-    });
-
-    found.push({
-      token: sym,
-      buyDex: buyFrom || "UniV3",
-      sellDex: sellBest.dex,
-      buyPrice, sellPrice: sellBest.price,
-      spreadPct, usdcBack, netPL
-    });
-
-    log(`${sym}: ✅ ${buyFrom} → ${sellBest.dex} spread ${spreadPct.toFixed(2)}% net ${usd(netPL)}`);
   }
 
-  renderRows(found);
-  document.getElementById("progPill").textContent =
-    `Done. Found ${found.filter(r=>r.netPL>0).length} profitable route(s), ${found.length} total rows.`;
+  renderRows(results);
+  const wins = results.filter(r=>r.netPL>0).length;
+  $("#progPill").textContent = `Done. Found ${wins} profitable route(s), ${results.length} total rows.`;
   scanning=false;
 }
 
-/* ======= Wire UI ======= */
-document.getElementById("scanBtn").addEventListener("click", runScan);
-document.getElementById("stopBtn").addEventListener("click", ()=>{ stopFlag=true; document.getElementById("progPill").textContent="Stopped."; });
-document.getElementById("results").addEventListener("change", e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
-document.getElementById("selectProfitable").addEventListener("click", ()=>{
-  document.querySelectorAll("#tbody tr").forEach(tr=>{
-    const cb=tr.querySelector(".pick"); if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0);
-  });
-  updateSelectedTotal();
-});
-document.getElementById("clearSel").addEventListener("click", ()=>{
-  document.querySelectorAll("#tbody .pick").forEach(cb=>cb.checked=false);
-  updateSelectedTotal();
-});
-document.getElementById("execPreview").addEventListener("click", ()=>{
-  const rows = Array.from(document.querySelectorAll("#tbody tr")).filter(tr=>tr.querySelector(".pick")?.checked);
+/* UI wiring */
+$("#scanBtn").addEventListener("click", runScan);
+$("#stopBtn").addEventListener("click", ()=>{ stopFlag=true; $("#progPill").textContent="Stopped."; });
+tbody.addEventListener("change", e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
+$("#selectProfitable").addEventListener("click", ()=>{ tbody.querySelectorAll("tr").forEach(tr=>{ const cb=tr.querySelector(".pick"); if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0); }); updateSelectedTotal(); });
+$("#clearSel").addEventListener("click", ()=>{ tbody.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
+$("#execPreview").addEventListener("click", ()=>{
+  const rows = Array.from(tbody.querySelectorAll("tr")).filter(tr=>tr.querySelector(".pick")?.checked);
   if(!rows.length){ alert("Select at least one profitable route first."); return; }
-  let msg="Preview — routes to execute:\n\n";
+  let msg="Preview — executable Uni v3 routes:\n\n";
   rows.forEach((tr,i)=>{
     const tds = tr.querySelectorAll("td");
     msg += `${i+1}. ${tds[1].textContent.trim()}: ${tds[2].innerText.replace(/\n/g,' ')} → ${tds[3].innerText.replace(/\n/g,' ')} | ${tds[5].textContent.trim()} | ${tds[6].textContent.trim()}\n`;
@@ -446,9 +393,8 @@ document.getElementById("execPreview").addEventListener("click", ()=>{
   alert(msg);
 });
 
-/* Init badges + live chips */
+/* Init badges */
 document.getElementById("rpcPill").textContent = "RPC: Alchemy";
-(async ()=>{ await Promise.all([fetchEthUsd(), fetchGasGwei()]); })();
 </script>
 </body>
 </html>

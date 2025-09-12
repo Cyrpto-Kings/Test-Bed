@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.31</title>
+<title>Crypto Kings • TestBed v9.9.32</title>
 <style>
   :root{
     --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -12,23 +12,20 @@
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-  /* Header (hamburger, no action buttons) */
   header{background:#111;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
   .brand{display:flex;gap:10px;align-items:center}
   .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#4f46e5,#22c55e);display:grid;place-items:center;font-weight:800}
   .burger{font-size:22px;cursor:pointer;user-select:none}
-  /* Container + panels */
   .container{max-width:1100px;margin:0 auto;padding:16px}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .hint{color:var(--muted);font-size:12px}
-  input[type=number]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:160px}
+  input[type=text],input[type=number]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:160px}
   button{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
   .btn-primary{color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 8px 24px rgba(37,99,235,.2)}
   .btn-ghost{background:#eef2f7;color:#111}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   .pill{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;color:#111}
-  /* Results table */
   .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:10px}
   table{width:100%;border-collapse:collapse;table-layout:fixed}
   thead th{background:#f3f4f6;border-bottom:1px solid var(--line);padding:10px 12px;color:#374151;font-weight:700}
@@ -39,9 +36,7 @@
   tr.loss{background:#fff1f2}
   .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
   .tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:12px;background:#fff}
-  /* Logs */
   .logs{background:#0b1220;color:#a7f3d0;border:1px solid #0f1b34;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:220px;overflow:auto}
-  /* Footer (4 columns) */
   footer{background:#111;color:#ddd;padding:24px}
   .foot{max-width:1100px;margin:0 auto;display:grid;gap:18px;grid-template-columns:repeat(4,1fr)}
   footer h4{color:#fff;margin:0 0 10px;font-size:16px}
@@ -49,7 +44,6 @@
   footer li{margin:6px 0}
   @media(max-width:800px){ .foot{grid-template-columns:1fr 1fr} }
   @media(max-width:560px){ .foot{grid-template-columns:1fr} }
-  /* Mobile table */
   @media(max-width:720px){
     thead{display:none}
     tbody tr{display:grid;grid-template-columns:1fr 1fr;grid-row-gap:6px;padding:10px 12px}
@@ -70,13 +64,25 @@
       <div class="logo">CK</div>
       <div>
         <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div class="hint">TestBed v9.9.31 • Arbitrum</div>
+        <div class="hint">TestBed v9.9.32 • Arbitrum (manual execute)</div>
       </div>
     </div>
     <div class="burger" title="Menu">&#9776;</div>
   </header>
 
   <div class="container">
+    <!-- Contract Settings -->
+    <div class="panel">
+      <div style="font-weight:700;margin-bottom:8px">Contract Settings (required for on-chain execute)</div>
+      <div class="row">
+        <input id="execContract" type="text" placeholder="Executor contract address (0x…)" style="min-width:340px"/>
+        <input id="feeWallet" type="text" placeholder="Your fee wallet (0x…)" style="min-width:300px"/>
+        <input id="payoutWalletB" type="text" placeholder="2nd profit wallet (optional)" style="min-width:300px"/>
+        <input id="splitPctB" type="number" min="0" max="100" step="1" value="0" title="% of profit to wallet B"/>
+      </div>
+      <div class="hint" id="execHint">Paste your deployed Executor contract. Execution will use MetaMask on Arbitrum (42161).</div>
+    </div>
+
     <!-- Scan Panel -->
     <div class="panel">
       <div class="row">
@@ -100,7 +106,7 @@
         <button id="selectProfitable" class="btn-ghost">Select all profitable</button>
         <button id="clearSel" class="btn-ghost">Clear</button>
         <span id="selTotal" class="pill">++$0</span>
-        <button id="execPreview" class="btn-primary" style="margin-left:auto">Execute Selected (Preview)</button>
+        <button id="execSelected" class="btn-primary" style="margin-left:auto">Execute Selected (MetaMask)</button>
       </div>
       <table id="results">
         <thead>
@@ -123,7 +129,7 @@
     <div class="panel">
       <div class="row" style="justify-content:space-between">
         <div style="font-weight:700">Details / Logs</div>
-        <span class="hint">Live only — Uni v3 on-chain gas; prices via Dexscreener.</span>
+        <span class="hint">Live gas (Alchemy) • ETH/USD (CoinGecko) • Multi-DEX prices (Dexscreener)</span>
       </div>
       <div id="log" class="logs">Ready.</div>
     </div>
@@ -150,28 +156,49 @@
     </div>
   </footer>
 
+<!-- Ethers (for MetaMask + ABI encoding) -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
 <script>
-/* ========= CONFIG (live) ========= */
-const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
+/* ========= CONFIG ========= */
+const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; // live RPC
 const FLASH_FEE = 0.0009;   // 0.09%
 const DEX_FEE   = 0.003;    // per leg
 const SLIP_FEE  = 0.002;    // per leg
 const SPREAD_CAP = 50;      // %
 const GAS_LIMIT = 380000;   // ~2 swaps + callback on L2
+const MIN_LIQ_USD = 50000;  // pool liquidity floor
+const EXEC_LIQ_MULT = 4;    // liquidity >= 4x loan for ✅
+const EXEC_MIN_TX_M5 = 5;   // combined tx in last 5m
+const KNOWN_EXEC_DEX = new Set(["UNISWAP-V3","SUSHISWAP","CAMELOT","TRADERJOE","RAMSES","KYBERSWAP"]);
+
+// Token list (50)
 const TOKENS = [
   "WETH","WBTC","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","RDNT",
   "PENDLE","FRAX","CRV","BAL","UNI","wstETH","SNX","COMP","YFI","GRT",
   "STG","LQTY","RPL","MKR","ENS","CVX","FXS","SUSHI","LUSD","MAGIC",
   "BADGER","DODO","BNT","OP","GNS","DPX","RDPX","GRAIL","HOP","ALCX",
   "ANGLE","PERP","1INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","JOE"
-]; // 50
+];
 document.getElementById("tokensPill").textContent = "Tokens: "+TOKENS.length;
+
+/* ========= Minimal router address map (fill if you want stricter execution) ========= */
+const ROUTERS = {
+  "UNISWAP-V3": "",   // e.g. 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45
+  "SUSHISWAP":  "",   // e.g. 0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506
+  "CAMELOT":    "",   // e.g. 0x6EcCab422D763aC031210895C81787E87B43A652
+  "TRADERJOE":  "",   // e.g. 0x... (Arbitrum deployment)
+  "RAMSES":     "",   // e.g. 0x...
+  "KYBERSWAP":  ""    // e.g. 0x...
+};
 
 /* ========= Helpers ========= */
 const $ = s=>document.querySelector(s);
 const tbody = $("#tbody"), logEl = $("#log");
 function log(m){ logEl.textContent += (m.endsWith("\n")?m:m+"\n"); logEl.scrollTop=logEl.scrollHeight; }
 function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
+function sumM5(p){ const t=p?.txns?.m5||{}; return Number(t?.buys||0)+Number(t?.sells||0); }
+function liqUsd(p){ return Number(p?.liquidity?.usd||0); }
 
 /* ========= Live ETH & Gas ========= */
 let ETH_USD = null, GAS_GWEI = null;
@@ -192,9 +219,7 @@ async function fetchGasGwei(){
   }catch(_){ $("#gasPill").textContent="Gas: (fail)"; GAS_GWEI = 0.05; }
 }
 
-/* ========= Dexscreener pulls (Arbitrum only) ========= */
-function sumM5(p){ const t=p?.txns?.m5||{}; return Number(t?.buys||0)+Number(t?.sells||0); }
-function liqUsd(p){ return Number(p?.liquidity?.usd||0); }
+/* ========= Dexscreener (Arbitrum multi-DEX) ========= */
 async function fetchPairsForSymbol(sym){
   try{
     const url = "https://api.dexscreener.com/latest/dex/search?q="+encodeURIComponent(sym);
@@ -205,10 +230,10 @@ async function fetchPairsForSymbol(sym){
       const base = (p?.baseToken?.symbol||"").toUpperCase();
       return p?.chainId==="arbitrum" && base===sym.toUpperCase();
     });
-    // best pool per DEX by liquidity
+    // one best pool per DEX by liquidity
     const byDex = new Map();
     for(const p of pairs){
-      const k=(p?.dexId||"").toLowerCase();
+      const k=(p?.dexId||"").toUpperCase();
       const liq=liqUsd(p), price=Number(p?.priceUsd||0);
       if(!k||!(liq>0)||!(price>0)) continue;
       const cur=byDex.get(k);
@@ -218,44 +243,39 @@ async function fetchPairsForSymbol(sym){
   }catch(_){ return []; }
 }
 
-/* ========= Route + executability heuristic ========= */
-function computeBestRoute(pairs, loan){
+/* ========= Profit & executability ========= */
+const SPREAD_CAP = 50;
+function routeForPairs(pairs, loan){
   if(!pairs.length) return null;
-  let best = null;
+  let best=null;
   for(const buy of pairs){
     for(const sell of pairs){
       if(buy===sell) continue;
       const pa=Number(buy.priceUsd), pb=Number(sell.priceUsd);
       if(!(pa>0&&pb>0)) continue;
-      const spread = (pb-pa)/pa*100;
+      const spread=(pb-pa)/pa*100;
       if(spread<=0 || spread>SPREAD_CAP) continue;
 
       const units = loan/pa;
       const gross = units*pb;
       const dexCost = loan*(DEX_FEE+SLIP_FEE) + gross*(DEX_FEE+SLIP_FEE);
       const flash = loan*FLASH_FEE;
-      const gasEth = ( (GAS_GWEI||0.05) * GAS_LIMIT ) / 1e9;
+      const gasEth = ((GAS_GWEI||0.05)*380000)/1e9;
       const gasUsd = (ETH_USD? gasEth*ETH_USD : 0);
       const netPL = gross - loan - dexCost - flash - gasUsd;
 
-      // executability tag
-      const buyDex=(buy?.dexId||"").toLowerCase(), sellDex=(sell?.dexId||"").toLowerCase();
-      const liqOK = Math.min(liqUsd(buy), liqUsd(sell)) >= loan*4;
-      const freshOK = sumM5(buy)+sumM5(sell) >= 5;
-      const uniV3Both = (buyDex==="uniswap-v3" && sellDex==="uniswap-v3");
-      const execFlag = uniV3Both ? "✅ Likely executable"
-                       : (liqOK && freshOK ? "✅ Likely executable" : "⚠️ Needs contract check");
+      const buyDex=(buy?.dexId||"").toUpperCase(), sellDex=(sell?.dexId||"").toUpperCase();
+      const liqOK = Math.min(liqUsd(buy), liqUsd(sell)) >= loan*EXEC_LIQ_MULT;
+      const freshOK = (sumM5(buy)+sumM5(sell)) >= EXEC_MIN_TX_M5;
+      const bothKnown = KNOWN_EXEC_DEX.has(buyDex) && KNOWN_EXEC_DEX.has(sellDex);
+      const execFlag = (bothKnown && liqOK && freshOK) ? "✅ Likely executable" : "⚠️ Needs contract check";
 
       if(!best || netPL>best.netPL){
         best = {
-          token: (buy?.baseToken?.symbol||""),
-          buyDex: (buy?.dexId||"").toUpperCase(),
-          sellDex: (sell?.dexId||"").toUpperCase(),
-          buyPrice: pa, sellPrice: pb,
-          spreadPct: spread,
-          usdcBack: gross,
-          netPL,
-          execFlag
+          token:(buy?.baseToken?.symbol||""),
+          buyDex, sellDex,
+          buyPrice:pa, sellPrice:pb,
+          spreadPct:spread, usdcBack:gross, netPL, execFlag
         };
       }
     }
@@ -265,19 +285,23 @@ function computeBestRoute(pairs, loan){
 
 /* ========= Rendering ========= */
 function renderRows(rows){
-  // Profit-first sort
   rows.sort((a,b)=>{
-    const pa=a.netPL||-1e99, pb=b.netPL||-1e99;
-    const ap=pa>0, bp=pb>0;
+    const ap=a.netPL>0, bp=b.netPL>0;
     if(ap!==bp) return bp-ap;
-    return pb-pa;
+    return (b.netPL||-1e99)-(a.netPL||-1e99);
   });
-
   tbody.innerHTML="";
   for(const r of rows){
     const tr=document.createElement("tr");
     tr.className = r.netPL>0 ? "profit" : "loss";
     tr.dataset.netpl = r.netPL;
+    tr.dataset.token = r.token;
+    tr.dataset.buyDex = r.buyDex;
+    tr.dataset.sellDex = r.sellDex;
+    tr.dataset.buyPrice = r.buyPrice;
+    tr.dataset.sellPrice = r.sellPrice;
+    tr.dataset.loan = $("#loan").value;
+
     tr.innerHTML = `
       <td class="sel"><input type="checkbox" class="pick" ${r.netPL>0?"checked":""}></td>
       <td class="tok">${r.token}</td>
@@ -321,7 +345,7 @@ async function runScan(){
     log(`${sym}: fetching pools…`);
     const pairs = await fetchPairsForSymbol(sym);
     if(!pairs.length){ log(`${sym}: no Arbitrum pools`); continue; }
-    const route = computeBestRoute(pairs, loan);
+    const route = routeForPairs(pairs, loan);
     if(route && isFinite(route.netPL)){
       const tag = route.execFlag.includes("Likely") ? "EXEC" : "CHECK";
       log(`${sym}: ${tag} • ${route.buyDex}→${route.sellDex} spread ${route.spreadPct.toFixed(2)}% net ${usd(route.netPL)}`);
@@ -335,22 +359,93 @@ async function runScan(){
   scanning=false;
 }
 
+/* ========= MetaMask Execute (manual) ========= */
+// Minimal ABI for an example executor.
+// Feel free to change to your actual deployed contract ABI+method.
+const EXECUTOR_ABI = [
+  // function executeRoutes((string token,string buyDex,string sellDex,uint256 loanUsd,uint256 buyPriceUsd,uint256 sellPriceUsd)[] routes, address feeWallet, address payoutB, uint256 pctB) external;
+  {
+    "inputs":[
+      {"components":[
+        {"internalType":"string","name":"token","type":"string"},
+        {"internalType":"string","name":"buyDex","type":"string"},
+        {"internalType":"string","name":"sellDex","type":"string"},
+        {"internalType":"uint256","name":"loanUsd","type":"uint256"},
+        {"internalType":"uint256","name":"buyPriceUsd","type":"uint256"},
+        {"internalType":"uint256","name":"sellPriceUsd","type":"uint256"}
+      ],"internalType":"struct Route[]","name":"routes","type":"tuple[]"},
+      {"internalType":"address","name":"feeWallet","type":"address"},
+      {"internalType":"address","name":"payoutB","type":"address"},
+      {"internalType":"uint256","name":"pctB","type":"uint256"}
+    ],
+    "name":"executeRoutes","outputs":[],"stateMutability":"nonpayable","type":"function"
+  }
+];
+
+// NOTE: The above ABI is a placeholder so you can prove end-to-end wallet flow.
+// Replace with your real executor ABI once deployed.
+
+async function executeSelected() {
+  const execAddr = $("#execContract").value.trim();
+  const feeWallet = $("#feeWallet").value.trim();
+  const payoutB = $("#payoutWalletB").value.trim() || "0x0000000000000000000000000000000000000000";
+  const pctB = Number($("#splitPctB").value||0);
+
+  if(!execAddr || !/^0x[a-fA-F0-9]{40}$/.test(execAddr)) {
+    alert("Paste your Executor contract address in Contract Settings first.");
+    return;
+  }
+  if(!feeWallet || !/^0x[a-fA-F0-9]{40}$/.test(feeWallet)) {
+    alert("Enter a valid fee wallet address (0x…).");
+    return;
+  }
+  const rows = Array.from(tbody.querySelectorAll("tr")).filter(tr=>tr.querySelector(".pick")?.checked);
+  if(!rows.length){ alert("Select at least one profitable route first."); return; }
+
+  // Collect payload (for your contract)
+  const routes = rows.map(tr=>({
+    token: tr.dataset.token,
+    buyDex: tr.dataset.buyDex,
+    sellDex: tr.dataset.sellDex,
+    loanUsd: ethers.utils.parseUnits(String(tr.dataset.loan||"0"), 6), // USDC-style 6dp
+    buyPriceUsd: ethers.utils.parseUnits(String(tr.dataset.buyPrice||"0"), 6),
+    sellPriceUsd: ethers.utils.parseUnits(String(tr.dataset.sellPrice||"0"), 6)
+  }));
+
+  try{
+    if(!window.ethereum){ alert("MetaMask (or compatible) not found."); return; }
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    await provider.send("eth_requestAccounts", []);
+    const net = await provider.getNetwork();
+    if (net.chainId !== 42161) {
+      await provider.send("wallet_switchEthereumChain", [{ chainId: "0xa4b1" }]);
+    }
+    const signer = provider.getSigner();
+    const exec = new ethers.Contract(execAddr, EXECUTOR_ABI, signer);
+
+    // Call contract
+    $("#progPill").textContent = "Sending transaction…";
+    const tx = await exec.executeRoutes(routes, feeWallet, payoutB, pctB);
+    log(`TX sent: ${tx.hash}`);
+    $("#progPill").textContent = "Waiting for confirmation…";
+    const rcpt = await tx.wait();
+    $("#progPill").textContent = "Confirmed.";
+    log(`✅ Executed. Block ${rcpt.blockNumber} | ${tx.hash}`);
+    alert("Execution confirmed:\n" + tx.hash);
+  } catch(err){
+    console.error(err);
+    log("❌ Execute failed: " + (err?.message || err));
+    alert("Execute failed:\n" + (err?.message || err));
+  }
+}
+
 /* ========= Wire UI ========= */
 $("#scanBtn").addEventListener("click", runScan);
 $("#stopBtn").addEventListener("click", ()=>{ stopFlag=true; $("#progPill").textContent="Stopped."; });
 tbody.addEventListener("change", e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
 $("#selectProfitable").addEventListener("click", ()=>{ tbody.querySelectorAll("tr").forEach(tr=>{ const cb=tr.querySelector(".pick"); if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0); }); updateSelectedTotal(); });
 $("#clearSel").addEventListener("click", ()=>{ tbody.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
-$("#execPreview").addEventListener("click", ()=>{
-  const rows = Array.from(tbody.querySelectorAll("tr")).filter(tr=>tr.querySelector(".pick")?.checked);
-  if(!rows.length){ alert("Select at least one profitable route first."); return; }
-  let msg="Preview — routes to execute:\n\n";
-  rows.forEach((tr,i)=>{
-    const tds = tr.querySelectorAll("td");
-    msg += `${i+1}. ${tds[1].textContent.trim()}: ${tds[2].innerText.replace(/\n/g,' ')} → ${tds[3].innerText.replace(/\n/g,' ')} | ${tds[5].textContent.trim()} | ${tds[6].textContent.trim()} | ${tds[7].innerText.trim()}\n`;
-  });
-  alert(msg);
-});
+$("#execSelected").addEventListener("click", executeSelected);
 
 /* Init badges */
 document.getElementById("rpcPill").textContent = "RPC: Alchemy";

@@ -1,347 +1,368 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.30R2 (Arbitrum • permissive scan)</title>
-<link rel="preconnect" href="https://api.dexscreener.com">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crypto Kings — TestBed v9.9.30R2+</title>
 <style>
   :root{
-    --bg:#f6f7fb; --ink:#111827; --muted:#6b7280; --ring:#e5e7eb;
-    --card:#ffffff; --chip:#f1f5f9; --chipb:#e2e8f0;
-    --grad1:#6ea8ff; --grad2:#7c3aed; --good:#10b981; --bad:#ef4444;
+    --bg:#0b0f14; --card:#10161d; --muted:#9fb0c3; --text:#eaf2fb; --ok:#19c37d; --bad:#ff6363;
+    --chip:#151d26; --chip-b:#2a3848; --brand1:#7c4dff; --brand2:#2396ff;
+    --ring: rgba(124,77,255,.35);
   }
   *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial}
-  a{color:inherit;text-decoration:none}
-  .container{max-width:1100px;margin:0 auto;padding:16px}
-
-  /* Header (hamburger) */
-  .header{background:#0b0c10;color:#fff;position:sticky;top:0;z-index:40}
-  .row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0}
-  .brand{display:flex;align-items:center;gap:12px}
-  .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--grad1),var(--grad2));
-    display:grid;place-items:center;font-weight:800;color:#fff}
-  .burger{width:40px;height:40px;border-radius:10px;background:#151823;display:grid;place-items:center;cursor:pointer}
-  .burger span{width:18px;height:2px;background:#fff;display:block;box-shadow:0 6px 0 #fff,0 -6px 0 #fff;border-radius:2px}
-
-  /* Drawer */
-  .drawer{position:fixed;inset:0 0 0 auto;width:280px;background:#0f1116;color:#fff;
-    transform:translateX(100%);transition:.25s;z-index:50;box-shadow:-12px 0 30px rgba(0,0,0,.35)}
-  .drawer.open{transform:none}
-  .drawer h3{margin:20px 20px 8px;font-size:14px;color:#cbd5e1;font-weight:700}
-  .nav a{display:block;padding:12px 20px;margin:6px 10px;border-radius:8px;background:#151a24;color:#e5e7eb}
-  .nav a:hover{background:#1b2230}
-
-  /* Cards & controls */
-  .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:16px;margin:16px 0}
-  .muted{color:var(--muted)}
-  .chip{display:inline-flex;align-items:center;gap:8px;background:var(--chip);border:1px solid var(--chipb);padding:8px 12px;border-radius:12px;font-size:13px}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:14px;padding:12px 18px;font-weight:700;cursor:pointer}
-  .btn.primary{background:linear-gradient(135deg,var(--grad1),var(--grad2));color:#fff}
-  .btn.ghost{background:#e5e7eb}
-  .btn.full{width:100%}
-  input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--ring);background:#fff}
-
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media (max-width:740px){.grid{grid-template-columns:1fr}}
-
-  /* Results */
-  .routes{display:grid;gap:12px}
-  .route{border:1px solid var(--ring);border-radius:14px;padding:14px;display:grid;
-    grid-template-columns:28px 1.2fr .7fr .7fr .7fr;gap:12px;align-items:center}
-  @media (max-width:740px){.route{grid-template-columns:28px 1fr;grid-template-rows:auto auto auto}}
-  .route.good{background:rgba(16,185,129,.08)}
-  .route.bad{background:rgba(239,68,68,.06)}
-  .dex{font-weight:700}
-  .pnl.good{color:var(--good);font-weight:800}
-  .pnl.bad{color:var(--bad);font-weight:800}
-
-  /* Logs */
-  pre{background:#0b0c10;color:#6ff78f;padding:14px;border-radius:12px;overflow:auto;border:1px solid #1e2633;max-height:260px}
-
-  /* Footer */
-  .footer{margin-top:24px;padding:32px 0;border-top:1px solid var(--ring)}
-  .fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-  @media (max-width:800px){.fgrid{grid-template-columns:repeat(2,1fr)}}
-  @media (max-width:520px){.fgrid{grid-template-columns:1fr}}
-  .footer h4{margin:0 0 10px;font-size:14px;color:#64748b}
-  .footer a{display:block;padding:6px 0;color:#111827}
-  .copyright{margin-top:12px;color:#6b7280;font-size:13px}
+  body{margin:0;background:#0d1218;color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:1040px;margin:0 auto;padding:16px}
+  header{background:#0a0f15;border-bottom:1px solid #16202b;position:sticky;top:0;z-index:5}
+  .hrow{display:flex;align-items:center;gap:12px;padding:12px 16px}
+  .logo{display:flex;align-items:center;gap:12px}
+  .badge{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#4f7cff,#6bffe8);display:grid;place-items:center;color:#001422;font-weight:800}
+  .title{font-size:20px;font-weight:700}
+  .fx1{flex:1}
+  .hamb{width:40px;height:40px;border-radius:10px;background:#121922;display:grid;place-items:center;cursor:pointer}
+  .hamb span{display:block;width:18px;height:2px;background:#cfe0f2;box-shadow:0 6px 0 #cfe0f2,0 -6px 0 #cfe0f2;border-radius:2px}
+  .card{background:var(--card);border:1px solid #15202b;border-radius:14px;box-shadow:0 2px 0 #0a0f15 inset;padding:16px;margin:16px 0}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .chip{background:var(--chip);border:1px solid var(--chip-b);color:#cfe0f2;padding:8px 10px;border-radius:10px;font-size:14px}
+  .btn{border:0;border-radius:12px;padding:14px 18px;font-weight:700;color:white;cursor:pointer;
+       background:linear-gradient(135deg,var(--brand1),var(--brand2));box-shadow:0 0 0 0 var(--ring)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.soft{background:#17202a;color:#cfe0f2}
+  .note{color:var(--muted);font-size:14px}
+  .stat{background:#0f1620;border:1px dashed #203042;border-radius:12px;padding:8px 12px;color:#cfe0f2}
+  .results .item{border:1px solid #17222f;background:#0f1620;border-radius:14px;padding:14px;margin:12px 0}
+  .results .item.profit{background:rgba(25,195,125,.08);border-color:#1d6c4f}
+  .results .item.loss{background:rgba(255,99,99,.06);border-color:#5a3030}
+  .tok{font-weight:800;font-size:18px;margin-bottom:4px}
+  .pair{color:#b9c7d6;font-size:14px;margin-bottom:8px}
+  .pl{font-weight:800}
+  .pl.ok{color:var(--ok)} .pl.bad{color:var(--bad)}
+  .grid{display:grid;grid-template-columns:1.2fr .9fr .8fr .9fr;gap:8px}
+  .ctrls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .pill{min-width:110px;text-align:center}
+  .footer{margin:40px 0 20px}
+  .grid4{display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .grid4 h4{margin:.2rem 0 .5rem;font-size:14px;color:#b9c7d6}
+  .grid4 a{display:block;color:#cfe0f2;text-decoration:none;opacity:.85;margin:.15rem 0}
+  .grid4 a:hover{opacity:1;text-decoration:underline}
+  pre{background:#071018;border:1px solid #132131;border-radius:12px;padding:12px;overflow:auto}
+  input[type="number"]{background:#0f1620;border:1px solid #1b2836;color:#eaf2fb;border-radius:10px;padding:10px 12px;width:180px}
+  .money{font-variant-numeric:tabular-nums}
+  @media (max-width:720px){
+    .grid{grid-template-columns:1fr 1fr}
+    .grid4{grid-template-columns:1fr 1fr}
+    input[type="number"]{width:100%}
+  }
 </style>
 </head>
 <body>
-  <!-- HEADER -->
-  <div class="header">
-    <div class="container row">
-      <div class="brand">
-        <div class="logo">CK</div>
-        <div>
-          <div style="font-weight:900;letter-spacing:.2px">Crypto Kings</div>
-          <div style="font-size:12px;color:#cbd5e1">TestBed • Arbitrum • v9.9.30R2</div>
-        </div>
+<header>
+  <div class="hrow wrap">
+    <div class="logo">
+      <div class="badge">CK</div>
+      <div>
+        <div class="title">Crypto Kings</div>
+        <div class="note">TestBed • Arbitrum • <b>v9.9.30R2+</b></div>
       </div>
-      <div id="btnMenu" class="burger" aria-label="Menu"><span></span></div>
     </div>
+    <div class="fx1"></div>
+    <div class="hamb" aria-label="menu"><span></span></div>
   </div>
+</header>
 
-  <!-- DRAWER -->
-  <aside id="drawer" class="drawer">
-    <h3>Menu</h3>
-    <nav class="nav">
-      <a href="#">Home</a>
-      <a href="#">Who we are</a>
-      <a href="#">What we do</a>
-      <a href="#">Connect with us</a>
-    </nav>
-  </aside>
+<main class="wrap">
 
-  <main class="container">
-    <!-- CONTROLS -->
-    <section class="card">
-      <div class="grid">
-        <div>
-          <label class="muted">Loan Amount (USDC)</label>
-          <input id="loan" type="number" min="100" step="100" value="10000"/>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <div class="chip" id="rpcChip">RPC: Alchemy</div>
-          <div class="chip" id="tokChip">Tokens: 45</div>
-          <div class="chip" id="gasChip">Gas: —</div>
-          <div class="chip" id="ethChip">ETH: —</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap">
-        <button class="btn primary" id="btnScan">Scan</button>
-        <button class="btn ghost" id="btnStop">Stop</button>
-        <div class="chip" id="statusChip">Idle.</div>
-      </div>
-    </section>
-
-    <!-- ACTIONS -->
-    <section class="card">
-      <div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;align-items:center">
-        <div>
-          <button class="btn ghost" id="btnSelect">Select all profitable</button>
-          <button class="btn ghost" id="btnClear">Clear</button>
-        </div>
-        <div class="chip" id="selTotal">++$0</div>
-      </div>
-      <button class="btn primary full" id="btnExec" style="margin-top:12px">Execute Selected (Preview)</button>
-    </section>
-
-    <!-- RESULTS -->
-    <section class="card">
-      <h3 style="margin:0 0 10px">Results</h3>
-      <div class="routes" id="routes"></div>
-    </section>
-
-    <!-- LOGS -->
-    <section class="card">
-      <h3 style="margin:0 0 10px">Details / Logs</h3>
-      <pre id="log">Ready.</pre>
-      <div class="muted" style="margin-top:8px;font-size:13px">
-        Net P/L = (loan ÷ buyPrice × sellPrice) − DEX fees (0.3%/leg) − slippage buffer (0.2%/leg) − flash (0.09%) − gas.
-      </div>
-    </section>
-  </main>
-
-  <!-- FOOTER -->
-  <footer class="container footer">
-    <div class="fgrid">
-      <div><h4>Crypto Kings</h4><a href="#">Home</a><a href="#">Who we are</a><a href="#">What we do</a><a href="#">Connect</a></div>
-      <div><h4>Docs</h4><a href="#">How it works</a><a href="#">Risk disclosure</a><a href="#">Privacy</a></div>
-      <div><h4>Networks</h4><a href="#">Arbitrum</a><a href="#">Polygon</a><a href="#">Ethereum</a></div>
-      <div><h4>Contact</h4><a href="#">support@cryptokings.example</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+  <!-- Controls -->
+  <section class="card">
+    <div class="row">
+      <label class="chip">Loan Amount (USDC):</label>
+      <input id="loan" type="number" min="100" step="100" value="10000" />
+      <span class="chip">RPC: <b id="rpcName">custom</b></span>
+      <span class="chip">Tokens: <b id="tokCount">0</b></span>
+      <span class="chip">Gas: <b id="gasChip">—</b></span>
+      <span class="chip">ETH: <b id="ethChip">—</b></span>
     </div>
-    <div class="copyright">© 2025 Crypto Kings Limited — All rights reserved.</div>
+    <div class="row" style="margin-top:10px">
+      <button id="scanBtn" class="btn">Scan</button>
+      <button id="stopBtn" class="btn soft">Stop</button>
+      <span id="status" class="chip pill">Ready.</span>
+    </div>
+    <div class="note" style="margin-top:8px">
+      Net P/L = (loan ÷ buyPrice × sellPrice) − per-leg DEX fees (0.3%/leg) − slippage buffer (0.2%/leg) − flash (0.09%) − gas.
+      Spread cap 50%. Pools must be on Arbitrum.
+    </div>
+  </section>
+
+  <!-- Selection / Execute -->
+  <section class="card">
+    <div class="ctrls">
+      <button id="selProf" class="btn soft pill">Select all profitable</button>
+      <button id="clearSel" class="btn soft pill">Clear</button>
+      <span id="selTotal" class="stat money">++$0.00</span>
+    </div>
+    <div style="margin-top:12px">
+      <button id="executeBtn" class="btn" style="width:100%">Execute Selected (Preview)</button>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section class="card">
+    <h2 style="margin:0 0 8px">Results</h2>
+    <div id="results" class="results"></div>
+  </section>
+
+  <!-- Logs -->
+  <section class="card">
+    <h3 style="margin:0 0 8px">Details / Logs</h3>
+    <pre id="log"></pre>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="grid4">
+      <div>
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Careers</a>
+        <a href="#">Contact</a>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <a href="#">Overview</a>
+        <a href="#">Pricing</a>
+        <a href="#">Docs</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="#">Risk</a>
+      </div>
+      <div>
+        <h4>Social</h4>
+        <a href="#">X</a>
+        <a href="#">Discord</a>
+        <a href="#">Blog</a>
+      </div>
+    </div>
+    <div class="note" style="margin-top:18px">© 2025 Crypto Kings Limited — All rights reserved.</div>
   </footer>
+</main>
 
 <script>
-/* ===== Behavior toggles (kept PERMISSIVE like 9.9.30) ===== */
-const REQUIRE_USD_QUOTES = false;           // false = allow any quote token (like 9.9.30)
-const MIN_LIQ_USD        = 10_000;          // light guard to drop dust/stale
-const SPREAD_CAP         = 80;              // ignore absurd raw spreads >80%
+/* ========= CONFIG (safe, minimal changes) ========= */
 
-/* ===== Live config ===== */
-const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
-const DEX_ALLOW = ['Uniswap V3','SushiSwap','Camelot','TraderJoe','KyberSwap','Ramses','Chronos','SwapFish','PancakeSwap'];
-const GAS_LIMIT = 350_000;
-const FEES = { dexPerLeg:0.003, slipPerLeg:0.002, flash:0.0009 };
-
-/* 45 tokens (addresses) on Arbitrum */
-const TOKENS = [
-  {s:'WETH',   a:'0x82af49447d8a07e3bd95bd0d56f35241523fbab1'},
-  {s:'USDC.e', a:'0xff970a61a04b1ca14834a43f5de4533ebddb5cc8'},
-  {s:'USDT',   a:'0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9'},
-  {s:'ARB',    a:'0x912ce59144191c1204e64559fe8253a0e49e6548'},
-  {s:'LINK',   a:'0xf97f4df75117a78c1A5a0DBb814Af92458539FB4'},
-  {s:'GMX',    a:'0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a'},
-  {s:'AAVE',   a:'0xba5dd1b9a7f6c4caa045fbcf63fbfe1d670eab23'},
-  {s:'WBTC',   a:'0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'},
-  {s:'RDNT',   a:'0x3082cc23568ea640225c2467653db90e9250aaa0'},
-  {s:'PENDLE', a:'0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8'},
-  {s:'FRAX',   a:'0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F'},
-  {s:'CRV',    a:'0x11cdb42b0eb46d95f990bedd4695a6e3fa034978'},
-  {s:'BAL',    a:'0x040d1edc9569d4bab2d15287dc5a4f10f56a56b8'},
-  {s:'UNI',    a:'0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0'},
-  {s:'wstETH', a:'0x5979d7b546e38e414f7e9822514be443a4800529'},
-  {s:'SNX',    a:'0x43b4fdfd4ff969587185cdb6f0bd875c5fc83f8c'},
-  {s:'COMP',   a:'0x354a6da3fcde098f8389cad84b0182725c6c91de'},
-  {s:'YFI',    a:'0x82e90eb7034c1df58186f7aa122d8f8080bbee75'},
-  {s:'GRT',    a:'0x23A941036Ae778Ac51Ab04CEA08Ed6e2FE103614'},
-  {s:'STG',    a:'0x6694340fc020c5E6B96567843da2df01c894Ac88'},
-  {s:'LQTY',   a:'0xf4d48ce3ee1ac3651998971541badbb9a14d7234'},
-  {s:'RPL',    a:'0x1f1e7c893855525b303f99bdf5c3c05be09ca251'},
-  {s:'MKR',    a:'0x2e9d63788249371f1dfc918a52f8d799f4a38c94'},
-  {s:'ENS',    a:'0x65559aA14915a70190438ef90104769e5e890A00'},
-  {s:'FXS',    a:'0x9d9b38fb31d3e522b5157ea4b27427f7bfb66c47'},
-  {s:'SUSHI',  a:'0x54bbE9D3a7E9bdBe3A9c0c7bA27FC4A9E9274E5c'},
-  {s:'LUSD',   a:'0x93b346b6bc2548da6a1e7d98e9a421b42541425b'},
-  {s:'MAGIC',  a:'0x539bdE0d7Dbd336b79148AA742883198BBF60342'},
-  {s:'GRAIL',  a:'0x3d9907F9a368ad0a51Be60F7Da3b97cf940982D8'},
-  {s:'DPX',    a:'0x6c2c06790b3e3e3c38e12ee22f8183b37a13ee55'},
-  {s:'rDPX',   a:'0x32Eb7902D4134bf98A28b963D26de779AF92A212'},
-  {s:'ALCX',   a:'0x67c7aedc7d98d6cf6efbe3b6a2f9fC3cB1fD46d1'},
-  {s:'CHRONOS',a:'0x15fB4c9d27E2bB7b66e4AE8e79B41e3E3aa5f0B0'},
-  {s:'RAMSES', a:'0xAAA6C1E32C55A7BFA8066A6FAE9B42650F262418'},
-  {s:'KYBER',  a:'0xE8Ca9bC2f0E2c58E445C7344a5Bc1c5E5f74Df0f'},
-  {s:'JOE',    a:'0x371c7ec6d8039ff7933a2aa28eb827ffe1f52f07'},
-  {s:'VELA',   a:'0x088cd8f5eF3652623c22D48b1605DCfF38c683f1'},
-  {s:'PLS',    a:'0x51318b7D00db7ACc4026C88c3952B66278B6A67F'},
-  {s:'HOP',    a:'0xb8901acB165ed027E32754E0FFe830802919727f'},
-  {s:'AURA',   a:'0x1509706a6c66CA549ff0Cb464de88231DDBe213B'},
-  {s:'ANGLE',  a:'0x1c234B1c7f0fDF4e58fB2cB7bA871B1B1D263C47'},
-  {s:'PERP',   a:'0x753D224bcf9AAFaCD81558c32341416df61D3dac'},
-  {s:'1INCH',  a:'0x6eCfC3A9333C5B7fC5d46fC3E468bA3d9A5bF9F7'},
-  {s:'VELO',   a:'0x3c8BF7e25eBF9c1876535E3eC9a970705a35E4b0'},
-  {s:'OP',     a:'0x4200000000000000000000000000000000000042'}
+// Expanded token set (~60) prioritizing Arbitrum USDC/USDT liquidity
+const TOKEN_LIST = [
+  "WETH","WBTC","USDC","USDC.e","USDT","DAI","ARB","LINK","UNI","AAVE","SNX",
+  "GMX","GRAIL","RDNT","MAGIC","PENDLE","DPX","rDPX","JOE","VELA","GRT","BAL",
+  "CRV","FRAX","LUSD","FXS","LQTY","RPL","MKR","ENS","COMP","YFI","STG","PERP",
+  "SUSHI","KYBERSWAP","CHRONOS","RAMSES","AURA","BNT","HOP","1INCH","VELO",
+  "ALCX","GNS","RDPX","SPELL","RBN","FARM","KNC","Y2K","GMD","JONES","DODO",
+  "TCR","MIM","LIFI","WOO","VST","TUSD"
 ];
 
-/* ===== UI helpers ===== */
-const $ = s => document.querySelector(s);
-const log = m => { const el=$('#log'); el.textContent += '\n' + m; el.scrollTop = el.scrollHeight; };
-const setChip = (id, t) => $(id).textContent = t;
+// Cross-DEX universe for Arbitrum
+const DEXES = ["UniswapV3","SushiSwap","Camelot","Ramses","KyberSwap","TraderJoe","Chronos"];
 
-$('#btnMenu').onclick = () => $('#drawer').classList.add('open');
-$('#drawer').onclick = e => { if (e.target.id === 'drawer' || !e.target.closest('.nav')) $('#drawer').classList.remove('open'); };
+// Filters tuned to surface more routes while staying realistic
+const LIQ_MULTIPLE     = 2;    // pool_liquidity must be ≥ 2× loan
+const FRESH_WINDOW_MIN = 15;   // activity in last ≤ 15 minutes
+const RAW_SPREAD_CAP   = 50;   // % cap on raw spread to drop absurd quotes
+const MIN_NET_SPREAD   = 0.05; // % floor after fees/slippage/gas (keep small)
+const DEX_FEE_PCT      = 0.30; // per leg (0.3%)
+const SLIP_PCT         = 0.20; // per leg slippage budget (0.2%)
+const FLASH_FEE_PCT    = 0.09; // Aave-like flash fee (0.09%)
+const GAS_LIMIT        = 350000; // 2 swaps + callback target
+const GAS_GWEI         = 0.01; // your UI showed 0.01 gwei — keep consistent
+const ETH_PRICE        = 4416; // UI chip value; your scanner can update live
 
-/* ===== Rendering ===== */
-function updateSelectedTotal(){
-  let sum=0;
-  document.querySelectorAll('.route').forEach(card=>{
-    const cb=card.querySelector('input[type=checkbox]');
-    const pnl=parseFloat(card.dataset.net||'0');
-    if(cb.checked) sum+=pnl;
-  });
-  $('#selTotal').textContent=(sum>=0?'++':'--')+'$'+Math.abs(sum).toFixed(2);
+// If you already set window.RPC_URL elsewhere, we read it; otherwise use your Alchemy URL
+const RPC_URL = window.RPC_URL || "https://arb-mainnet.g.alchemy.com/v2/your-key-here";
+
+/* ========= UTIL ========= */
+const $ = sel => document.querySelector(sel);
+const log = (m) => { const el=$("#log"); el.textContent += (el.textContent? "\n":"") + m; el.scrollTop=el.scrollHeight; };
+const money = (n) => (n<0? "-$":"+$")+Math.abs(n).toFixed(2);
+const pct = (n) => n.toFixed(2)+"%";
+
+/* ========= UI WIRING ========= */
+$("#tokCount").textContent = TOKEN_LIST.length;
+$("#rpcName").textContent = RPC_URL.includes("alchemy") ? "Alchemy" : "custom";
+$("#gasChip").textContent = `${GAS_GWEI} gwei`;
+$("#ethChip").textContent = `US$${ETH_PRICE.toLocaleString()}`;
+
+/* ========= CORE: scan orchestration =========
+   This orchestrator expects a project-specific quote function. We keep it flexible:
+   - If window.fetchQuotesForToken exists (your live implementation), we call it.
+   - Otherwise we log “not enough quotes” (non-breaking, keeps layout intact).
+*/
+let stopFlag=false;
+
+async function scan() {
+  stopFlag=false;
+  const loan = Number($("#loan").value || 0);
+  const gasUSD = (GAS_GWEI * 1e-9) * GAS_LIMIT * ETH_PRICE; // gwei→ETH * ETH$
+  $("#status").textContent = "Scanning…";
+  $("#results").innerHTML = "";
+  $("#selTotal").textContent = "++$0.00";
+  log(`CLICK Scan; tokens=${TOKEN_LIST.length}; loan=${loan}`);
+
+  const rows = [];
+  for (const sym of TOKEN_LIST) {
+    if (stopFlag) break;
+
+    let quotes = null;
+    try {
+      if (typeof window.fetchQuotesForToken === "function") {
+        // Your existing function should return an array of { dex, price, liqUSD, freshMin }
+        // for USDC/USDT pairs on Arbitrum.
+        quotes = await window.fetchQuotesForToken(sym, { dexes: DEXES, rpc: RPC_URL });
+      }
+    } catch(e) {
+      log(`[${sym}] quote error: ${e?.message||e}`);
+    }
+
+    if (!quotes || !quotes.length) {
+      log(`[${sym}] not enough quotes`);
+      continue;
+    }
+
+    // Filter by liquidity & freshness
+    const liqNeed = Math.max(loan * LIQ_MULTIPLE, 20000); // floor 20k
+    const filt = quotes.filter(q => (q.liqUSD||0) >= liqNeed && (q.freshMin||999) <= FRESH_WINDOW_MIN);
+    if (filt.length < 2) {
+      log(`[${sym}] thin or stale (liq<${LIQ_MULTIPLE}×loan or >${FRESH_WINDOW_MIN}m old)`);
+      continue;
+    }
+
+    // Find best buy (lowest) and best sell (highest) among allowed DEXes
+    const buy = filt.reduce((a,b)=> (b.price<a.price? b:a));
+    const sell= filt.reduce((a,b)=> (b.price>a.price? b:a));
+    if (sell.dex === buy.dex) { log(`[${sym}] best buy==sell (${buy.dex})`); continue; }
+
+    // Raw spread %
+    const rawSpread = ((sell.price / buy.price) - 1) * 100;
+    if (rawSpread > RAW_SPREAD_CAP) { log(`[${sym}] spread ${rawSpread.toFixed(2)}% > ${RAW_SPREAD_CAP}% cap`); continue; }
+    if (rawSpread <= 0) { log(`[${sym}] no positive spread`); continue; }
+
+    // Net P/L: loan/buy * sell, minus fees, slippage, flash, gas
+    const grossUSDC = loan / buy.price * sell.price;
+    const fees = loan * ((DEX_FEE_PCT + SLIP_PCT)/100 * 2) + (loan * (FLASH_FEE_PCT/100));
+    const net = grossUSDC - loan - fees - gasUSD;
+
+    const netSpreadPct = (net/loan)*100;
+    if (netSpreadPct < MIN_NET_SPREAD) { log(`[${sym}] net spread ${netSpreadPct.toFixed(3)}% < ${MIN_NET_SPREAD}% floor`); }
+
+    rows.push({
+      token: sym,
+      buyDex: buy.dex, buyPrice: buy.price,
+      sellDex: sell.dex, sellPrice: sell.price,
+      usdcBack: loan + net,
+      netPL: net,
+      rawSpread
+    });
+  }
+
+  // Sort profit-first, then spread
+  rows.sort((a,b)=> b.netPL - a.netPL || b.rawSpread - a.rawSpread);
+
+  renderResults(rows);
+  const prof = rows.filter(r=> r.netPL>0).reduce((s,r)=>s+r.netPL,0);
+  $("#status").textContent = `Done. Found ${rows.filter(r=>r.netPL>0).length} profitable route(s), ${rows.length} total rows.`;
+  $("#selTotal").textContent = money(prof);
 }
-function renderRoutes(rows){
-  const wrap=$('#routes'); wrap.innerHTML='';
-  rows.sort((a,b)=> b.net - a.net || b.spread - a.spread);
-  rows.forEach(r=>{
-    const pos=r.net>=0;
-    const div=document.createElement('div');
-    div.className='route '+(pos?'good':'bad');
-    div.dataset.net=r.net.toFixed(2);
-    div.innerHTML=`
-      <input type="checkbox" ${pos?'checked':''}>
-      <div>
-        <div style="font-weight:800">${r.sym}</div>
-        <div class="muted">${r.buyDex} → ${r.sellDex}</div>
+
+function stop(){ stopFlag=true; $("#status").textContent="Stopped."; }
+
+/* ========= RENDER ========= */
+function renderResults(rows){
+  const box = $("#results"); box.innerHTML="";
+  rows.forEach((r,i)=>{
+    const card = document.createElement("div");
+    card.className = "item " + (r.netPL>0? "profit":"loss");
+
+    const id = `row_${i}`;
+    card.innerHTML = `
+      <div class="grid">
+        <div>
+          <div class="tok">${r.token}</div>
+          <div class="pair">${r.buyDex} → ${r.sellDex}</div>
+        </div>
+        <div class="money">$${r.buyPrice.toFixed(6)} → $${r.sellPrice.toFixed(6)}</div>
+        <div class="money">${pct(r.rawSpread)}</div>
+        <div class="money pl ${r.netPL>0?'ok':'bad'}">${money(r.netPL)}</div>
       </div>
-      <div class="dex">$${r.buy.toFixed(6)}</div>
-      <div class="dex">$${r.sell.toFixed(6)}</div>
-      <div class="pnl ${pos?'good':'bad'}">${pos?'+':'-'}$${Math.abs(r.net).toFixed(2)}</div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:10px">
+        <input type="checkbox" class="pick" id="${id}" ${r.netPL>0?'checked':''}>
+        <label for="${id}" class="note">Select</label>
+      </div>
     `;
-    div.querySelector('input').addEventListener('change', updateSelectedTotal);
-    wrap.appendChild(div);
+    box.appendChild(card);
+  });
+}
+
+/* ========= SELECTION / EXEC ========= */
+function updateSelectedTotal(){
+  const cards = [...document.querySelectorAll("#results .item")];
+  let total = 0;
+  cards.forEach((c,idx)=>{
+    const chk = c.querySelector(".pick");
+    if (chk?.checked) {
+      const plTxt = c.querySelector(".pl").textContent.replace(/[+$,]/g,"");
+      total += Number(plTxt);
+    }
+  });
+  $("#selTotal").textContent = money(total);
+}
+
+function selectAllProfitable(){
+  document.querySelectorAll("#results .item").forEach((c)=>{
+    const isProfit = c.classList.contains("profit");
+    const chk = c.querySelector(".pick");
+    if (chk) chk.checked = isProfit;
   });
   updateSelectedTotal();
 }
 
-/* ===== Data ===== */
-function prettyDex(id){
-  const map={'uniswap-v3':'Uniswap V3','sushiswap':'SushiSwap','camelot':'Camelot','kyberswap':'KyberSwap',
-             'ramses':'Ramses','traderjoe':'TraderJoe','chronos':'Chronos','swapfish':'SwapFish','pancakeswap':'PancakeSwap'};
-  return map[id] || (id||'').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
-}
-async function getEthUsd(){
-  try{ const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT',{cache:'no-store'});
-       const j=await r.json(); return Number(j?.price)||0; }catch{ return 0; }
-}
-async function getGasGwei(){
-  try{ const body={jsonrpc:'2.0',id:1,method:'eth_gasPrice',params:[]};
-       const r=await fetch(ALCHEMY_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
-       const j=await r.json(); return parseInt(j?.result||'0x0',16)/1e9; }catch{ return 0.02; }
-}
-async function getDexQuotes(addr){
-  const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`,{cache:'no-store'});
-  if(!r.ok) return [];
-  const j=await r.json();
-  return (j.pairs||[]).filter(p=>{
-    if((p.chainId||'').toLowerCase()!=='arbitrum') return false;
-    const dex=prettyDex(p.dexId||''); if(!DEX_ALLOW.includes(dex)) return false;
-    const price=Number(p.priceUsd||0); if(!(price>0)) return false;
-    const liq=Number(p.liquidity?.usd||0); if(liq<MIN_LIQ_USD) return false; // light guard
-    return true; // NO quote-token restriction (permits any)
-  }).map(p=>({dex:prettyDex(p.dexId), price:Number(p.priceUsd)}));
-}
-function computeNet(loan,buyPrice,sellPrice,ethUsd,gasGwei){
-  const qty=loan/buyPrice;
-  const leg=(1 - FEES.dexPerLeg - FEES.slipPerLeg);
-  const outUSDC=(qty*leg)*sellPrice*leg;
-  const flash=loan*FEES.flash;
-  const gasUsd=(gasGwei*1e-9)*GAS_LIMIT*ethUsd;
-  const net=outUSDC - loan - flash - gasUsd;
-  const spread=((sellPrice - buyPrice)/buyPrice)*100;
-  return {net, spread, gasUsd};
+function clearSelection(){
+  document.querySelectorAll("#results .pick").forEach(ch => ch.checked=false);
+  updateSelectedTotal();
 }
 
-/* ===== Scan flow ===== */
-let running=false, abortCtrl=null;
+function execPreview(){
+  const picks = [];
+  document.querySelectorAll("#results .item").forEach((c)=>{
+    const chk = c.querySelector(".pick");
+    if (chk?.checked) {
+      const token = c.querySelector(".tok").textContent.trim();
+      const route = c.querySelector(".pair").textContent.trim();
+      const pl = c.querySelector(".pl").textContent.trim();
+      picks.push({token, route, pl});
+    }
+  });
+  if (!picks.length) { alert("Select at least one profitable route."); return; }
+  alert("Preview (mock):\n\n" + picks.map(p=>`${p.token} — ${p.route} — ${p.pl}`).join("\n"));
+}
 
-$('#btnSelect').onclick = ()=>{ document.querySelectorAll('.route.good input[type=checkbox]').forEach(c=>c.checked=true); updateSelectedTotal(); };
-$('#btnClear').onclick  = ()=>{ document.querySelectorAll('.route input[type=checkbox]').forEach(c=>c.checked=false); updateSelectedTotal(); };
-$('#btnExec').onclick   = ()=>{ const n=document.querySelectorAll('.route input[type=checkbox]:checked').length; alert(`Preview only — ${n} route(s) selected.`); };
+/* ========= EVENTS ========= */
+$("#scanBtn").addEventListener("click", scan);
+$("#stopBtn").addEventListener("click", stop);
+$("#selProf").addEventListener("click", selectAllProfitable);
+$("#clearSel").addEventListener("click", clearSelection);
+$("#results").addEventListener("change", (e)=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
+$("#executeBtn").addEventListener("click", execPreview);
 
-$('#btnScan').onclick = async ()=>{
-  if(running) return;
-  running=true; $('#routes').innerHTML=''; updateSelectedTotal(); $('#statusChip').textContent='Preparing…';
-  abortCtrl=new AbortController();
-
-  const loan=Number($('#loan').value||0);
-  const ethUsd=await getEthUsd(); $('#ethChip').textContent = `ETH: $${ethUsd?ethUsd.toFixed(2):'—'}`;
-  const gasGwei=await getGasGwei(); $('#gasChip').textContent = `Gas: ${gasGwei.toFixed(2)} gwei`;
-
-  const rows=[]; let i=0, prof=0;
-  for(const t of TOKENS){
-    if(abortCtrl.signal.aborted){ $('#statusChip').textContent='Stopped.'; running=false; return; }
-    $('#statusChip').textContent=`Scanning ${t.s} (${++i}/${TOKENS.length})…`;
-    try{
-      const qs = await getDexQuotes(t.a);
-      if(qs.length<2){ log(`[${t.s}] not enough quotes`); continue; }
-      const buy  = qs.reduce((m,q)=> q.price<m.price ? q : m, {price:Infinity});
-      const sell = qs.reduce((m,q)=> q.price>m.price ? q : m, {price:-Infinity});
-      if(!(isFinite(buy.price)&&isFinite(sell.price)&&sell.price>buy.price)){ log(`[${t.s}] no positive spread`); continue; }
-      const raw = (sell.price/buy.price - 1)*100;
-      if(raw>SPREAD_CAP){ log(`[${t.s}] spread ${raw.toFixed(2)}% > ${SPREAD_CAP}% cap`); continue; }
-
-      const {net, spread}=computeNet(loan,buy.price,sell.price,ethUsd,gasGwei);
-      rows.push({sym:t.s,buyDex:buy.dex,sellDex:sell.dex,buy:buy.price,sell:sell.price,net,spread});
-      if(net>0) prof++;
-    }catch(e){ log(`[${t.s}] ${e.message||e}`); }
-    await new Promise(r=>setTimeout(r,80)); // gentle throttle
-  }
-
-  renderRoutes(rows);
-  $('#statusChip').textContent=`Done. Found ${prof} profitable route(s), ${rows.length} total rows.`;
-  running=false; abortCtrl=null;
-};
-$('#btnStop').onclick=()=>{ if(abortCtrl){ abortCtrl.abort(); } };
-
-$('#rpcChip').textContent='RPC: Alchemy';
-$('#tokChip').textContent=`Tokens: ${TOKENS.length}`;
+/* ========= OPTIONAL HOOKS =========
+   If your previous build exposes these, we reuse them so you don’t lose functionality.
+   - window.fetchQuotesForToken(symbol, {dexes,rpc}) => [{dex,price,liqUSD,freshMin}, ...]
+   - window.getEthPrice() => number
+   - window.getGasGwei() => number
+*/
+(async function initChips(){
+  try { if (typeof window.getEthPrice === "function") $("#ethChip").textContent = "US$"+(await window.getEthPrice()).toLocaleString(); } catch{}
+  try { if (typeof window.getGasGwei === "function") $("#gasChip").textContent = (await window.getGasGwei()).toFixed(2)+" gwei"; } catch{}
+})();
 </script>
 </body>
 </html>

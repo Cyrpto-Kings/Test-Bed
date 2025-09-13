@@ -156,6 +156,61 @@
     </div>
   </footer>
 
+<script>
+const EXECUTOR_ADDR = "0xfc1272aa98811cfd32e7dfa31d3ecb217d2868e3";
+const EXECUTOR_ABI = /* paste ABI array from Remix here */ [];
+
+async function getSignerContract() {
+  if (!window.ethereum) throw new Error("MetaMask not found");
+  await ethereum.request({ method: "eth_requestAccounts" });
+  const provider = new ethers.providers.Web3Provider(window.ethereum);   // ethers v5 already on Remix CDN or add it
+  const signer = provider.getSigner();
+  return new ethers.Contract(EXECUTOR_ADDR, EXECUTOR_ABI, signer);
+}
+
+// Quick read test: shows profit wallet set in constructor
+async function uiReadProfitWallet() {
+  try {
+    const c = await getSignerContract();
+    const addr = await c.profitWallet();
+    alert("Profit wallet: " + addr);
+  } catch (e) {
+    alert("Read failed: " + (e?.message || e));
+  }
+}
+
+// Owner-only example to change profit wallet (disabled by default; call when ready)
+async function uiSetProfitWallet(newAddr) {
+  try {
+    const c = await getSignerContract();
+    const tx = await c.setProfitWallet(newAddr);
+    await tx.wait();
+    alert("Updated profit wallet!");
+  } catch (e) {
+    alert("Tx failed: " + (e?.data?.message || e?.message || e));
+  }
+}
+
+// Flash loan entry point (fills from your loan input)
+// NOTE: Works on testnet only if the Aave pool & token exist on Sepolia.
+// Replace asset with your test token address for the network you deployed to.
+async function uiRequestFlashLoan() {
+  try {
+    const c = await getSignerContract();
+    const loan = Number(document.querySelector("#loan").value || "10000"); // USDC units
+    const asset = "0x0000000000000000000000000000000000000000"; // TODO: set the ERC-20 address you're borrowing
+    const decimals = 6; // USDC=6, adjust if diff
+    const amount = ethers.utils.parseUnits(String(loan), decimals);
+    const params = "0x"; // later: pack your route instructions here
+    const tx = await c.requestFlashLoan(asset, amount, params);
+    await tx.wait();
+    alert("Flash loan tx confirmed");
+  } catch (e) {
+    alert("Flash call failed: " + (e?.data?.message || e?.message || e));
+  }
+}
+</script>
+  
 <!-- Ethers (for MetaMask + ABI encoding) -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 

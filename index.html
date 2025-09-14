@@ -170,216 +170,56 @@
    You can either paste your contract here, or type it in the UI box.
 */
 const DEFAULT_EXECUTOR_ADDR = "0xfc1272aa98811Cf3D2e7dfa31d3Ecb217D2868e3"; // optional fallback
+
 // PASTE YOUR FULL ABI (from Remix) into the array below.
-// Must include: startFlashLoan(asset,address,bytes), profitWallet(), setProfitWallet(address)
-const EXECUTOR_ABI = 
-[	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "token",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "spender",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amt",
-				"type": "uint256"
-			}
-		],
-		"name": "approveToken",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "asset",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "premium",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			}
-		],
-		"name": "executeOperation",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "token",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amt",
-				"type": "uint256"
-			}
-		],
-		"name": "rescueToken",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_pool",
-				"type": "address"
-			}
-		],
-		"name": "setAavePool",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_to",
-				"type": "address"
-			}
-		],
-		"name": "setProfitWallet",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "asset",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bytes",
-				"name": "params",
-				"type": "bytes"
-			}
-		],
-		"name": "startFlashLoan",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_to",
-				"type": "address"
-			}
-		],
-		"name": "transferOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_profitWallet",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_aavePool",
-				"type": "address"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"stateMutability": "payable",
-		"type": "fallback"
-	},
-	{
-		"stateMutability": "payable",
-		"type": "receive"
-	},
-	{
-		"inputs": [],
-		"name": "aavePool",
-		"outputs": [
-			{
-				"internalType": "contract IPool",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "owner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "profitWallet",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-]
-];
+// Must include: startFlashLoan(asset,uint256,bytes), profitWallet(), setProfitWallet(address)
+const EXECUTOR_ABI =
+[
+  {
+    "inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amt","type":"uint256"}],
+    "name":"approveToken","outputs":[],"stateMutability":"nonpayable","type":"function"
+  },
+  {
+    "inputs":[{"internalType":"address","name":"asset","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"premium","type":"uint256"},{"internalType":"address","name":"","type":"address"},{"internalType":"bytes","name":"","type":"bytes"}],
+    "name":"executeOperation","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"
+  },
+  {
+    "inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amt","type":"uint256"}],
+    "name":"rescueToken","outputs":[],"stateMutability":"nonpayable","type":"function"
+  },
+  {
+    "inputs":[{"internalType":"address","name":"_pool","type":"address"}],
+    "name":"setAavePool","outputs":[],"stateMutability":"nonpayable","type":"function"
+  },
+  {
+    "inputs":[{"internalType":"address","name":"_to","type":"address"}],
+    "name":"setProfitWallet","outputs":[],"stateMutability":"nonpayable","type":"function"
+  },
+  {
+    "inputs":[{"internalType":"address","name":"asset","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"params","type":"bytes"}],
+    "name":"startFlashLoan","outputs":[],"stateMutability":"nonpayable","type":"function"
+  },
+  {
+    "inputs":[{"internalType":"address","name":"_to","type":"address"}],
+    "name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"
+  },
+  {
+    "stateMutability":"nonpayable","type":"constructor",
+    "inputs":[{"internalType":"address","name":"_profitWallet","type":"address"},{"internalType":"address","name":"_aavePool","type":"address"}]
+  },
+  {"stateMutability":"payable","type":"fallback"},
+  {"stateMutability":"payable","type":"receive"},
+  {
+    "inputs":[],"name":"aavePool","outputs":[{"internalType":"contract IPool","name":"","type":"address"}],"stateMutability":"view","type":"function"
+  },
+  {
+    "inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"
+  },
+  {
+    "inputs":[],"name":"profitWallet","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"
+  }
+]; <!-- FIX: removed the stray extra "]" that was breaking the script -->
+
 // If you didn't paste the ABI yet, we'll fall back to this minimal ABI so the smoke test still works:
 const CK_MIN_ABI = [
   {"inputs":[{"internalType":"address","name":"asset","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"params","type":"bytes"}],"name":"startFlashLoan","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -410,7 +250,14 @@ const TOKENS = [
   "BADGER","DODO","BNT","OP","GNS","DPX","RDPX","GRAIL","HOP","ALCX",
   "ANGLE","PERP","1INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","JOE"
 ];
-document.addEventListener("DOMContentLoaded",()=>{ document.getElementById("tokensPill").textContent = "Tokens: "+TOKENS.length; });
+document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("tokensPill").textContent = "Tokens: "+TOKENS.length;
+  // PRE-POPULATE the Executor address input
+  const box = document.getElementById("execContract");
+  if (box && /^0x[a-fA-F0-9]{40}$/.test(DEFAULT_EXECUTOR_ADDR)) {
+    box.value = DEFAULT_EXECUTOR_ADDR;
+  }
+});
 
 /* ========= HELPERS ========= */
 const $ = s=>document.querySelector(s);
@@ -482,7 +329,7 @@ function routeForPairs(pairs, loan){
       const units = loan/pa;
       const gross = units*pb;
       const dexCost = loan*(DEX_FEE+SLIP_FEE) + gross*(DEX_FEE+SLIP_FEE);
-      const flash = loan*FLASH_FEE; // fee representation for USDC path only
+      const flash = loan*FLASH_FEE;
       const gasEth = ((GAS_GWEI||0.05)*380000)/1e9;
       const gasUsd = (ETH_USD? gasEth*ETH_USD : 0);
       const netPL = gross - loan - dexCost - flash - gasUsd;

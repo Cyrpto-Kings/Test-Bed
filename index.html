@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.33</title>
+<title>Crypto Kings • TestBed v9.9.35</title>
 <style>
   :root{
     --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -64,7 +64,7 @@
       <div class="logo">CK</div>
       <div>
         <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div class="hint">TestBed v9.9.33 • Arbitrum (flash-loan smoke test)</div>
+        <div class="hint">TestBed v9.9.35 • Arbitrum (flash-loan smoke test)</div>
       </div>
     </div>
     <div class="burger" title="Menu">&#9776;</div>
@@ -80,7 +80,7 @@
         <input id="payoutWalletB" type="text" placeholder="2nd profit wallet (optional)" style="min-width:300px"/>
         <input id="splitPctB" type="number" min="0" max="100" step="1" value="0" title="% of profit to wallet B"/>
       </div>
-      <!-- New: flash-loan test helpers -->
+      <!-- Flash-loan test helpers -->
       <div class="row" style="margin-top:8px">
         <button id="connectBtn" class="btn-ghost">Connect</button>
         <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.01" title="WETH loan size (for smoke test)"/>
@@ -167,60 +167,16 @@
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 <script>
 /* ========= USER CONFIG =========
-   You can either paste your contract here, or type it in the UI box.
+   Either paste your contract in the input box at the top,
+   or set DEFAULT_EXECUTOR_ADDR below.
 */
-const DEFAULT_EXECUTOR_ADDR = "0xfc1272aa98811Cf3D2e7dfa31d3Ecb217D2868e3"; // optional fallback
+const DEFAULT_EXECUTOR_ADDR = "0xfc1272aa98811Cf3D2e7dfa31d3Ecb217D2868e3";
 
-// PASTE YOUR FULL ABI (from Remix) into the array below.
-// Must include: startFlashLoan(asset,uint256,bytes), profitWallet(), setProfitWallet(address)
-const EXECUTOR_ABI =
-[
-  {
-    "inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amt","type":"uint256"}],
-    "name":"approveToken","outputs":[],"stateMutability":"nonpayable","type":"function"
-  },
-  {
-    "inputs":[{"internalType":"address","name":"asset","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"premium","type":"uint256"},{"internalType":"address","name":"","type":"address"},{"internalType":"bytes","name":"","type":"bytes"}],
-    "name":"executeOperation","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"
-  },
-  {
-    "inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amt","type":"uint256"}],
-    "name":"rescueToken","outputs":[],"stateMutability":"nonpayable","type":"function"
-  },
-  {
-    "inputs":[{"internalType":"address","name":"_pool","type":"address"}],
-    "name":"setAavePool","outputs":[],"stateMutability":"nonpayable","type":"function"
-  },
-  {
-    "inputs":[{"internalType":"address","name":"_to","type":"address"}],
-    "name":"setProfitWallet","outputs":[],"stateMutability":"nonpayable","type":"function"
-  },
-  {
-    "inputs":[{"internalType":"address","name":"asset","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"params","type":"bytes"}],
-    "name":"startFlashLoan","outputs":[],"stateMutability":"nonpayable","type":"function"
-  },
-  {
-    "inputs":[{"internalType":"address","name":"_to","type":"address"}],
-    "name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"
-  },
-  {
-    "stateMutability":"nonpayable","type":"constructor",
-    "inputs":[{"internalType":"address","name":"_profitWallet","type":"address"},{"internalType":"address","name":"_aavePool","type":"address"}]
-  },
-  {"stateMutability":"payable","type":"fallback"},
-  {"stateMutability":"payable","type":"receive"},
-  {
-    "inputs":[],"name":"aavePool","outputs":[{"internalType":"contract IPool","name":"","type":"address"}],"stateMutability":"view","type":"function"
-  },
-  {
-    "inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"
-  },
-  {
-    "inputs":[],"name":"profitWallet","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"
-  }
-]; <!-- FIX: removed the stray extra "]" that was breaking the script -->
+// PASTE your full ABI array if you want (not required for smoke test)
+// Keep empty to use the minimal ABI (startFlashLoan/profitWallet/setProfitWallet)
+const EXECUTOR_ABI = []; // <-- optional, paste full ABI here
 
-// If you didn't paste the ABI yet, we'll fall back to this minimal ABI so the smoke test still works:
+// Minimal ABI used if EXECUTOR_ABI is empty
 const CK_MIN_ABI = [
   {"inputs":[{"internalType":"address","name":"asset","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"params","type":"bytes"}],"name":"startFlashLoan","outputs":[],"stateMutability":"nonpayable","type":"function"},
   {"inputs":[],"name":"profitWallet","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
@@ -231,10 +187,10 @@ const CK_MIN_ABI = [
 const ARBITRUM_CHAIN_ID_DEC = 42161;
 const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
 const WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"; // Arbitrum WETH
-const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/demo"; // put your real key
-const FLASH_FEE = 0.0005; // 0.05% Aave flash-loan fee (for premium calc)
+const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/demo"; // replace with your key
+const FLASH_FEE = 0.0005; // 0.05%
 
-/* ========= SCANNER CONFIG (kept from your original) ========= */
+/* ========= SCANNER CONFIG ========= */
 const DEX_FEE   = 0.003;
 const SLIP_FEE  = 0.002;
 const SPREAD_CAP = 50;
@@ -250,14 +206,6 @@ const TOKENS = [
   "BADGER","DODO","BNT","OP","GNS","DPX","RDPX","GRAIL","HOP","ALCX",
   "ANGLE","PERP","1INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","JOE"
 ];
-document.addEventListener("DOMContentLoaded",()=>{
-  document.getElementById("tokensPill").textContent = "Tokens: "+TOKENS.length;
-  // PRE-POPULATE the Executor address input
-  const box = document.getElementById("execContract");
-  if (box && /^0x[a-fA-F0-9]{40}$/.test(DEFAULT_EXECUTOR_ADDR)) {
-    box.value = DEFAULT_EXECUTOR_ADDR;
-  }
-});
 
 /* ========= HELPERS ========= */
 const $ = s=>document.querySelector(s);
@@ -268,11 +216,10 @@ function sumM5(p){ const t=p?.txns?.m5||{}; return Number(t?.buys||0)+Number(t?.
 function liqUsd(p){ return Number(p?.liquidity?.usd||0); }
 function getExecAddr(){
   const v = ($("#execContract").value||"").trim();
-  if(/^0x[a-fA-F0-9]{40}$/.test(v)) return v;
-  return DEFAULT_EXECUTOR_ADDR;
+  return /^0x[a-fA-F0-9]{40}$/.test(v) ? v : DEFAULT_EXECUTOR_ADDR;
 }
 
-/* ========= ETH & GAS (kept) ========= */
+/* ========= ETH & GAS ========= */
 let ETH_USD = null, GAS_GWEI = null;
 async function fetchEthUsd(){
   try{
@@ -291,7 +238,7 @@ async function fetchGasGwei(){
   }catch(_){ $("#gasPill").textContent="Gas: (fail)"; GAS_GWEI = 0.05; }
 }
 
-/* ========= DEXSCREENER (kept) ========= */
+/* ========= DEXSCREENER ========= */
 async function fetchPairsForSymbol(sym){
   try{
     const url = "https://api.dexscreener.com/latest/dex/search?q="+encodeURIComponent(sym);
@@ -314,7 +261,7 @@ async function fetchPairsForSymbol(sym){
   }catch(_){ return []; }
 }
 
-/* ========= PROFIT & RENDER (kept) ========= */
+/* ========= PROFIT & RENDER ========= */
 function routeForPairs(pairs, loan){
   if(!pairs.length) return null;
   let best=null;
@@ -392,7 +339,7 @@ function updateSelectedTotal(){
   $("#selTotal").textContent = (sum>=0?'++$':'−$') + Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
 }
 
-/* ========= SCAN FLOW (kept) ========= */
+/* ========= SCAN FLOW ========= */
 let stopFlag=false, scanning=false;
 async function runScan(){
   if(scanning) return;
@@ -427,8 +374,9 @@ async function runScan(){
   scanning=false;
 }
 
-/* ========= FLASH-LOAN WIRING (NEW) ========= */
-let __provider, __signer, __contract;
+/* ========= FLASH-LOAN WIRING ========= */
+let __provider, __signer, __contract, __account;
+
 async function connectWallet(){
   if(!window.ethereum) throw new Error("MetaMask not found");
   __provider = new ethers.providers.Web3Provider(window.ethereum, "any");
@@ -440,19 +388,24 @@ async function connectWallet(){
     }catch(e){ throw new Error("Please switch MetaMask to Arbitrum One"); }
   }
   __signer = __provider.getSigner();
+  __account = await __signer.getAddress();
+  // auto-fill fee wallet
+  const feeBox = document.getElementById("feeWallet"); if (feeBox) feeBox.value = __account;
+
   const addr = getExecAddr();
   if(!addr) throw new Error("Enter your executor contract address");
   const abi = (EXECUTOR_ABI && EXECUTOR_ABI.length) ? EXECUTOR_ABI : CK_MIN_ABI;
   __contract = new ethers.Contract(addr, abi, __signer);
+
   $("#progPill").textContent = "Connected.";
-  log("✅ Wallet connected. Exec: " + addr);
+  log("✅ Wallet connected: " + __account + " | Exec: " + addr);
   return __contract;
 }
 
 async function fundPremium(){
   const human = String($("#wethAmt").value||"0.01");
   const amount = ethers.utils.parseUnits(human, 18);
-  // premium = amount * 0.0005 (0.05%)
+  // premium ≈ amount * 0.0005 (0.05%)
   const premium = amount.mul(5).div(10000);
   const buffer  = premium.mul(2).div(100); // +2% buffer
   const wrapVal = premium.add(buffer);
@@ -460,7 +413,6 @@ async function fundPremium(){
   const c = __contract || await connectWallet();
   const execAddr = c.address;
 
-  // WETH deposit() payable, then transfer() to contract
   const weth = new ethers.Contract(
     WETH,
     ["function deposit() payable",
@@ -469,10 +421,8 @@ async function fundPremium(){
   );
 
   log(`Wrapping ~${ethers.utils.formatUnits(wrapVal,18)} ETH → WETH for premium…`);
-  const depTx = await weth.deposit({ value: wrapVal });
-  await depTx.wait();
-  const sendTx = await weth.transfer(execAddr, premium);
-  const rcpt = await sendTx.wait();
+  const depTx = await weth.deposit({ value: wrapVal }); await depTx.wait();
+  const sendTx = await weth.transfer(execAddr, premium); await sendTx.wait();
   log(`✅ Premium sent to executor (${ethers.utils.formatUnits(premium,18)} WETH). Tx: ${sendTx.hash}`);
   alert("Premium funded.\n" + sendTx.hash);
 }
@@ -489,9 +439,9 @@ async function startFlashLoan(){
   alert("Flash loan executed.\n" + tx.hash);
 }
 
-/* ========= PLACEHOLDER: EXECUTE SELECTED (kept but disabled) ========= */
+/* ========= PLACEHOLDER: EXECUTE SELECTED ========= */
 async function executeSelected(){
-  alert("Route execution via 'executeRoutes' is not wired to CKFlashExecutor.\nUse the Contract Settings buttons to run the WETH flash-loan smoke test.");
+  alert("Route execution via 'executeRoutes' isn't wired to CKFlashExecutor yet.\nUse the Contract Settings buttons to run the WETH flash-loan smoke test.");
 }
 
 /* ========= WIRE UI ========= */
@@ -504,7 +454,7 @@ document.getElementById("execSelected").addEventListener("click", executeSelecte
 
 // New buttons
 document.getElementById("connectBtn").addEventListener("click", async ()=>{
-  try{ await connectWallet(); }catch(e){ alert(e.message||e); }
+  try{ await connectWallet(); }catch(e){ alert(e?.message || e); }
 });
 document.getElementById("fundBtn").addEventListener("click", async ()=>{
   try{ await connectWallet(); await fundPremium(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
@@ -513,8 +463,25 @@ document.getElementById("flashBtn").addEventListener("click", async ()=>{
   try{ await connectWallet(); await startFlashLoan(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
 });
 
-// Badges
+// Badges + initial UI
 document.getElementById("rpcPill").textContent = "RPC: Alchemy";
+document.getElementById("tokensPill").textContent = "Tokens: " + TOKENS.length;
+document.addEventListener("DOMContentLoaded",()=>{
+  const box=document.getElementById("execContract");
+  if(box && /^0x[a-fA-F0-9]{40}$/.test(DEFAULT_EXECUTOR_ADDR)) box.value = DEFAULT_EXECUTOR_ADDR;
+});
+
+// Account / network listeners
+if (window.ethereum) {
+  window.ethereum.on("accountsChanged", (accts)=>{
+    if (accts && accts[0]) {
+      const feeBox = document.getElementById("feeWallet");
+      if (feeBox) feeBox.value = accts[0];
+      log("ℹ️ Account changed: " + accts[0]);
+    }
+  });
+  window.ethereum.on("chainChanged", ()=>window.location.reload());
+}
 </script>
 </body>
 </html>

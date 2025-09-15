@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.35</title>
+<title>Crypto Kings • TestBed v9.9.40</title>
 <style>
   :root{
     --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -64,7 +64,7 @@
       <div class="logo">CK</div>
       <div>
         <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div class="hint">TestBed v9.9.35 • Arbitrum (flash-loan smoke test)</div>
+        <div class="hint">TestBed v9.9.40 • Arbitrum (flash-loan smoke test)</div>
       </div>
     </div>
     <div class="burger" title="Menu">&#9776;</div>
@@ -80,7 +80,6 @@
         <input id="payoutWalletB" type="text" placeholder="2nd profit wallet (optional)" style="min-width:300px"/>
         <input id="splitPctB" type="number" min="0" max="100" step="1" value="0" title="% of profit to wallet B"/>
       </div>
-      <!-- Flash-loan test helpers -->
       <div class="row" style="margin-top:8px">
         <button id="connectBtn" class="btn-ghost">Connect</button>
         <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.01" title="WETH loan size (for smoke test)"/>
@@ -163,30 +162,24 @@
     </div>
   </footer>
 
-<!-- ========= CONTRACT WIRING (ethers v5) ========= -->
+<!-- ========= CONTRACT + SCANNER (kept) ========= -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 <script>
-/* ========= USER CONFIG =========
-   Either paste your contract in the input box at the top,
-   or set DEFAULT_EXECUTOR_ADDR below.
-*/
-const DEFAULT_EXECUTOR_ADDR = "0xfc1272aa98811Cf3D2e7dfa31d3Ecb217D2868e3";
-
-// PASTE your full ABI array if you want (not required for smoke test)
-// Keep empty to use the minimal ABI (startFlashLoan/profitWallet/setProfitWallet)
-const EXECUTOR_ABI = []; // <-- optional, paste full ABI here
-
-// Minimal ABI used if EXECUTOR_ABI is empty
-const CK_MIN_ABI = [
-  {"inputs":[{"internalType":"address","name":"asset","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"params","type":"bytes"}],"name":"startFlashLoan","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[],"name":"profitWallet","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-  {"inputs":[{"internalType":"address","name":"_to","type":"address"}],"name":"setProfitWallet","outputs":[],"stateMutability":"nonpayable","type":"function"}
-];
+/* ========= USER CONFIG ========= */
+const DEFAULT_EXECUTOR_ADDR = "0x43327acEAd76dCD48A09cc93A509a2FE7b1f0f5c";
 
 /* ========= NETWORK / TOKENS ========= */
 const ARBITRUM_CHAIN_ID_DEC = 42161;
 const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
-const WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"; // Arbitrum WETH
+const WETH = "0x82aF49447D8a07e3BD95BD0d56f35241523fBab1"; // Arbitrum WETH
+const USDCe = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
+const SUSHI = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506";
+const CAMELOT = "0xC873FECbD354f5A56E00E710B90EF4201Db2448d";
+
+/* start simple: same router both sides; flip SELL to CAMELOT when ready */
+const BUY_ROUTER  = SUSHI;
+const SELL_ROUTER = SUSHI;
+
 const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/demo"; // replace with your key
 const FLASH_FEE = 0.0005; // 0.05%
 
@@ -374,224 +367,159 @@ async function runScan(){
   scanning=false;
 }
 
-<!-- ========= FLASH-LOAN WIRING ========= -->
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-<script>
-/* ---------- Network & addresses (Arbitrum) ---------- */
-const ARBITRUM_CHAIN_ID_DEC = 42161;
-const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
-
-/* Your deployed CKFE (you can still override via the input box) */
-const DEFAULT_EXECUTOR_ADDR = "0x43327acEAd76dCD48A09cc93A509a2FE7b1f0f5c";
-
-/* Tokens / Routers */
-const WETH   = "0x82aF49447D8a07e3BD95BD0d56f35241523fBab1";
-const USDCe  = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8"; // deeper liquidity on Arbitrum
-
-/* Start simple: same router both sides (Sushi). You can change SELL to Camelot later. */
-const SUSHI  = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506";
-const CAMELOT= "0xC873FECbD354f5A56E00E710B90EF4201Db2448d";
-
-const BUY_ROUTER  = SUSHI;   // flip to CAMELOT if you want
-const SELL_ROUTER = SUSHI;   // flip to CAMELOT to test cross-DEX arb
-
-/* ---------- Minimal ABIs ---------- */
-/* CKFE.startFlashTrade(asset, amount, Route) */
+/* ========= FLASH-LOAN WIRING (CKFE) ========= */
 const CKFE_ABI = [
-  {
-    "inputs":[
-      {"internalType":"address","name":"asset","type":"address"},
-      {"internalType":"uint256","name":"amount","type":"uint256"},
-      {"components":[
-        {"internalType":"address","name":"buyRouter","type":"address"},
-        {"internalType":"address","name":"sellRouter","type":"address"},
-        {"internalType":"address","name":"targetToken","type":"address"},
-        {"internalType":"uint256","name":"minBuyOut","type":"uint256"},
-        {"internalType":"uint256","name":"minSellOut","type":"uint256"},
-        {"internalType":"uint256","name":"deadline","type":"uint256"}
-      ],"internalType":"struct CKFE.Route","name":"r","type":"tuple"}
-    ],
-    "name":"startFlashTrade",
-    "outputs":[],
-    "stateMutability":"nonpayable",
-    "type":"function"
-  },
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"asset","type":"address"},{"indexed":false,"internalType":"uint256","name":"repaid","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"profit","type":"uint256"}],"name":"FlashCompleted","type":"event"}
+  {"inputs":[
+    {"internalType":"address","name":"asset","type":"address"},
+    {"internalType":"uint256","name":"amount","type":"uint256"},
+    {"components":[
+      {"internalType":"address","name":"buyRouter","type":"address"},
+      {"internalType":"address","name":"sellRouter","type":"address"},
+      {"internalType":"address","name":"targetToken","type":"address"},
+      {"internalType":"uint256","name":"minBuyOut","type":"uint256"},
+      {"internalType":"uint256","name":"minSellOut","type":"uint256"},
+      {"internalType":"uint256","name":"deadline","type":"uint256"}
+    ],"internalType":"struct CKFE.Route","name":"r","type":"tuple"}
+  ],"name":"startFlashTrade","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"anonymous":false,"inputs":[
+    {"indexed":true,"internalType":"address","name":"asset","type":"address"},
+    {"indexed":false,"internalType":"uint256","name":"repaid","type":"uint256"},
+    {"indexed":false,"internalType":"uint256","name":"profit","type":"uint256"}
+  ],"name":"FlashCompleted","type":"event"}
 ];
+const V2_ABI = ["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
 
-/* V2 getAmountsOut for quoting minOuts */
-const V2_ABI = [
-  "function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"
-];
-
-/* ---------- Helpers from your existing UI ---------- */
-const $ = s => document.querySelector(s);
-function getExecAddr(){
-  const v = ($("#execContract").value||"").trim();
-  return /^0x[a-fA-F0-9]{40}$/.test(v) ? v : DEFAULT_EXECUTOR_ADDR;
-}
-
-/* ---------- State ---------- */
 let __provider, __signer, __account, __ckfe;
 
-/* ---------- Wallet connect (MetaMask) ---------- */
 async function connectWallet(){
   if(!window.ethereum) throw new Error("MetaMask not found");
   __provider = new ethers.providers.Web3Provider(window.ethereum, "any");
   await __provider.send("eth_requestAccounts", []);
-
   const net = await __provider.getNetwork();
   if(Number(net.chainId)!==ARBITRUM_CHAIN_ID_DEC){
-    try{
-      await __provider.send("wallet_switchEthereumChain", [{ chainId: ARBITRUM_CHAIN_ID_HEX }]);
-    }catch(e){ throw new Error("Please switch MetaMask to Arbitrum One"); }
+    try{ await __provider.send("wallet_switchEthereumChain", [{ chainId: ARBITRUM_CHAIN_ID_HEX }]); }
+    catch(e){ throw new Error("Please switch MetaMask to Arbitrum One"); }
   }
-
   __signer  = __provider.getSigner();
   __account = await __signer.getAddress();
 
-  // set fee wallet input to connected account (keeps your layout)
   const feeBox = document.getElementById("feeWallet");
   if (feeBox) feeBox.value = __account;
 
   const addr = getExecAddr();
   __ckfe = new ethers.Contract(addr, CKFE_ABI, __signer);
+  const box=document.getElementById("execContract"); if (box) box.value = addr;
 
   document.getElementById("progPill").textContent = "Connected.";
-  const logEl = document.getElementById("log");
-  if (logEl) { logEl.textContent += `\n✅ Wallet: ${__account} | CKFE: ${addr}\n`; logEl.scrollTop = logEl.scrollHeight; }
+  log("✅ Wallet connected: " + __account + " | CKFE: " + addr);
   return __ckfe;
 }
 
-/* ---------- Optional: fund small premium buffer (WETH) ---------- */
 async function fundPremium(){
-  const human = String($("#wethAmt").value||"0.01");           // keep your input & step
+  const human = String($("#wethAmt").value||"0.01");
   const amount = ethers.utils.parseUnits(human, 18);
-  // est premium ≈ 5 bps
-  const premium = amount.mul(5).div(10000);
-  const buffer  = premium.mul(2).div(100);                     // +2% buffer
+  const premium = amount.mul(5).div(10000); // ~0.05%
+  const buffer  = premium.mul(2).div(100);  // +2%
   const wrapVal = premium.add(buffer);
 
   const c = __ckfe || await connectWallet();
   const execAddr = c.address;
 
-  const WETH_ABI = [
-    "function deposit() payable",
-    "function transfer(address to, uint256 value) returns (bool)"
-  ];
-  const weth = new ethers.Contract(WETH, WETH_ABI, __signer);
+  const weth = new ethers.Contract(
+    WETH,
+    ["function deposit() payable","function transfer(address to,uint256 value) returns (bool)"],
+    __signer
+  );
 
-  const logEl = document.getElementById("log");
-  const say = m=>{ logEl.textContent += m+"\n"; logEl.scrollTop=logEl.scrollHeight; };
-
-  say(`Wrapping ~${ethers.utils.formatUnits(wrapVal,18)} ETH → WETH`);
+  log(`Wrapping ~${ethers.utils.formatUnits(wrapVal,18)} ETH → WETH`);
   const depTx = await weth.deposit({ value: wrapVal }); await depTx.wait();
-
-  say(`Sending premium ${ethers.utils.formatUnits(premium,18)} WETH to ${execAddr}`);
+  log(`Sending premium ${ethers.utils.formatUnits(premium,18)} WETH → ${execAddr}`);
   const sendTx = await weth.transfer(execAddr, premium); await sendTx.wait();
-  say(`✅ Premium funded. Tx: ${sendTx.hash}`);
+  log(`✅ Premium funded. Tx: ${sendTx.hash}`);
   alert("Premium funded.\n" + sendTx.hash);
 }
 
-/* ---------- Execute CKFE.startFlashTrade ---------- */
 async function startFlashLoan(){
-  // Use your existing input for size; borrow WETH
   const human = String($("#wethAmt").value||"0.01");
   const amount = ethers.utils.parseUnits(human, 18);
-
   const c = __ckfe || await connectWallet();
-  const logEl = document.getElementById("log");
-  const say = m=>{ logEl.textContent += m+"\n"; logEl.scrollTop=logEl.scrollHeight; };
 
-  // 1) Quote minOuts with 99% safety from V2 routers
+  // quote minOuts @ 99% safety
   const rBuy  = new ethers.Contract(BUY_ROUTER,  V2_ABI, __provider);
   const rSell = new ethers.Contract(SELL_ROUTER, V2_ABI, __provider);
+  const buyPath  = [WETH, USDCe];
+  const sellPath = [USDCe, WETH];
 
-  let minBuyOut = ethers.constants.One;   // default loose guard
-  let minSellOut= ethers.constants.One;
+  let minBuyOut = ethers.constants.One;
+  let minSellOut = ethers.constants.One;
   try{
-    const buyPath  = [WETH, USDCe];
-    const sellPath = [USDCe, WETH];
-    const buyOut   = await rBuy.getAmountsOut(amount, buyPath);
-    const usdcOut  = buyOut[buyOut.length-1];
-    const sellOut  = await rSell.getAmountsOut(usdcOut, sellPath);
-    const wethBack = sellOut[sellOut.length-1];
-
-    // set 99% of quoted amounts as minOuts
+    const buyOut  = await rBuy.getAmountsOut(amount, buyPath);
+    const usdcOut = buyOut[buyOut.length-1];
+    const sellOut = await rSell.getAmountsOut(usdcOut, sellPath);
+    const wethBack= sellOut[sellOut.length-1];
     minBuyOut  = usdcOut.mul(99).div(100);
     minSellOut = wethBack.mul(99).div(100);
-  }catch(e){
-    // leave min outs at 1 if quoting fails
-  }
+  }catch(_){}
 
-  // 2) Build Route tuple
   const route = {
-    buyRouter:  BUY_ROUTER,
+    buyRouter: BUY_ROUTER,
     sellRouter: SELL_ROUTER,
-    targetToken: USDCe,        // use USDC.e for depth
-    minBuyOut:  minBuyOut,
-    minSellOut: minSellOut,
-    deadline:   0              // contract translates 0 to "now"
+    targetToken: USDCe,
+    minBuyOut, minSellOut,
+    deadline: 0
   };
 
-  // 3) Simulate first (no gas)
+  // simulate first
   try{
     await c.callStatic.startFlashTrade(WETH, amount, route);
-    say("staticCall: would succeed ✅");
+    log("staticCall: would succeed ✅");
   }catch(err){
-    say("staticCall revert ❌ " + (err?.data?.message || err?.reason || err?.message || ""));
+    log("staticCall revert ❌ " + (err?.reason||err?.message||""));
   }
 
-  // 4) Send real tx
-  say(`Sending startFlashTrade for ${human} WETH…`);
   const tx = await c.startFlashTrade(WETH, amount, route, { gasLimit: 3_500_000 });
-  say("tx: " + tx.hash);
+  log("tx: " + tx.hash);
   const rcpt = await tx.wait();
-  say(`✅ Mined in block ${rcpt.blockNumber} | logs: ${rcpt.logs.length}`);
-  alert("Flash trade executed.\n" + tx.hash);
+  log(`✅ Executed | Block ${rcpt.blockNumber} | logs: ${rcpt.logs.length}`);
 }
 
-/* ---------- Execute Selected (placeholder stays) ---------- */
+/* ========= PLACEHOLDER: EXECUTE SELECTED ========= */
 async function executeSelected(){
-  alert("Route execution from table is still a placeholder.\nUse the buttons in Contract Settings to run the CKFE flash-loan test.");
+  alert("Route execution from table is still a placeholder.\nUse Contract Settings to run CKFE flash-loan test.");
 }
 
-/* ---------- Wire your existing buttons (layout unchanged) ---------- */
+/* ========= WIRE UI ========= */
 document.getElementById("scanBtn").addEventListener("click", runScan);
-document.getElementById("stopBtn").addEventListener("click", ()=>{ stopFlag=true; document.getElementById("progPill").textContent="Stopped."; });
-document.getElementById("results").addEventListener("change", e=>{
-  if(e.target.classList.contains("pick")) updateSelectedTotal();
-});
+document.getElementById("stopBtn").addEventListener("click", ()=>{ stopFlag=true; $("#progPill").textContent="Stopped."; });
+tbody.addEventListener("change", e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
 document.getElementById("selectProfitable").addEventListener("click", ()=>{
-  document.querySelectorAll("#tbody tr").forEach(tr=>{
+  tbody.querySelectorAll("tr").forEach(tr=>{
     const cb=tr.querySelector(".pick");
-    if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99) > 0);
+    if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0);
   });
   updateSelectedTotal();
 });
-document.getElementById("clearSel").addEventListener("click", ()=>{
-  document.querySelectorAll("#tbody .pick").forEach(cb=>cb.checked=false);
-  updateSelectedTotal();
-});
+document.getElementById("clearSel").addEventListener("click", ()=>{ tbody.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
+
 document.getElementById("execSelected").addEventListener("click", executeSelected);
 
-/* New buttons keep same IDs so layout stays */
+/* New buttons (keep your layout) */
 document.getElementById("connectBtn").addEventListener("click", async ()=>{
-  try { await connectWallet(); } catch(e){ alert(e?.message || e); }
+  try{ await connectWallet(); }catch(e){ alert(e?.message || e); }
 });
 document.getElementById("fundBtn").addEventListener("click", async ()=>{
-  try { await connectWallet(); await fundPremium(); } catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
+  try{ await connectWallet(); await fundPremium(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
 });
 document.getElementById("flashBtn").addEventListener("click", async ()=>{
-  try { await connectWallet(); await startFlashLoan(); } catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
+  try{ await connectWallet(); await startFlashLoan(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
 });
 
-/* Badges + auto-fill */
+/* Badges + initial UI */
 document.getElementById("rpcPill").textContent = "RPC: Alchemy";
 document.getElementById("tokensPill").textContent = "Tokens: " + TOKENS.length;
-document.addEventListener("DOMContentLoaded", ()=>{
+document.addEventListener("DOMContentLoaded",()=>{
   const box=document.getElementById("execContract");
-  if (box && /^0x[a-fA-F0-9]{40}$/.test(DEFAULT_EXECUTOR_ADDR)) box.value = DEFAULT_EXECUTOR_ADDR;
+  if(box && /^0x[a-fA-F0-9]{40}$/.test(DEFAULT_EXECUTOR_ADDR)) box.value = DEFAULT_EXECUTOR_ADDR;
 });
 
 /* Account / network listeners */
@@ -600,8 +528,7 @@ if (window.ethereum) {
     if (accts && accts[0]) {
       const feeBox = document.getElementById("feeWallet");
       if (feeBox) feeBox.value = accts[0];
-      const logEl = document.getElementById("log");
-      if (logEl) { logEl.textContent += `\nℹ️ Account changed: ${accts[0]}\n`; logEl.scrollTop = logEl.scrollHeight; }
+      log("ℹ️ Account changed: " + accts[0]);
     }
   });
   window.ethereum.on("chainChanged", ()=>window.location.reload());

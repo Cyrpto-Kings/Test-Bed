@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.46</title>
+<title>Crypto Kings • TestBed v9.9.48</title>
 <style>
 :root{
   --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -36,7 +36,7 @@ tr.profit{background:#ecfdf5}
 tr.loss{background:#fff1f2}
 .ok{color:#059669} .bad{color:#e11d48} .warn{color:#b45309}
 .tag{display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;border-radius:999px;padding:2px 8px;font-size:12px;background:#fff}
-.logs{background:#0b1220;color:#a7f3d0;border:1px solid #0f1b34;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:220px;overflow:auto}
+.logs{background:#0b1220;color:#a7f3d0;border:1px solid #0f1b34;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:260px;overflow:auto}
 footer{background:#111;color:#ddd;padding:24px}
 .foot{max-width:1100px;margin:0 auto;display:grid;gap:18px;grid-template-columns:repeat(4,1fr)}
 footer h4{color:#fff;margin:0 0 10px;font-size:16px}
@@ -64,7 +64,7 @@ footer li{margin:6px 0}
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;line-height:1">Crypto Kings</div>
-      <div class="hint">TestBed v9.9.46 • Arbitrum (Sushi-only, USDCe fallback)</div>
+      <div class="hint">TestBed v9.9.48 • Arbitrum (Sushi-only, smarter pool matching)</div>
     </div>
   </div>
   <div class="burger" title="Menu">&#9776;</div>
@@ -82,11 +82,11 @@ footer li{margin:6px 0}
     </div>
     <div class="row" style="margin-top:8px">
       <button id="connectBtn" class="btn-ghost">Connect</button>
-      <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.002" title="WETH loan size (for quotes & smoke test)"/>
+      <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.003" title="WETH loan size (for quotes & smoke test)"/>
       <button id="fundBtn" class="btn-ghost" title="Wrap tiny ETH→WETH and send premium to the contract">Fund Premium</button>
       <button id="flashBtn" class="btn-primary">Start Flash Loan (WETH)</button>
     </div>
-    <div class="hint" id="execHint">Enter your CKFlashExecutor. Execution uses MetaMask on Arbitrum (42161). WETH amount above is used for router quotes and smoke-test flash loans.</div>
+    <div class="hint" id="execHint">Enter your CKFlashExecutor. Execution uses MetaMask on Arbitrum (42161). WETH amount above is used for router quotes and flash-loan test.</div>
   </div>
 
   <!-- Scan Panel -->
@@ -181,7 +181,7 @@ const ROUTER_BY_DEX = {
 const KNOWN_EXEC_DEX = new Set(Object.keys(ROUTER_BY_DEX));
 
 /* ========= RPC (hard-wired) ========= */
-const ALCHEMY_URL   = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; // your key
+const ALCHEMY_URL   = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
 const READ_PROVIDER = new ethers.providers.JsonRpcProvider(ALCHEMY_URL);
 
 /* ========= SCANNER CONFIG ========= */
@@ -190,12 +190,15 @@ const SLIP_FEE  = 0.002;
 const SPREAD_CAP = 75;
 const GAS_LIMIT = 380000;
 const EXEC_LIQ_MULT = 1.5;
+
+/* Token universe (expanded) — removed WETH as a “symbol row” to avoid confusion */
 const TOKENS = [
-  "WETH","WBTC","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","RDNT",
-  "PENDLE","FRAX","CRV","BAL","UNI","wstETH","SNX","COMP","YFI","GRT",
-  "STG","LQTY","RPL","MKR","ENS","CVX","FXS","SUSHI","LUSD","MAGIC",
-  "BADGER","DODO","BNT","OP","GNS","DPX","RDPX","GRAIL","HOP","ALCX",
-  "ANGLE","PERP","1INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","JOE"
+  "USDC","USDT","DAI","ARB","WBTC","LINK","GMX","AAVE","RDNT","PENDLE","FRAX","CRV","BAL","UNI","wstETH","SNX","COMP","YFI","GRT",
+  "STG","LQTY","RPL","MKR","ENS","CVX","FXS","SUSHI","LUSD","MAGIC","BADGER","DODO","BNT","OP","GNS","DPX","RDPX","GRAIL","HOP",
+  "ALCX","ANGLE","PERP","1INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","JOE",
+  /* extra adds */
+  "WOO","TIA","MERLIN","PRIME","ORDI","LDO","LBR","ZRO","AEVO","ALT","BEAM","KAVA","KNC","LPT","MCB","METIS","MNT","PENDLE","RUNE","SYN",
+  "TUSD","XAI","XVS","ZRX","XAVA","JONES","JTO","BTRFLY","SWPR","LYRA"
 ];
 
 /* ========= HELPERS ========= */
@@ -203,7 +206,6 @@ const $ = s=>document.querySelector(s);
 const tbody = $("#tbody"), logEl = $("#log");
 function log(m){ logEl.textContent += (m.endsWith("\n")?m:m+"\n"); logEl.scrollTop=logEl.scrollHeight; }
 function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
-function liqUsd(p){ return Number(p?.liquidity?.usd||0); }
 function getExecAddr(){ const v = ($("#execContract").value||"").trim(); return /^0x[a-fA-F0-9]{40}$/.test(v) ? v : DEFAULT_EXECUTOR_ADDR; }
 
 /* ========= ETH & GAS ========= */
@@ -225,34 +227,56 @@ async function fetchGasGwei(){
   }catch(_){ $("#gasPill").textContent="Gas: (fail)"; GAS_GWEI = 0.05; }
 }
 
-/* ========= DEXSCREENER (Sushi filter) ========= */
+/* ========= Dexscreener (better Sushi matching; symbol on either side) ========= */
+function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+function isUsdcish(s){ const n=norm(s); return n==="usdc"||n==="usdce"; }
+
 async function fetchPairsForSymbol(sym){
+  const want = norm(sym);
   try{
     const url = "https://api.dexscreener.com/latest/dex/search?q="+encodeURIComponent(sym);
-    const r = await fetch(url,{cache:"no-store"});
-    if(!r.ok) return [];
+    const r = await fetch(url,{cache:"no-store"}); if(!r.ok) return [];
     const j = await r.json();
+
     const pairs = (j?.pairs||[]).filter(p=>{
-  const base = (p?.baseToken?.symbol||"").toUpperCase();
-  const dex  = (p?.dexId||"").toLowerCase();
-  return p?.chainId==="arbitrum" && base===sym.toUpperCase() && dex.includes("sushi");
-});
-    // pick the highest-liquidity Sushi pool per token
-    let best=null; for(const p of pairs){
-      const liq=liqUsd(p), price=Number(p?.priceUsd||0);
-      if(!(liq>0&&price>0)) continue;
-      if(!best || liq>best.liq) best = { pair:p, liq };
+      if (p?.chainId !== "arbitrum") return false;
+      const dex = norm(p?.dexId);
+      if (!dex.includes("sushi")) return false;
+
+      const baseS = p?.baseToken?.symbol || "";
+      const quoteS= p?.quoteToken?.symbol || "";
+      const baseN = norm(baseS), quoteN = norm(quoteS);
+
+      const sideMatch =
+        baseN===want || quoteN===want ||
+        (isUsdcish(sym) && (isUsdcish(baseS) || isUsdcish(quoteS)));
+
+      return sideMatch && Number(p?.priceUsd)>0 && Number(p?.liquidity?.usd)>0;
+    });
+
+    // Map to “partner token on this Sushi pair”
+    const mapped = pairs.map(p=>{
+      const baseS = p?.baseToken?.symbol || "", quoteS = p?.quoteToken?.symbol || "";
+      const matchBase = norm(baseS)===want || (isUsdcish(sym) && isUsdcish(baseS));
+      const partner = matchBase ? p?.quoteToken : p?.baseToken;
+      return {
+        dexId: "SUSHISWAP",
+        priceUsd: Number(p?.priceUsd||0),
+        liq: Number(p?.liquidity?.usd||0),
+        tokenSymbol: String(partner?.symbol||"").toUpperCase(),
+        tokenAddr: String(partner?.address||"").toLowerCase(),
+        baseToken: p?.baseToken, quoteToken: p?.quoteToken,
+        txns: p?.txns, liquidity: p?.liquidity
+      };
+    });
+
+    // Keep highest-liquidity partner per token address
+    const byAddr = new Map();
+    for (const m of mapped){
+      const cur = byAddr.get(m.tokenAddr);
+      if (!cur || m.liq > cur.liq) byAddr.set(m.tokenAddr, m);
     }
-    return best ? [{
-      dexId: "SUSHISWAP",
-      priceUsd: Number(best.pair?.priceUsd||0),
-      liq: Number(best.pair?.liquidity?.usd||0),
-      tokenSymbol: (best.pair?.baseToken?.symbol||"").toUpperCase(),
-      tokenAddr: (best.pair?.baseToken?.address||"").toLowerCase(),
-      baseToken: best.pair?.baseToken,
-      txns: best.pair?.txns,
-      liquidity: best.pair?.liquidity
-    }] : [];
+    return Array.from(byAddr.values());
   }catch(_){ return []; }
 }
 
@@ -297,7 +321,6 @@ async function routeForPairs(pairs, loanUsd, amountWei){
   let best=null;
 
   for(const buy of pairs){
-    // Sushi only, so buyDex = sellDex = SUSHI
     const rt = await quoteRoundTrip(amountWei, buy.tokenAddr);
     if(!rt) continue;
 
@@ -313,8 +336,7 @@ async function routeForPairs(pairs, loanUsd, amountWei){
     const netBackWei = backWei.sub(feeWei).sub(gasWei);
     const netPLWei   = netBackWei.sub(amountIn);
 
-    const pa=Number(buy.priceUsd), pb=pa; // same DEX for visuals
-    const spreadPct = 0;
+    const pa=Number(buy.priceUsd);
     const netPLUsd = ETH_USD ? Number(ethers.utils.formatUnits(netPLWei,18))*ETH_USD : 0;
 
     const row = {
@@ -322,8 +344,8 @@ async function routeForPairs(pairs, loanUsd, amountWei){
       tokenAddr: buy.tokenAddr,
       buyDex: "SUSHISWAP",
       sellDex: "SUSHISWAP",
-      buyPrice: pa, sellPrice: pb,
-      spreadPct, usdcBack: NaN,
+      buyPrice: pa, sellPrice: pa,
+      spreadPct: 0, usdcBack: NaN,
       netPL: netPLUsd, netPLWei, execFlag: "✅ Router-verified (Sushi)"
     };
     if (!best || netPLWei.gt(best.netPLWei)) best = row;
@@ -356,8 +378,8 @@ function renderRows(rows){
       <td class="tok">${r.token}</td>
       <td><div class="cell"><span class="lbl">Buy</span><span class="val">${isFinite(r.buyPrice)?Number(r.buyPrice).toLocaleString(undefined,{maximumFractionDigits:6}):'—'} @ ${r.buyDex}</span></div></td>
       <td><div class="cell"><span class="lbl">Sell</span><span class="val">${isFinite(r.sellPrice)?Number(r.sellPrice).toLocaleString(undefined,{maximumFractionDigits:6}):'—'} @ ${r.sellDex}</span></div></td>
-      <td class="right mono">${isFinite(r.spreadPct)?r.spreadPct.toFixed(2):'—'}%</td>
-      <td class="right mono">${isFinite(r.usdcBack)?usd(r.usdcBack):'—'}</td>
+      <td class="right mono">—%</td>
+      <td class="right mono">—</td>
       <td class="right mono ${r.netPL>0?'ok':'bad'}">${isFinite(r.netPL)?((r.netPL>=0?'+':'-')+usd(Math.abs(r.netPL)).replace('$','')):'—'}</td>
       <td class="flags"><span class="tag ok">${r.execFlag}</span></td>
     `;
@@ -386,7 +408,7 @@ async function runScan(){
   $("#progPill").textContent="Scanning Sushi pools…";
   log(`[${new Date().toLocaleTimeString()}] CLICK Scan; tokens=${TOKENS.length}; loan=${loan.toLocaleString()}`);
 
-  const humanAmt = String($("#wethAmt").value||"0.002");
+  const humanAmt = String($("#wethAmt").value||"0.003");
   const amountWei = ethers.utils.parseUnits(humanAmt, 18);
 
   const found=[];
@@ -401,7 +423,7 @@ async function runScan(){
     const best = await routeForPairs(pairs, loan, amountWei);
     if(best){
       found.push(best);
-      log(`${sym}: router-verified ${best.buyDex}→${best.sellDex} net ${usd(best.netPL)} (${humanAmt} WETH)`);
+      log(`${sym}: router-verified net ${usd(best.netPL)} (${humanAmt} WETH)`);
     } else {
       log(`${sym}: no route at ${humanAmt} WETH`);
     }
@@ -484,7 +506,7 @@ async function fundPremium(){
 }
 
 async function startFlashLoan(){
-  const human = String($("#wethAmt").value||"0.002");
+  const human = String($("#wethAmt").value||"0.003");
   const amount = ethers.utils.parseUnits(human, 18);
   const c = __ckfe || await connectWallet();
 
@@ -534,7 +556,7 @@ async function executeSelected(){
   const tokenAddr = (row.dataset.tokenAddr || "").toLowerCase();
   if (!/^0x[a-f0-9]{40}$/.test(tokenAddr)) { alert("Missing token address on the selected row."); return; }
 
-  const human  = String($("#wethAmt").value || "0.002");
+  const human  = String($("#wethAmt").value || "0.003");
   const amount = ethers.utils.parseUnits(human, 18);
 
   const c = __ckfe || await connectWallet();

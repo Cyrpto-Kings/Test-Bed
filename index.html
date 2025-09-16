@@ -233,10 +233,10 @@ async function fetchPairsForSymbol(sym){
     if(!r.ok) return [];
     const j = await r.json();
     const pairs = (j?.pairs||[]).filter(p=>{
-      const base = (p?.baseToken?.symbol||"").toUpperCase();
-      const dex  = (p?.dexId||"").toUpperCase();
-      return p?.chainId==="arbitrum" && base===sym.toUpperCase() && dex==="SUSHISWAP";
-    });
+  const base = (p?.baseToken?.symbol||"").toUpperCase();
+  const dex  = (p?.dexId||"").toLowerCase();
+  return p?.chainId==="arbitrum" && base===sym.toUpperCase() && dex.includes("sushi");
+});
     // pick the highest-liquidity Sushi pool per token
     let best=null; for(const p of pairs){
       const liq=liqUsd(p), price=Number(p?.priceUsd||0);

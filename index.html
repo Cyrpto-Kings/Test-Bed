@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.40</title>
+<title>Crypto Kings • TestBed v9.9.42</title>
 <style>
   :root{
     --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -64,7 +64,7 @@
       <div class="logo">CK</div>
       <div>
         <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div class="hint">TestBed v9.9.40 • Arbitrum (flash-loan smoke test)</div>
+        <div class="hint">TestBed v9.9.42 • Arbitrum (flash-loan smoke test)</div>
       </div>
     </div>
     <div class="burger" title="Menu">&#9776;</div>
@@ -112,7 +112,7 @@
         <button id="selectProfitable" class="btn-ghost">Select all profitable</button>
         <button id="clearSel" class="btn-ghost">Clear</button>
         <span id="selTotal" class="pill">++$0</span>
-        <button id="execSelected" class="btn-primary" style="margin-left:auto">Execute Selected (placeholder)</button>
+        <button id="execSelected" class="btn-primary" style="margin-left:auto">Execute Selected (one route)</button>
       </div>
       <table id="results">
         <thead>
@@ -171,7 +171,7 @@ const DEFAULT_EXECUTOR_ADDR = "0x43327acEAd76dCD48A09cc93A509a2FE7b1f0f5c";
 /* ========= NETWORK / TOKENS ========= */
 const ARBITRUM_CHAIN_ID_DEC = 42161;
 const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
-const WETH = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"; // Arbitrum WETH (lowercase)"; // Arbitrum WETH
+const WETH = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"; // Arbitrum WETH (lowercase)
 const USDCe = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
 const SUSHI = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506";
 const CAMELOT = "0xC873FECbD354f5A56E00E710B90EF4201Db2448d";
@@ -179,6 +179,12 @@ const CAMELOT = "0xC873FECbD354f5A56E00E710B90EF4201Db2448d";
 /* start simple: same router both sides; flip SELL to CAMELOT when ready */
 const BUY_ROUTER  = SUSHI;
 const SELL_ROUTER = SUSHI;
+
+/* DEX → router map for Execute Selected */
+const ROUTER_BY_DEX = {
+  "SUSHISWAP": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
+  "CAMELOT":   "0xc873fecbd354f5a56e00e710b90ef4201db2448d"
+};
 
 const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/demo"; // replace with your key
 const FLASH_FEE = 0.0005; // 0.05%
@@ -282,7 +288,9 @@ function routeForPairs(pairs, loan){
 
       if(!best || netPL>best.netPL){
         best = {
-          token:(buy?.baseToken?.symbol||""), buyDex, sellDex,
+          token:(buy?.baseToken?.symbol||""),
+          tokenAddr:(buy?.baseToken?.address||"").toLowerCase(),  // <- keep address for execution
+          buyDex, sellDex,
           buyPrice:pa, sellPrice:pb,
           spreadPct:spread, usdcBack:gross, netPL, execFlag
         };
@@ -304,6 +312,7 @@ function renderRows(rows){
     tr.className = r.netPL>0 ? "profit" : "loss";
     tr.dataset.netpl = r.netPL;
     tr.dataset.token = r.token;
+    tr.dataset.tokenAddr = r.tokenAddr || "";  // <- for Execute Selected
     tr.dataset.buyDex = r.buyDex;
     tr.dataset.sellDex = r.sellDex;
     tr.dataset.buyPrice = r.buyPrice;
@@ -410,7 +419,7 @@ async function connectWallet(){
   __ckfe = new ethers.Contract(addr, CKFE_ABI, __signer);
   const box=document.getElementById("execContract"); if (box) box.value = addr;
 
-  document.getElementById("progPill").textContent = "Connected.";
+  $("#progPill").textContent = "Connected.";
   log("✅ Wallet connected: " + __account + " | CKFE: " + addr);
   return __ckfe;
 }
@@ -483,9 +492,71 @@ async function startFlashLoan(){
   log(`✅ Executed | Block ${rcpt.blockNumber} | logs: ${rcpt.logs.length}`);
 }
 
-/* ========= PLACEHOLDER: EXECUTE SELECTED ========= */
+/* ========= EXECUTE SELECTED (one row) ========= */
 async function executeSelected(){
-  alert("Route execution from table is still a placeholder.\nUse Contract Settings to run CKFE flash-loan test.");
+  // exactly one row
+  const picks = Array.from(document.querySelectorAll("#tbody .pick:checked"));
+  if (picks.length !== 1) { alert("Please select exactly 1 row."); return; }
+  const row = picks[0].closest("tr");
+
+  // map DEX -> router
+  const buyDex  = row.dataset.buyDex;
+  const sellDex = row.dataset.sellDex;
+  const buyRouter  = ROUTER_BY_DEX[buyDex]  || null;
+  const sellRouter = ROUTER_BY_DEX[sellDex] || null;
+  if (!buyRouter || !sellRouter) {
+    alert(`Router missing for ${!buyRouter ? buyDex : sellDex}. Choose a Sushi/Camelot row.`);
+    return;
+  }
+
+  // token address from scan row
+  const tokenAddr = (row.dataset.tokenAddr || "").toLowerCase();
+  if (!/^0x[a-f0-9]{40}$/.test(tokenAddr)) {
+    alert("Missing token address on the selected row."); return;
+  }
+
+  // borrow amount from your WETH input
+  const human  = String($("#wethAmt").value || "0.01");
+  const amount = ethers.utils.parseUnits(human, 18);
+
+  const c = __ckfe || await connectWallet();
+
+  // quote 99% minOuts on the chosen routers
+  const rBuy  = new ethers.Contract(buyRouter,  V2_ABI, __provider);
+  const rSell = new ethers.Contract(sellRouter, V2_ABI, __provider);
+
+  const buyPath  = [WETH, tokenAddr];
+  const sellPath = [tokenAddr, WETH];
+
+  let minBuyOut = ethers.constants.One;
+  let minSellOut = ethers.constants.One;
+  try {
+    const buyOut  = await rBuy.getAmountsOut(amount, buyPath);
+    const midOut  = buyOut[buyOut.length-1];
+    const sellOut = await rSell.getAmountsOut(midOut, sellPath);
+    const back    = sellOut[sellOut.length-1];
+    minBuyOut  = midOut.mul(99).div(100);
+    minSellOut = back.mul(99).div(100);
+  } catch (_) {
+    log("Quote failed; using minOut=1.");
+  }
+
+  const route = {
+    buyRouter:  buyRouter,
+    sellRouter: sellRouter,
+    targetToken: tokenAddr,
+    minBuyOut, minSellOut,
+    deadline: 0
+  };
+
+  // simulate just for a readable error, then send real tx
+  try { await c.callStatic.startFlashTrade(WETH, amount, route); log("staticCall: would succeed ✅"); }
+  catch (err) { log("staticCall revert ❌ " + (err?.reason||err?.message||"")); }
+
+  const tx = await c.startFlashTrade(WETH, amount, route, { gasLimit: 3_500_000 });
+  log("⛓️ tx: " + tx.hash);
+  const rcpt = await tx.wait();
+  log(`✅ Mined block ${rcpt.blockNumber} | logs: ${rcpt.logs.length}`);
 }
 
 /* ========= WIRE UI ========= */

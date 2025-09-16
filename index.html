@@ -3,164 +3,164 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.44</title>
+<title>Crypto Kings • TestBed v9.9.45</title>
 <style>
-  :root{
-    --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
-    --card:#f9fafb; --ok:#059669; --warn:#b45309; --bad:#e11d48;
-    --g1:#2563eb; --g2:#7c3aed;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-  header{background:#111;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
-  .brand{display:flex;gap:10px;align-items:center}
-  .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#4f46e5,#22c55e);display:grid;place-items:center;font-weight:800}
-  .burger{font-size:22px;cursor:pointer;user-select:none}
-  .container{max-width:1100px;margin:0 auto;padding:16px}
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .hint{color:var(--muted);font-size:12px}
-  input[type=text],input[type=number]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:160px}
-  button{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
-  .btn-primary{color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 8px 24px rgba(37,99,235,.2)}
-  .btn-ghost{background:#eef2f7;color:#111}
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .pill{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;color:#111}
-  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:10px}
-  table{width:100%;border-collapse:collapse;table-layout:fixed}
-  thead th{background:#f3f4f6;border-bottom:1px solid var(--line);padding:10px 12px;color:#374151;font-weight:700}
-  tbody td{border-bottom:1px solid var(--line);padding:10px 12px;vertical-align:top}
-  .right{text-align:right}
-  .mono{font-variant-numeric:tabular-nums}
-  tr.profit{background:#ecfdf5}
-  tr.loss{background:#fff1f2}
-  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
-  .tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:12px;background:#fff}
-  .logs{background:#0b1220;color:#a7f3d0;border:1px solid #0f1b34;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:220px;overflow:auto}
-  footer{background:#111;color:#ddd;padding:24px}
-  .foot{max-width:1100px;margin:0 auto;display:grid;gap:18px;grid-template-columns:repeat(4,1fr)}
-  footer h4{color:#fff;margin:0 0 10px;font-size:16px}
-  footer ul{list-style:none;margin:0;padding:0}
-  footer li{margin:6px 0}
-  @media(max-width:800px){ .foot{grid-template-columns:1fr 1fr} }
-  @media(max-width:560px){ .foot{grid-template-columns:1fr} }
-  @media(max-width:720px){
-    thead{display:none}
-    tbody tr{display:grid;grid-template-columns:1fr 1fr;grid-row-gap:6px;padding:10px 12px}
-    tbody td{border:0;padding:0}
-    td.sel{grid-column:1/-1;order:-3;margin-bottom:4px}
-    td.tok{grid-column:1/-1;font-weight:700;order:-2}
-    td.flags{grid-column:1/-1;order:-1;margin-top:6px}
-    .cell{display:flex;justify-content:space-between;gap:8px}
-    .lbl{color:#6b7280;font-size:12px;margin-right:8px}
-    .val{text-align:right}
-    .toolbar .btn-primary,.toolbar .btn-ghost{width:100%}
-  }
+:root{
+  --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+  --card:#f9fafb; --ok:#059669; --warn:#b45309; --bad:#e11d48;
+  --g1:#2563eb; --g2:#7c3aed;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:#111;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#4f46e5,#22c55e);display:grid;place-items:center;font-weight:800}
+.burger{font-size:22px;cursor:pointer;user-select:none}
+.container{max-width:1100px;margin:0 auto;padding:16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hint{color:var(--muted);font-size:12px}
+input[type=text],input[type=number]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:160px}
+button{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
+.btn-primary{color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 8px 24px rgba(37,99,235,.2)}
+.btn-ghost{background:#eef2f7;color:#111}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pill{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;color:#111}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:10px}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead th{background:#f3f4f6;border-bottom:1px solid var(--line);padding:10px 12px;color:#374151;font-weight:700}
+tbody td{border-bottom:1px solid var(--line);padding:10px 12px;vertical-align:top}
+.right{text-align:right}
+.mono{font-variant-numeric:tabular-nums}
+tr.profit{background:#ecfdf5}
+tr.loss{background:#fff1f2}
+.ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+.tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:12px;background:#fff}
+.logs{background:#0b1220;color:#a7f3d0;border:1px solid #0f1b34;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:220px;overflow:auto}
+footer{background:#111;color:#ddd;padding:24px}
+.foot{max-width:1100px;margin:0 auto;display:grid;gap:18px;grid-template-columns:repeat(4,1fr)}
+footer h4{color:#fff;margin:0 0 10px;font-size:16px}
+footer ul{list-style:none;margin:0;padding:0}
+footer li{margin:6px 0}
+@media(max-width:800px){ .foot{grid-template-columns:1fr 1fr} }
+@media(max-width:560px){ .foot{grid-template-columns:1fr} }
+@media(max-width:720px){
+  thead{display:none}
+  tbody tr{display:grid;grid-template-columns:1fr 1fr;grid-row-gap:6px;padding:10px 12px}
+  tbody td{border:0;padding:0}
+  td.sel{grid-column:1/-1;order:-3;margin-bottom:4px}
+  td.tok{grid-column:1/-1;font-weight:700;order:-2}
+  td.flags{grid-column:1/-1;order:-1;margin-top:6px}
+  .cell{display:flex;justify-content:space-between;gap:8px}
+  .lbl{color:#6b7280;font-size:12px;margin-right:8px}
+  .val{text-align:right}
+  .toolbar .btn-primary,.toolbar .btn-ghost{width:100%}
+}
 </style>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <div class="logo">CK</div>
-      <div>
-        <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div class="hint">TestBed v9.9.44 • Arbitrum (manual + callStatic verify)</div>
-      </div>
+<header>
+  <div class="brand">
+    <div class="logo">CK</div>
+    <div>
+      <div style="font-weight:800;line-height:1">Crypto Kings</div>
+      <div class="hint">TestBed v9.9.45 • Arbitrum (router-verified, Sushi↔️Camelot↔️Ramses)</div>
     </div>
-    <div class="burger" title="Menu">&#9776;</div>
-  </header>
+  </div>
+  <div class="burger" title="Menu">&#9776;</div>
+</header>
 
-  <div class="container">
-    <!-- Contract Settings -->
-    <div class="panel">
-      <div style="font-weight:700;margin-bottom:8px">Contract Settings (required for on-chain execute)</div>
-      <div class="row">
-        <input id="execContract" type="text" placeholder="Executor contract address (0x…)" style="min-width:340px"/>
-        <input id="feeWallet" type="text" placeholder="Your fee wallet (0x…)" style="min-width:300px"/>
-        <input id="payoutWalletB" type="text" placeholder="2nd profit wallet (optional)" style="min-width:300px"/>
-        <input id="splitPctB" type="number" min="0" max="100" step="1" value="0" title="% of profit to wallet B"/>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button id="connectBtn" class="btn-ghost">Connect</button>
-        <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.001" title="WETH trade size (for quotes & execute)"/>
-        <button id="fundBtn" class="btn-ghost" title="Wrap tiny ETH→WETH and send premium to the contract">Fund Premium</button>
-        <button id="flashBtn" class="btn-primary">Start Flash Loan (WETH)</button>
-      </div>
-      <div class="hint" id="execHint">Paste your deployed CKFlashExecutor contract. Execution uses MetaMask on Arbitrum (42161). WETH amount drives router quotes & execution size.</div>
+<div class="container">
+  <!-- Contract Settings -->
+  <div class="panel">
+    <div style="font-weight:700;margin-bottom:8px">Contract Settings (required for on-chain execute)</div>
+    <div class="row">
+      <input id="execContract" type="text" placeholder="Executor contract address (0x…)" style="min-width:340px"/>
+      <input id="feeWallet" type="text" placeholder="Your fee wallet (0x…)" style="min-width:300px"/>
+      <input id="payoutWalletB" type="text" placeholder="2nd profit wallet (optional)" style="min-width:300px"/>
+      <input id="splitPctB" type="number" min="0" max="100" step="1" value="0" title="% of profit to wallet B"/>
     </div>
-
-    <!-- Scan Panel -->
-    <div class="panel">
-      <div class="row">
-        <label class="hint">Loan Amount (USDC):</label>
-        <input id="loan" type="number" min="1" step="1" value="3"/>
-        <button id="scanBtn" class="btn-primary">Scan</button>
-        <button id="stopBtn" class="btn-ghost">Stop</button>
-      </div>
-      <div class="chips">
-        <span class="pill" id="rpcPill">RPC: —</span>
-        <span class="pill" id="tokensPill">Tokens: —</span>
-        <span class="pill" id="gasPill">Gas: —</span>
-        <span class="pill" id="ethPill">ETH: —</span>
-        <span class="pill" id="progPill">Idle.</span>
-      </div>
+    <div class="row" style="margin-top:8px">
+      <button id="connectBtn" class="btn-ghost">Connect</button>
+      <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.01" title="WETH loan size (for smoke test)"/>
+      <button id="fundBtn" class="btn-ghost" title="Wrap tiny ETH→WETH and send premium to the contract">Fund Premium</button>
+      <button id="flashBtn" class="btn-primary">Start Flash Loan (WETH)</button>
     </div>
+    <div class="hint" id="execHint">Paste your deployed CKFlashExecutor contract. Execution uses MetaMask on Arbitrum (42161). For the test we borrow WETH and repay with pre-funded premium.</div>
+  </div>
 
-    <!-- Results Panel -->
-    <div class="panel">
-      <div class="toolbar">
-        <button id="selectProfitable" class="btn-ghost">Select all profitable</button>
-        <button id="clearSel" class="btn-ghost">Clear</button>
-        <span id="selTotal" class="pill">++$0</span>
-        <button id="execSelected" class="btn-primary" style="margin-left:auto">Execute Selected</button>
-      </div>
-      <table id="results">
-        <thead>
-          <tr>
-            <th style="width:42px">Select</th>
-            <th>Token</th>
-            <th>Buy (DEX @ $)</th>
-            <th>Sell (DEX @ $)</th>
-            <th class="right">Spread %</th>
-            <th class="right">USDC Back</th>
-            <th class="right">Net P/L</th>
-            <th>Executable?</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
+  <!-- Scan Panel -->
+  <div class="panel">
+    <div class="row">
+      <label class="hint">Loan Amount (USDC):</label>
+      <input id="loan" type="number" min="100" step="100" value="10000"/>
+      <button id="scanBtn" class="btn-primary">Scan</button>
+      <button id="stopBtn" class="btn-ghost">Stop</button>
     </div>
-
-    <!-- Logs Panel -->
-    <div class="panel">
-      <div class="row" style="justify-content:space-between">
-        <div style="font-weight:700">Details / Logs</div>
-        <span class="hint">Live gas (Alchemy) • ETH/USD (CoinGecko) • Multi-DEX prices (Dexscreener) • callStatic verify</span>
-      </div>
-      <div id="log" class="logs">Ready.</div>
+    <div class="chips">
+      <span class="pill" id="rpcPill">RPC: Alchemy</span>
+      <span class="pill" id="tokensPill">Tokens: —</span>
+      <span class="pill" id="gasPill">Gas: —</span>
+      <span class="pill" id="ethPill">ETH: —</span>
+      <span class="pill" id="progPill">Idle.</span>
     </div>
   </div>
 
-  <footer>
-    <div class="foot">
-      <div>
-        <h4>Crypto Kings</h4>
-        <ul><li>Arbitrage Scanner</li><li>DeFi Tools</li><li>Risk Analysis</li></ul>
-      </div>
-      <div>
-        <h4>Company</h4>
-        <ul><li>Who we are</li><li>What we do</li><li>Connect with us</li></ul>
-      </div>
-      <div>
-        <h4>Resources</h4>
-        <ul><li>Docs</li><li>Blog</li><li>Support</li></ul>
-      </div>
-      <div>
-        <h4>Legal</h4>
-        <ul><li>Privacy</li><li>Terms</li><li>Disclaimer</li></ul>
-      </div>
+  <!-- Results Panel -->
+  <div class="panel">
+    <div class="toolbar">
+      <button id="selectProfitable" class="btn-ghost">Select all profitable</button>
+      <button id="clearSel" class="btn-ghost">Clear</button>
+      <span id="selTotal" class="pill">++$0</span>
+      <button id="execSelected" class="btn-primary" style="margin-left:auto">Execute Selected (one route)</button>
     </div>
-  </footer>
+    <table id="results">
+      <thead>
+        <tr>
+          <th style="width:42px">Select</th>
+          <th>Token</th>
+          <th>Buy (DEX @ $)</th>
+          <th>Sell (DEX @ $)</th>
+          <th class="right">Spread %</th>
+          <th class="right">USDC Back</th>
+          <th class="right">Net P/L</th>
+          <th>Executable?</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Logs Panel -->
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div style="font-weight:700">Details / Logs</div>
+      <span class="hint">Live gas (Alchemy) • ETH/USD (CoinGecko) • Multi-DEX prices (Dexscreener) • Router-verified</span>
+    </div>
+    <div id="log" class="logs">Ready.</div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot">
+    <div>
+      <h4>Crypto Kings</h4>
+      <ul><li>Arbitrage Scanner</li><li>DeFi Tools</li><li>Risk Analysis</li></ul>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <ul><li>Who we are</li><li>What we do</li><li>Connect with us</li></ul>
+    </div>
+    <div>
+      <h4>Resources</h4>
+      <ul><li>Docs</li><li>Blog</li><li>Support</li></ul>
+    </div>
+    <div>
+      <h4>Legal</h4>
+      <ul><li>Privacy</li><li>Terms</li><li>Disclaimer</li></ul>
+    </div>
+  </div>
+</footer>
 
 <!-- ========= CONTRACT + SCANNER ========= -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -171,53 +171,37 @@ const DEFAULT_EXECUTOR_ADDR = "0x43327acEAd76dCD48A09cc93A509a2FE7b1f0f5c";
 /* ========= NETWORK / TOKENS ========= */
 const ARBITRUM_CHAIN_ID_DEC = 42161;
 const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
-const WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"; // Arbitrum WETH
+const WETH  = "0x82aF49447D8a07e3BD95BD0d56f35241523fBab1"; // checksummed
 const USDCe = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
-const SUSHI = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506";
-const CAMELOT = "0xC873FECbD354f5A56E00E710B90EF4201Db2448d";
 
-/* DEX map for execution */
-const ROUTERS = { "SUSHISWAP": SUSHI, "CAMELOT": CAMELOT };
+/* Routers (V2-like) */
+const ROUTER_BY_DEX = {
+  "SUSHISWAP": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
+  "CAMELOT":   "0xC873FECbD354f5A56E00E710B90EF4201Db2448d",
+  "RAMSES":    "0xAAEAfD6e975fF4811fB8F8bBF27106e2164F3E3E" // update if needed
+};
 
-/* ========= RPC (HARD-WIRED) ========= */
-const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WyyAx5cvsez"; // <- your key here
+/* ========= RPC (hard-wired) ========= */
+const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; // <- your key
 const READ_PROVIDER = new ethers.providers.JsonRpcProvider(ALCHEMY_URL);
 
-/* ========= ABIs ========= */
-const CKFE_ABI = [
-  {"inputs":[
-    {"internalType":"address","name":"asset","type":"address"},
-    {"internalType":"uint256","name":"amount","type":"uint256"},
-    {"components":[
-      {"internalType":"address","name":"buyRouter","type":"address"},
-      {"internalType":"address","name":"sellRouter","type":"address"},
-      {"internalType":"address","name":"targetToken","type":"address"},
-      {"internalType":"uint256","name":"minBuyOut","type":"uint256"},
-      {"internalType":"uint256","name":"minSellOut","type":"uint256"},
-      {"internalType":"uint256","name":"deadline","type":"uint256"}
-    ],"internalType":"struct CKFE.Route","name":"r","type":"tuple"}
-  ],"name":"startFlashTrade","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[{"internalType":"address","name":"asset","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"params","type":"bytes"}],"name":"startFlashLoan","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[{"internalType":"address","name":"_to","type":"address"}],"name":"setProfitWallet","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[],"name":"profitWallet","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}
-];
-const V2_ABI = ["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
-
 /* ========= SCANNER CONFIG ========= */
-const FLASH_FEE = 0.0005; // 0.05%
 const DEX_FEE   = 0.003;
 const SLIP_FEE  = 0.002;
-const SPREAD_CAP = 150;
+const SPREAD_CAP = 75;
 const GAS_LIMIT = 380000;
 const MIN_LIQ_USD = 1;
-const EXEC_LIQ_MULT = 1.2;
+const EXEC_LIQ_MULT = 1.5;
 const EXEC_MIN_TX_M5 = 0;
-const KNOWN_EXEC_DEX = new Set(["SUSHISWAP","CAMELOT"]);
+const KNOWN_EXEC_DEX = new Set(Object.keys(ROUTER_BY_DEX));
+
+/* Token universe */
 const TOKENS = [
   "WETH","WBTC","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","RDNT",
   "PENDLE","FRAX","CRV","BAL","UNI","wstETH","SNX","COMP","YFI","GRT",
   "STG","LQTY","RPL","MKR","ENS","CVX","FXS","SUSHI","LUSD","MAGIC",
-  "BADGER","DODO","GNS","DPX","RDPX","GRAIL","ALCX"
+  "BADGER","DODO","BNT","OP","GNS","DPX","RDPX","GRAIL","HOP","ALCX",
+  "ANGLE","PERP","1INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","JOE"
 ];
 
 /* ========= HELPERS ========= */
@@ -260,7 +244,9 @@ async function fetchPairsForSymbol(sym){
     const j = await r.json();
     const pairs = (j?.pairs||[]).filter(p=>{
       const base = (p?.baseToken?.symbol||"").toUpperCase();
-      return p?.chainId==="arbitrum" && base===sym.toUpperCase();
+      const dex  = (p?.dexId||"").toUpperCase();
+      return p?.chainId==="arbitrum" && base===sym.toUpperCase()
+             && KNOWN_EXEC_DEX.has(dex);
     });
     const byDex = new Map();
     for(const p of pairs){
@@ -270,42 +256,88 @@ async function fetchPairsForSymbol(sym){
       const cur=byDex.get(k);
       if(!cur || liq>cur.liq) byDex.set(k,{pair:p,liq});
     }
-    return Array.from(byDex.values()).map(v=>v.pair);
+    return Array.from(byDex.values()).map(v=>{
+      const p=v.pair;
+      return {
+        dexId:(p?.dexId||"").toUpperCase(),
+        priceUsd:Number(p?.priceUsd||0),
+        liq:Number(p?.liquidity?.usd||0),
+        tokenSymbol:(p?.baseToken?.symbol||"").toUpperCase(),
+        tokenAddr:(p?.baseToken?.address||"").toLowerCase(),
+        baseToken:p?.baseToken, txns:p?.txns, liquidity:p?.liquidity
+      };
+    });
   }catch(_){ return []; }
 }
 
-/* ========= PROFIT & RENDER ========= */
-function routeForPairs(pairs, loan){
+/* ========= ROUTER QUOTES (V2) ========= */
+const V2_ABI = ["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
+
+async function quoteRoundTrip(amountWei, tokenAddr, buyDex, sellDex){
+  const buyRouter = ROUTER_BY_DEX[buyDex];
+  const sellRouter= ROUTER_BY_DEX[sellDex];
+  if(!buyRouter || !sellRouter) return null;
+
+  const rBuy  = new ethers.Contract(buyRouter,  V2_ABI, READ_PROVIDER);
+  const rSell = new ethers.Contract(sellRouter, V2_ABI, READ_PROVIDER);
+  const buyPath  = [WETH, tokenAddr];
+  const sellPath = [tokenAddr, WETH];
+
+  try{
+    const buyOut  = await rBuy.getAmountsOut(amountWei, buyPath);
+    const midOut  = buyOut[buyOut.length-1];
+    const sellOut = await rSell.getAmountsOut(midOut, sellPath);
+    const backWei = sellOut[sellOut.length-1];
+    return { midOut, backWei };
+  }catch(_){
+    return null; // pool cannot serve this size
+  }
+}
+
+/* ========= PROFIT (router-verified) & RENDER ========= */
+let collect = [];
+async function routeForPairs(pairs, loanUsd, amountWei){
   if(!pairs.length) return null;
   let best=null;
+
   for(const buy of pairs){
     for(const sell of pairs){
-      if(buy===sell) continue;
+      if(buy.dexId===sell.dexId) continue;
+
+      const liqOK = Math.min(buy.liq||0, sell.liq||0) >= loanUsd*EXEC_LIQ_MULT;
+
+      const rt = await quoteRoundTrip(amountWei, buy.tokenAddr, buy.dexId, sell.dexId);
+      if(!rt) continue;
+
+      const amountIn = amountWei;
+      const backWei  = rt.backWei;
+
+      const totalPct = (DEX_FEE + SLIP_FEE)*2 + 0.0005; // includes flash
+      const ppm = Math.floor(totalPct * 1e6);
+      const feeWei = amountIn.mul(ppm).div(1e6);
+
+      const gasPriceWei = ethers.utils.parseUnits(String(GAS_GWEI||0.05), "gwei");
+      const gasWei = gasPriceWei.mul(GAS_LIMIT);
+
+      const netBackWei = backWei.sub(feeWei).sub(gasWei);
+      const netPLWei   = netBackWei.sub(amountIn);
+
       const pa=Number(buy.priceUsd), pb=Number(sell.priceUsd);
-      if(!(pa>0&&pb>0)) continue;
-      const spread=(pb-pa)/pa*100;
-      if(spread<=0 || spread>SPREAD_CAP) continue;
+      const spreadPct=isFinite((pb-pa)/pa*100) ? (pb-pa)/pa*100 : 0;
+      const netPLUsd = ETH_USD ? Number(ethers.utils.formatUnits(netPLWei,18))*ETH_USD : 0;
 
-      const units = loan/pa;
-      const gross = units*pb;
-      const dexCost = loan*(DEX_FEE+SLIP_FEE) + gross*(DEX_FEE+SLIP_FEE);
-      const flash = loan*FLASH_FEE;
-      const gasEth = ((GAS_GWEI||0.05)*GAS_LIMIT)/1e9;
-      const gasUsd = (ETH_USD? gasEth*ETH_USD : 0);
-      const netPL = gross - loan - dexCost - flash - gasUsd;
-
-      const buyDex=(buy?.dexId||"").toUpperCase(), sellDex=(sell?.dexId||"").toUpperCase();
-      const liqOK = Math.min(liqUsd(buy), liqUsd(sell)) >= loan*EXEC_LIQ_MULT && Math.min(liqUsd(buy), liqUsd(sell)) >= MIN_LIQ_USD;
-      const freshOK = (sumM5(buy)+sumM5(sell)) >= EXEC_MIN_TX_M5;
-      const bothKnown = KNOWN_EXEC_DEX.has(buyDex) && KNOWN_EXEC_DEX.has(sellDex);
-      const execFlag = (bothKnown && liqOK && freshOK) ? "✅ Likely executable" : "⚠ Needs contract check";
-
+      const execFlag = (rt && liqOK) ? "✅ Router-verified" : "⚠️ Thin liquidity";
       const row = {
-        token:(buy?.baseToken?.symbol||""), buyDex, sellDex,
-        buyPrice:pa, sellPrice:pb,
-        spreadPct:spread, usdcBack:gross, netPL, execFlag
+        token: buy.tokenSymbol,
+        tokenAddr: buy.tokenAddr,
+        buyDex: buy.dexId, sellDex: sell.dexId,
+        buyPrice: pa, sellPrice: pb,
+        spreadPct, usdcBack: (pa>0 && pb>0) ? loanUsd*(pb/pa) : NaN,
+        netPL: netPLUsd, netPLWei, execFlag
       };
-      if(!best || netPL>best.netPL) best = row;
+
+      if (!best || netPLWei.gt(best.netPLWei)) best = row;
+      collect.push(row);
     }
   }
   return best;
@@ -323,6 +355,7 @@ function renderRows(rows){
     tr.className = r.netPL>0 ? "profit" : "loss";
     tr.dataset.netpl = r.netPL;
     tr.dataset.token = r.token;
+    tr.dataset.tokenAddr = r.tokenAddr || "";
     tr.dataset.buyDex = r.buyDex;
     tr.dataset.sellDex = r.sellDex;
     tr.dataset.buyPrice = r.buyPrice;
@@ -332,12 +365,12 @@ function renderRows(rows){
     tr.innerHTML = `
       <td class="sel"><input type="checkbox" class="pick" ${r.netPL>0?"checked":""}></td>
       <td class="tok">${r.token}</td>
-      <td><div class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex} @ ${Number(r.buyPrice).toLocaleString(undefined,{maximumFractionDigits:6})}</span></div></td>
-      <td><div class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex} @ ${Number(r.sellPrice).toLocaleString(undefined,{maximumFractionDigits:6})}</span></div></td>
-      <td class="right mono">${r.spreadPct.toFixed(2)}%</td>
-      <td class="right mono">${usd(r.usdcBack)}</td>
-      <td class="right mono ${r.netPL>0?'ok':'bad'}">${(r.netPL>=0?'+':'-')+usd(Math.abs(r.netPL)).replace('$','')}</td>
-      <td class="flags"><span class="tag ${r.execFlag.includes('Likely')?'ok':'warn'}">${r.execFlag}</span></td>
+      <td><div class="cell"><span class="lbl">Buy</span><span class="val">${isFinite(r.buyPrice)?Number(r.buyPrice).toLocaleString(undefined,{maximumFractionDigits:6}):'—'} @ ${r.buyDex}</span></div></td>
+      <td><div class="cell"><span class="lbl">Sell</span><span class="val">${isFinite(r.sellPrice)?Number(r.sellPrice).toLocaleString(undefined,{maximumFractionDigits:6}):'—'} @ ${r.sellDex}</span></div></td>
+      <td class="right mono">${isFinite(r.spreadPct)?r.spreadPct.toFixed(2):'—'}%</td>
+      <td class="right mono">${isFinite(r.usdcBack)?usd(r.usdcBack):'—'}</td>
+      <td class="right mono ${r.netPL>0?'ok':'bad'}">${isFinite(r.netPL)?((r.netPL>=0?'+':'-')+usd(Math.abs(r.netPL)).replace('$','')):'—'}</td>
+      <td class="flags"><span class="tag ${r.execFlag.includes('Router-verified')?'ok':'warn'}">${r.execFlag}</span></td>
     `;
     tbody.appendChild(tr);
   }
@@ -355,38 +388,62 @@ function updateSelectedTotal(){
 let stopFlag=false, scanning=false;
 async function runScan(){
   if(scanning) return;
-  scanning = true; stopFlag=false;
+  scanning = true; stopFlag=false; collect=[];
   $("#progPill").textContent="Preparing (gas, ETH)…";
   tbody.innerHTML=""; updateSelectedTotal(); logEl.textContent="Ready.\n";
 
-  const loan = Number($("#loan").value||3);
+  const loan = Number($("#loan").value||10000);
   await Promise.all([fetchEthUsd(), fetchGasGwei()]);
   $("#progPill").textContent="Scanning live pools…";
-  log([${new Date().toLocaleTimeString()}] CLICK Scan; tokens=${TOKENS.length}; loan=${loan.toLocaleString()});
+  log(`[${new Date().toLocaleTimeString()}] CLICK Scan; tokens=${TOKENS.length}; loan=${loan.toLocaleString()}`);
+
+  const humanAmt = String($("#wethAmt").value||"0.001");
+  const amountWei = ethers.utils.parseUnits(humanAmt, 18);
 
   const found=[];
   for(let i=0;i<TOKENS.length;i++){
     if(stopFlag) break;
     const sym = TOKENS[i];
-    $("#progPill").textContent = Scanning ${i+1}/${TOKENS.length} — ${sym};
-    log(${sym}: fetching pools…);
+    $("#progPill").textContent = `Scanning ${i+1}/${TOKENS.length} — ${sym}`;
+    log(`${sym}: fetching pools…`);
     const pairs = await fetchPairsForSymbol(sym);
-    if(!pairs.length){ log(${sym}: no Arbitrum pools); continue; }
-    const route = routeForPairs(pairs, loan);
-    if(route && isFinite(route.netPL)){
-      const tag = route.execFlag.includes("Likely") ? "EXEC" : "CHECK";
-      log(${sym}: ${tag} • ${route.buyDex}→${route.sellDex} spread ${route.spreadPct.toFixed(2)}% net ${usd(route.netPL)});
-      found.push(route);
+    if(!pairs.length){ log(`${sym}: no Sushi/Camelot/Ramses pools`); continue; }
+
+    const best = await routeForPairs(pairs, loan, amountWei);
+    if(best){
+      found.push(best);
+      log(`${sym}: top route ${best.buyDex}→${best.sellDex} net ${usd(best.netPL)} (${humanAmt} WETH)`);
     } else {
-      log(${sym}: no profitable route);
+      log(`${sym}: no router-verified route at ${humanAmt} WETH`);
     }
   }
-  renderRows(found);
-  $("#progPill").textContent = Done. Found ${found.filter(r=>r.netPL>0).length} profitable route(s), ${found.length} total rows.;
+  renderRows(collect.length ? collect : found);
+  $("#progPill").textContent = `Done. Green=${collect.filter(r=>r.netPL>0).length} / Rows=${collect.length||found.length}.`;
   scanning=false;
 }
 
-/* ========= WALLET/CONTRACT ========= */
+/* ========= FLASH-LOAN WIRING (CKFE) ========= */
+const CKFE_ABI = [
+  {"inputs":[
+    {"internalType":"address","name":"asset","type":"address"},
+    {"internalType":"uint256","name":"amount","type":"uint256"},
+    {"components":[
+      {"internalType":"address","name":"buyRouter","type":"address"},
+      {"internalType":"address","name":"sellRouter","type":"address"},
+      {"internalType":"address","name":"targetToken","type":"address"},
+      {"internalType":"uint256","name":"minBuyOut","type":"uint256"},
+      {"internalType":"uint256","name":"minSellOut","type":"uint256"},
+      {"internalType":"uint256","name":"deadline","type":"uint256"}
+    ],"internalType":"struct CKFE.Route","name":"r","type":"tuple"}
+  ],"name":"startFlashTrade","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"anonymous":false,"inputs":[
+    {"indexed":true,"internalType":"address","name":"asset","type":"address"},
+    {"indexed":false,"internalType":"uint256","name":"repaid","type":"uint256"},
+    {"indexed":false,"internalType":"uint256","name":"profit","type":"uint256"}
+  ],"name":"FlashCompleted","type":"event"}
+];
+const V2_QUOTE_ABI = ["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
+
 let __provider, __signer, __account, __ckfe;
 
 async function connectWallet(){
@@ -402,20 +459,19 @@ async function connectWallet(){
   __account = await __signer.getAddress();
 
   const feeBox = document.getElementById("feeWallet");
-  if (feeBox && !feeBox.value) feeBox.value = __account;
+  if (feeBox) feeBox.value = __account;
 
   const addr = getExecAddr();
   __ckfe = new ethers.Contract(addr, CKFE_ABI, __signer);
   const box=document.getElementById("execContract"); if (box) box.value = addr;
 
-  $("#rpcPill").textContent = "RPC: Alchemy (OK)";
   $("#progPill").textContent = "Connected.";
   log("✅ Wallet connected: " + __account + " | CKFE: " + addr);
   return __ckfe;
 }
 
 async function fundPremium(){
-  const human = String($("#wethAmt").value||"0.001");
+  const human = String($("#wethAmt").value||"0.01");
   const amount = ethers.utils.parseUnits(human, 18);
   const premium = amount.mul(5).div(10000); // ~0.05%
   const buffer  = premium.mul(2).div(100);  // +2%
@@ -430,23 +486,22 @@ async function fundPremium(){
     __signer
   );
 
-  log(Wrapping ~${ethers.utils.formatUnits(wrapVal,18)} ETH → WETH);
+  log(`Wrapping ~${ethers.utils.formatUnits(wrapVal,18)} ETH → WETH`);
   const depTx = await weth.deposit({ value: wrapVal }); await depTx.wait();
-  log(Sending premium ${ethers.utils.formatUnits(premium,18)} WETH → ${execAddr});
+  log(`Sending premium ${ethers.utils.formatUnits(premium,18)} WETH → ${execAddr}`);
   const sendTx = await weth.transfer(execAddr, premium); await sendTx.wait();
-  log(✅ Premium funded. Tx: ${sendTx.hash});
+  log(`✅ Premium funded. Tx: ${sendTx.hash}`);
   alert("Premium funded.\n" + sendTx.hash);
 }
 
-/* ========= EXECUTION ========= */
 async function startFlashLoan(){
-  const human = String($("#wethAmt").value||"0.001");
+  const human = String($("#wethAmt").value||"0.01");
   const amount = ethers.utils.parseUnits(human, 18);
   const c = __ckfe || await connectWallet();
 
-  // default: SUSHI buy -> CAMELOT sell
-  const rBuy  = new ethers.Contract(SUSHI,  V2_ABI, READ_PROVIDER);
-  const rSell = new ethers.Contract(CAMELOT,V2_ABI, READ_PROVIDER);
+  // simple SUSHI->SUSHI smoke
+  const rBuy  = new ethers.Contract(ROUTER_BY_DEX.SUSHISWAP, V2_QUOTE_ABI, READ_PROVIDER);
+  const rSell = new ethers.Contract(ROUTER_BY_DEX.SUSHISWAP, V2_QUOTE_ABI, READ_PROVIDER);
   const buyPath  = [WETH, USDCe];
   const sellPath = [USDCe, WETH];
 
@@ -457,83 +512,90 @@ async function startFlashLoan(){
     const usdcOut = buyOut[buyOut.length-1];
     const sellOut = await rSell.getAmountsOut(usdcOut, sellPath);
     const wethBack= sellOut[sellOut.length-1];
-    minBuyOut  = usdcOut.mul(99).div(100);
-    minSellOut = wethBack.mul(99).div(100);
+    minBuyOut  = usdcOut.mul(98).div(100);
+    minSellOut = wethBack.mul(98).div(100);
   }catch(_){}
 
-  const route = { buyRouter:SUSHI, sellRouter:CAMELOT, targetToken:USDCe, minBuyOut, minSellOut, deadline:0 };
+  const route = {
+    buyRouter: ROUTER_BY_DEX.SUSHISWAP,
+    sellRouter: ROUTER_BY_DEX.SUSHISWAP,
+    targetToken: USDCe,
+    minBuyOut, minSellOut,
+    deadline: 0
+  };
 
   try{
     await c.callStatic.startFlashTrade(WETH, amount, route);
     log("staticCall: would succeed ✅");
-  }catch(err){ log("staticCall revert ❌ " + (err?.reason||err?.message||"")); }
+  }catch(err){
+    log("staticCall revert ❌ " + (err?.reason||err?.message||""));
+  }
 
-  const tx = await c.startFlashTrade(WETH, amount, route, {
-    gasLimit: 3_500_000,
-    maxFeePerGas: ethers.utils.parseUnits("0.30", "gwei"),
-    maxPriorityFeePerGas: ethers.utils.parseUnits("0.10", "gwei")
-  });
+  const tx = await c.startFlashTrade(WETH, amount, route, { gasLimit: 3_500_000 });
   log("tx: " + tx.hash);
   const rcpt = await tx.wait();
-  log(✅ Executed | Block ${rcpt.blockNumber});
+  log(`✅ Executed | Block ${rcpt.blockNumber} | logs: ${rcpt.logs.length}`);
 }
 
-/* Execute from selected table row */
+/* ========= EXECUTE SELECTED (one row) ========= */
 async function executeSelected(){
-  try{
-    const c = __ckfe || await connectWallet();
-    const tr = Array.from(tbody.querySelectorAll("tr")).find(r => {
-      const cb=r.querySelector(".pick"); return cb && cb.checked;
-    });
-    if(!tr){ alert("Pick a profitable row first."); return; }
+  const picks = Array.from(document.querySelectorAll("#tbody .pick:checked"));
+  if (picks.length !== 1) { alert("Please select exactly 1 row."); return; }
+  const row = picks[0].closest("tr");
 
-    const buyDex = tr.dataset.buyDex, sellDex = tr.dataset.sellDex;
-    const buyRouter = ROUTERS[buyDex], sellRouter = ROUTERS[sellDex];
-    if(!buyRouter || !sellRouter){ alert("Unsupported DEX combo (SUSHI/CAMELOT only in this build)."); return; }
-
-    const human = String($("#wethAmt").value||"0.001");
-    const amount = ethers.utils.parseUnits(human, 18);
-
-    // fresh quotes for min outs
-    const rBuy  = new ethers.Contract(buyRouter,  V2_ABI, READ_PROVIDER);
-    const rSell = new ethers.Contract(sellRouter, V2_ABI, READ_PROVIDER);
-    const buyPath  = [WETH, USDCe];
-    const sellPath = [USDCe, WETH];
-
-    const buyOut  = await rBuy.getAmountsOut(amount, buyPath);
-    const usdcOut = buyOut[buyOut.length-1];
-    const sellOut = await rSell.getAmountsOut(usdcOut, sellPath);
-    const wethBack= sellOut[sellOut.length-1];
-
-    const route = {
-      buyRouter, sellRouter, targetToken: USDCe,
-      minBuyOut: usdcOut.mul(99).div(100),
-      minSellOut: wethBack.mul(99).div(100),
-      deadline: 0
-    };
-
-    // static verify
-    try{
-      await c.callStatic.startFlashTrade(WETH, amount, route);
-      log("callStatic ✅ route executable");
-    }catch(e){
-      log("callStatic ❌ " + (e?.reason||e?.message||""));
-      alert("Static call failed. Route likely stale."); return;
-    }
-
-    const tx = await c.startFlashTrade(WETH, amount, route, {
-      gasLimit: 3_500_000,
-      maxFeePerGas: ethers.utils.parseUnits("0.30", "gwei"),
-      maxPriorityFeePerGas: ethers.utils.parseUnits("0.10", "gwei")
-    });
-    log("send tx: " + tx.hash);
-    const rcpt = await tx.wait();
-    log(✅ Executed from table | Block ${rcpt.blockNumber});
-    alert("Executed.\n" + tx.hash);
-  }catch(err){
-    console.error(err);
-    alert(err?.data?.message || err?.message || String(err));
+  const buyDex  = row.dataset.buyDex;
+  const sellDex = row.dataset.sellDex;
+  const buyRouter  = ROUTER_BY_DEX[buyDex]  || null;
+  const sellRouter = ROUTER_BY_DEX[sellDex] || null;
+  if (!buyRouter || !sellRouter) {
+    alert(`Router missing for ${!buyRouter ? buyDex : sellDex}. Choose a Sushi/Camelot/Ramses row.`);
+    return;
   }
+
+  const tokenAddr = (row.dataset.tokenAddr || "").toLowerCase();
+  if (!/^0x[a-f0-9]{40}$/.test(tokenAddr)) {
+    alert("Missing token address on the selected row."); return;
+  }
+
+  const human  = String($("#wethAmt").value || "0.01");
+  const amount = ethers.utils.parseUnits(human, 18);
+
+  const c = __ckfe || await connectWallet();
+
+  const rBuy  = new ethers.Contract(buyRouter,  V2_QUOTE_ABI, READ_PROVIDER);
+  const rSell = new ethers.Contract(sellRouter, V2_QUOTE_ABI, READ_PROVIDER);
+
+  const buyPath  = [WETH, tokenAddr];
+  const sellPath = [tokenAddr, WETH];
+
+  let minBuyOut = ethers.constants.One;
+  let minSellOut = ethers.constants.One;
+  try {
+    const buyOut  = await rBuy.getAmountsOut(amount, buyPath);
+    const midOut  = buyOut[buyOut.length-1];
+    const sellOut = await rSell.getAmountsOut(midOut, sellPath);
+    const back    = sellOut[sellOut.length-1];
+    minBuyOut  = midOut.mul(98).div(100);
+    minSellOut = back.mul(98).div(100);
+  } catch (_) {
+    log("Quote failed; using minOut=1.");
+  }
+
+  const route = {
+    buyRouter:  buyRouter,
+    sellRouter: sellRouter,
+    targetToken: tokenAddr,
+    minBuyOut, minSellOut,
+    deadline: 0
+  };
+
+  try { await c.callStatic.startFlashTrade(WETH, amount, route); log("staticCall: would succeed ✅"); }
+  catch (err) { log("staticCall revert ❌ " + (err?.reason||err?.message||"")); }
+
+  const tx = await c.startFlashTrade(WETH, amount, route, { gasLimit: 3_500_000 });
+  log("⛓️ tx: " + tx.hash);
+  const rcpt = await tx.wait();
+  log(`✅ Mined block ${rcpt.blockNumber} | logs: ${rcpt.logs.length}`);
 }
 
 /* ========= WIRE UI ========= */
@@ -545,13 +607,22 @@ function wireUI(){
     tbody.querySelectorAll("tr").forEach(tr=>{
       const cb=tr.querySelector(".pick");
       if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0);
-    }); updateSelectedTotal();
+    });
+    updateSelectedTotal();
   });
   document.getElementById("clearSel").addEventListener("click", ()=>{ tbody.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
+
   document.getElementById("execSelected").addEventListener("click", executeSelected);
-  document.getElementById("connectBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); }catch(e){ alert(e?.message || e); } });
-  document.getElementById("fundBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); await fundPremium(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); } });
-  document.getElementById("flashBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); await startFlashLoan(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); } });
+
+  document.getElementById("connectBtn").addEventListener("click", async ()=>{
+    try{ await connectWallet(); }catch(e){ alert(e?.message || e); }
+  });
+  document.getElementById("fundBtn").addEventListener("click", async ()=>{
+    try{ await connectWallet(); await fundPremium(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
+  });
+  document.getElementById("flashBtn").addEventListener("click", async ()=>{
+    try{ await connectWallet(); await startFlashLoan(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
+  });
 
   document.getElementById("rpcPill").textContent = "RPC: Alchemy (wired)";
   document.getElementById("tokensPill").textContent = "Tokens: " + TOKENS.length;
@@ -560,17 +631,15 @@ function wireUI(){
 }
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", wireUI);
-} else {
-  wireUI();
-}
+} else { wireUI(); }
 
 /* Account / network listeners */
 if (window.ethereum) {
   window.ethereum.on("accountsChanged", (accts)=>{
     if (accts && accts[0]) {
       const feeBox = document.getElementById("feeWallet");
-      if (feeBox && !feeBox.value) feeBox.value = accts[0];
-      log("ℹ Account changed: " + accts[0]);
+      if (feeBox) feeBox.value = accts[0];
+      log("ℹ️ Account changed: " + accts[0]);
     }
   });
   window.ethereum.on("chainChanged", ()=>window.location.reload());

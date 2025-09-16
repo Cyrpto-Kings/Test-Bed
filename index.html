@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.48</title>
+<title>Crypto Kings • TestBed v9.9.49</title>
 <style>
 :root{
   --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -64,7 +64,7 @@ footer li{margin:6px 0}
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;line-height:1">Crypto Kings</div>
-      <div class="hint">TestBed v9.9.48 • Arbitrum (Sushi-only, smarter pool matching)</div>
+      <div class="hint">TestBed v9.9.49 • Arbitrum (Sushi-only, loose matching)</div>
     </div>
   </div>
   <div class="burger" title="Menu">&#9776;</div>
@@ -174,10 +174,8 @@ const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
 const WETH  = "0x82aF49447D8a07e3BD95BD0d56f35241523fBab1";
 const USDCe = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
 
-/* Routers: SUSHI only (simple & reliable V2) */
-const ROUTER_BY_DEX = {
-  "SUSHISWAP": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"
-};
+/* Routers: SUSHI only (reliable V2) */
+const ROUTER_BY_DEX = { "SUSHISWAP": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506" };
 const KNOWN_EXEC_DEX = new Set(Object.keys(ROUTER_BY_DEX));
 
 /* ========= RPC (hard-wired) ========= */
@@ -191,14 +189,13 @@ const SPREAD_CAP = 75;
 const GAS_LIMIT = 380000;
 const EXEC_LIQ_MULT = 1.5;
 
-/* Token universe (expanded) — removed WETH as a “symbol row” to avoid confusion */
+/* Token list (expanded; WETH removed as a “symbol row”) */
 const TOKENS = [
   "USDC","USDT","DAI","ARB","WBTC","LINK","GMX","AAVE","RDNT","PENDLE","FRAX","CRV","BAL","UNI","wstETH","SNX","COMP","YFI","GRT",
   "STG","LQTY","RPL","MKR","ENS","CVX","FXS","SUSHI","LUSD","MAGIC","BADGER","DODO","BNT","OP","GNS","DPX","RDPX","GRAIL","HOP",
   "ALCX","ANGLE","PERP","1INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","JOE",
-  /* extra adds */
-  "WOO","TIA","MERLIN","PRIME","ORDI","LDO","LBR","ZRO","AEVO","ALT","BEAM","KAVA","KNC","LPT","MCB","METIS","MNT","PENDLE","RUNE","SYN",
-  "TUSD","XAI","XVS","ZRX","XAVA","JONES","JTO","BTRFLY","SWPR","LYRA"
+  "WOO","TIA","PRIME","ORDI","LDO","ZRO","AEVO","ALT","BEAM","KAVA","KNC","LPT","MCB","METIS","MNT","RUNE","SYN",
+  "TUSD","XAI","ZRX","XAVA","JONES","BTRFLY","SWPR","LYRA"
 ];
 
 /* ========= HELPERS ========= */
@@ -206,6 +203,8 @@ const $ = s=>document.querySelector(s);
 const tbody = $("#tbody"), logEl = $("#log");
 function log(m){ logEl.textContent += (m.endsWith("\n")?m:m+"\n"); logEl.scrollTop=logEl.scrollHeight; }
 function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
+function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+function isUsdcish(s){ const n=norm(s); return n==="usdc"||n==="usdce"; }
 function getExecAddr(){ const v = ($("#execContract").value||"").trim(); return /^0x[a-fA-F0-9]{40}$/.test(v) ? v : DEFAULT_EXECUTOR_ADDR; }
 
 /* ========= ETH & GAS ========= */
@@ -227,20 +226,18 @@ async function fetchGasGwei(){
   }catch(_){ $("#gasPill").textContent="Gas: (fail)"; GAS_GWEI = 0.05; }
 }
 
-/* ========= Dexscreener (better Sushi matching; symbol on either side) ========= */
-function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
-function isUsdcish(s){ const n=norm(s); return n==="usdc"||n==="usdce"; }
-
+/* ========= Dexscreener (loose Sushi matching; symbol on either side; keep top-liq) ========= */
 async function fetchPairsForSymbol(sym){
   const want = norm(sym);
   try{
     const url = "https://api.dexscreener.com/latest/dex/search?q="+encodeURIComponent(sym);
-    const r = await fetch(url,{cache:"no-store"}); if(!r.ok) return [];
+    const r = await fetch(url,{cache:"no-store"}); 
+    if(!r.ok) return [];
     const j = await r.json();
 
-    const pairs = (j?.pairs||[]).filter(p=>{
+    const raw = (j?.pairs||[]).filter(p=>{
       if (p?.chainId !== "arbitrum") return false;
-      const dex = norm(p?.dexId);
+      const dex = norm(p?.dexId||"");
       if (!dex.includes("sushi")) return false;
 
       const baseS = p?.baseToken?.symbol || "";
@@ -249,52 +246,58 @@ async function fetchPairsForSymbol(sym){
 
       const sideMatch =
         baseN===want || quoteN===want ||
-        (isUsdcish(sym) && (isUsdcish(baseS) || isUsdcish(quoteS)));
+        (["usdc","usdce","usdt","dai"].includes(want) &&
+         (["usdc","usdce","usdt","dai"].includes(baseN) || ["usdc","usdce","usdt","dai"].includes(quoteN)));
 
-      return sideMatch && Number(p?.priceUsd)>0 && Number(p?.liquidity?.usd)>0;
+      const liqOK = Number(p?.liquidity?.usd||0) > 20000;
+      const priceOK = Number(p?.priceUsd||0) > 0;
+
+      return sideMatch && liqOK && priceOK;
     });
 
-    // Map to “partner token on this Sushi pair”
-    const mapped = pairs.map(p=>{
-      const baseS = p?.baseToken?.symbol || "", quoteS = p?.quoteToken?.symbol || "";
-      const matchBase = norm(baseS)===want || (isUsdcish(sym) && isUsdcish(baseS));
-      const partner = matchBase ? p?.quoteToken : p?.baseToken;
-      return {
-        dexId: "SUSHISWAP",
-        priceUsd: Number(p?.priceUsd||0),
-        liq: Number(p?.liquidity?.usd||0),
-        tokenSymbol: String(partner?.symbol||"").toUpperCase(),
-        tokenAddr: String(partner?.address||"").toLowerCase(),
-        baseToken: p?.baseToken, quoteToken: p?.quoteToken,
-        txns: p?.txns, liquidity: p?.liquidity
-      };
-    });
-
-    // Keep highest-liquidity partner per token address
+    // Keep the top-liquidity entries per token address (partner side doesn’t matter for now)
     const byAddr = new Map();
-    for (const m of mapped){
-      const cur = byAddr.get(m.tokenAddr);
-      if (!cur || m.liq > cur.liq) byAddr.set(m.tokenAddr, m);
+    for (const p of raw){
+      const addrBase  = String(p?.baseToken?.address||"").toLowerCase();
+      const addrQuote = String(p?.quoteToken?.address||"").toLowerCase();
+      const liq = Number(p?.liquidity?.usd||0);
+
+      const keep = (addr, sym, price) => {
+        if(!/^0x[a-f0-9]{40}$/.test(addr)) return;
+        const cur = byAddr.get(addr);
+        if (!cur || liq > cur.liq) {
+          byAddr.set(addr, {
+            dexId: "SUSHISWAP",
+            priceUsd: Number(price||p?.priceUsd||0),
+            liq,
+            tokenSymbol: String(sym||"").toUpperCase(),
+            tokenAddr: addr,
+            baseToken: p?.baseToken, quoteToken: p?.quoteToken
+          });
+        }
+      };
+
+      // keep both sides so we get a partner entry regardless which side matched
+      keep(addrBase,  p?.baseToken?.symbol,  p?.priceUsd);
+      keep(addrQuote, p?.quoteToken?.symbol, p?.priceUsd);
     }
+
     return Array.from(byAddr.values());
-  }catch(_){ return []; }
+  }catch(e){ 
+    log(`fetchPairsForSymbol error for ${sym}: ${e.message}`);
+    return []; 
+  }
 }
 
 /* ========= V2 Quoting (Sushi) with USDCe fallback ========= */
 const V2_ABI = [
   "function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"
 ];
-
 async function tryQuoteV2(routerAddr, amountIn, path) {
   const r = new ethers.Contract(routerAddr, V2_ABI, READ_PROVIDER);
-  try {
-    const out = await r.getAmountsOut(amountIn, path);
-    return out[out.length - 1];
-  } catch (_) {
-    return null;
-  }
+  try { const out = await r.getAmountsOut(amountIn, path); return out[out.length - 1]; }
+  catch (_) { return null; }
 }
-
 async function quoteRoundTrip(amountWei, tokenAddr){
   const router = ROUTER_BY_DEX["SUSHISWAP"];
   if (!router) return null;
@@ -322,7 +325,17 @@ async function routeForPairs(pairs, loanUsd, amountWei){
 
   for(const buy of pairs){
     const rt = await quoteRoundTrip(amountWei, buy.tokenAddr);
-    if(!rt) continue;
+    // even if quote fails, list the pool (so you can see it exists)
+    if(!rt){
+      collect.push({
+        token: buy.tokenSymbol, tokenAddr: buy.tokenAddr,
+        buyDex: "SUSHISWAP", sellDex: "SUSHISWAP",
+        buyPrice: Number(buy.priceUsd)||NaN, sellPrice: Number(buy.priceUsd)||NaN,
+        spreadPct: NaN, usdcBack: NaN, netPL: NaN,
+        execFlag: "⚠️ Router quote failed (size)"
+      });
+      continue;
+    }
 
     const amountIn = amountWei;
     const backWei  = rt.backWei;
@@ -342,8 +355,7 @@ async function routeForPairs(pairs, loanUsd, amountWei){
     const row = {
       token: buy.tokenSymbol,
       tokenAddr: buy.tokenAddr,
-      buyDex: "SUSHISWAP",
-      sellDex: "SUSHISWAP",
+      buyDex: "SUSHISWAP", sellDex: "SUSHISWAP",
       buyPrice: pa, sellPrice: pa,
       spreadPct: 0, usdcBack: NaN,
       netPL: netPLUsd, netPLWei, execFlag: "✅ Router-verified (Sushi)"
@@ -378,10 +390,10 @@ function renderRows(rows){
       <td class="tok">${r.token}</td>
       <td><div class="cell"><span class="lbl">Buy</span><span class="val">${isFinite(r.buyPrice)?Number(r.buyPrice).toLocaleString(undefined,{maximumFractionDigits:6}):'—'} @ ${r.buyDex}</span></div></td>
       <td><div class="cell"><span class="lbl">Sell</span><span class="val">${isFinite(r.sellPrice)?Number(r.sellPrice).toLocaleString(undefined,{maximumFractionDigits:6}):'—'} @ ${r.sellDex}</span></div></td>
-      <td class="right mono">—%</td>
-      <td class="right mono">—</td>
-      <td class="right mono ${r.netPL>0?'ok':'bad'}">${isFinite(r.netPL)?((r.netPL>=0?'+':'-')+usd(Math.abs(r.netPL)).replace('$','')):'—'}</td>
-      <td class="flags"><span class="tag ok">${r.execFlag}</span></td>
+      <td class="right mono">${isFinite(r.spreadPct)?r.spreadPct.toFixed(2):'—'}%</td>
+      <td class="right mono">${isFinite(r.usdcBack)?usd(r.usdcBack):'—'}</td>
+      <td class="right mono ${isFinite(r.netPL)?(r.netPL>0?'ok':'bad'):'warn'}">${isFinite(r.netPL)?((r.netPL>=0?'+':'-')+usd(Math.abs(r.netPL)).replace('$','')):'n/a'}</td>
+      <td class="flags"><span class="tag ${r.execFlag.includes('verified')?'ok':(r.execFlag.includes('failed')?'warn':'warn')}">${r.execFlag}</span></td>
     `;
     tbody.appendChild(tr);
   }
@@ -418,18 +430,18 @@ async function runScan(){
     $("#progPill").textContent = `Scanning ${i+1}/${TOKENS.length} — ${sym}`;
     log(`${sym}: fetching Sushi pools…`);
     const pairs = await fetchPairsForSymbol(sym);
-    if(!pairs.length){ log(`${sym}: no Sushi pool`); continue; }
+    if(!pairs.length){ log(`${sym}: no Sushi pool (kept 0)`); continue; }
 
     const best = await routeForPairs(pairs, loan, amountWei);
     if(best){
       found.push(best);
-      log(`${sym}: router-verified net ${usd(best.netPL)} (${humanAmt} WETH)`);
+      log(`${sym}: router-verified net ${isFinite(best.netPL)?usd(best.netPL):'n/a'} (${humanAmt} WETH)`);
     } else {
-      log(`${sym}: no route at ${humanAmt} WETH`);
+      log(`${sym}: no route at ${humanAmt} WETH (but pools exist)`);
     }
   }
   renderRows(collect.length ? collect : found);
-  $("#progPill").textContent = `Done. Green=${collect.filter(r=>r.netPL>0).length} / Rows=${collect.length||found.length}.`;
+  $("#progPill").textContent = `Done. Rows=${collect.length||found.length} | Green=${(collect.length?collect:found).filter(r=>isFinite(r.netPL)&&r.netPL>0).length}.`;
   scanning=false;
 }
 

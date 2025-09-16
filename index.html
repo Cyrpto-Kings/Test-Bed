@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.43</title>
+<title>Crypto Kings • TestBed v9.9.44</title>
 <style>
   :root{
     --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -64,7 +64,7 @@
       <div class="logo">CK</div>
       <div>
         <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div class="hint">TestBed v9.9.43 • Arbitrum (manual + auto-exec)</div>
+        <div class="hint">TestBed v9.9.44 • Arbitrum (manual + callStatic verify)</div>
       </div>
     </div>
     <div class="burger" title="Menu">&#9776;</div>
@@ -96,9 +96,6 @@
         <input id="loan" type="number" min="1" step="1" value="3"/>
         <button id="scanBtn" class="btn-primary">Scan</button>
         <button id="stopBtn" class="btn-ghost">Stop</button>
-        <label class="hint" style="display:flex;align-items:center;gap:6px;margin-left:auto">
-          <input id="autoExec" type="checkbox"/> Auto-execute top profitable
-        </label>
       </div>
       <div class="chips">
         <span class="pill" id="rpcPill">RPC: —</span>
@@ -179,16 +176,12 @@ const USDCe = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
 const SUSHI = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506";
 const CAMELOT = "0xC873FECbD354f5A56E00E710B90EF4201Db2448d";
 
-/* Routers map for execution */
-const ROUTERS = {
-  "SUSHISWAP": SUSHI,
-  "CAMELOT": CAMELOT
-};
+/* DEX map for execution */
+const ROUTERS = { "SUSHISWAP": SUSHI, "CAMELOT": CAMELOT };
 
 /* ========= RPC (HARD-WIRED) ========= */
-const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WyyAx5cvsez";
+const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WyyAx5cvsez"; // <- your key here
 const READ_PROVIDER = new ethers.providers.JsonRpcProvider(ALCHEMY_URL);
-let __provider, __signer, __account, __ckfe;
 
 /* ========= ABIs ========= */
 const CKFE_ABI = [
@@ -389,32 +382,13 @@ async function runScan(){
     }
   }
   renderRows(found);
-  const profitable = found.filter(r=>r.netPL>0);
-  $("#progPill").textContent = Done. Found ${profitable.length} profitable route(s), ${found.length} total rows.;
-
-  // Auto-select profitable
-  tbody.querySelectorAll("tr").forEach(tr=>{
-    const net = Number(tr.dataset.netpl||0);
-    const cb = tr.querySelector(".pick");
-    if(cb) cb.checked = net > 0;
-  });
-  updateSelectedTotal();
-
-  // Auto-execute top profitable if toggle is on
-  if ($("#autoExec").checked && profitable.length){
-    // pick the first row in table (already sorted)
-    const firstRow = tbody.querySelector("tr");
-    if(firstRow){
-      const cb = firstRow.querySelector(".pick");
-      if(cb){ cb.checked = true; }
-      await executeSelected(); // will do callStatic + send
-    }
-  }
-
+  $("#progPill").textContent = Done. Found ${found.filter(r=>r.netPL>0).length} profitable route(s), ${found.length} total rows.;
   scanning=false;
 }
 
 /* ========= WALLET/CONTRACT ========= */
+let __provider, __signer, __account, __ckfe;
+
 async function connectWallet(){
   if(!window.ethereum) throw new Error("MetaMask not found");
   __provider = new ethers.providers.Web3Provider(window.ethereum, "any");
@@ -508,15 +482,14 @@ async function startFlashLoan(){
 async function executeSelected(){
   try{
     const c = __ckfe || await connectWallet();
-    // pick the first checked row; assume table is already sorted (best first)
-    let tr = Array.from(tbody.querySelectorAll("tr")).find(
-      r => r.querySelector(".pick") && r.querySelector(".pick").checked
-    );
-    if(!tr){ alert("Pick a row (or enable Auto-execute and run Scan)"); return; }
+    const tr = Array.from(tbody.querySelectorAll("tr")).find(r => {
+      const cb=r.querySelector(".pick"); return cb && cb.checked;
+    });
+    if(!tr){ alert("Pick a profitable row first."); return; }
 
     const buyDex = tr.dataset.buyDex, sellDex = tr.dataset.sellDex;
     const buyRouter = ROUTERS[buyDex], sellRouter = ROUTERS[sellDex];
-    if(!buyRouter || !sellRouter){ alert("Unsupported DEX combo in this build (SUSHI/CAMELOT only)."); return; }
+    if(!buyRouter || !sellRouter){ alert("Unsupported DEX combo (SUSHI/CAMELOT only in this build)."); return; }
 
     const human = String($("#wethAmt").value||"0.001");
     const amount = ethers.utils.parseUnits(human, 18);
@@ -564,28 +537,32 @@ async function executeSelected(){
 }
 
 /* ========= WIRE UI ========= */
-document.getElementById("scanBtn").addEventListener("click", runScan);
-document.getElementById("stopBtn").addEventListener("click", ()=>{ stopFlag=true; $("#progPill").textContent="Stopped."; });
-tbody.addEventListener("change", e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
-document.getElementById("selectProfitable").addEventListener("click", ()=>{
-  tbody.querySelectorAll("tr").forEach(tr=>{
-    const cb=tr.querySelector(".pick");
-    if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0);
-  }); updateSelectedTotal();
-});
-document.getElementById("clearSel").addEventListener("click", ()=>{ tbody.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
-document.getElementById("execSelected").addEventListener("click", executeSelected);
-document.getElementById("connectBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); }catch(e){ alert(e?.message || e); } });
-document.getElementById("fundBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); await fundPremium(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); } });
-document.getElementById("flashBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); await startFlashLoan(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); } });
+function wireUI(){
+  document.getElementById("scanBtn").addEventListener("click", runScan);
+  document.getElementById("stopBtn").addEventListener("click", ()=>{ stopFlag=true; $("#progPill").textContent="Stopped."; });
+  tbody.addEventListener("change", e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
+  document.getElementById("selectProfitable").addEventListener("click", ()=>{
+    tbody.querySelectorAll("tr").forEach(tr=>{
+      const cb=tr.querySelector(".pick");
+      if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0);
+    }); updateSelectedTotal();
+  });
+  document.getElementById("clearSel").addEventListener("click", ()=>{ tbody.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
+  document.getElementById("execSelected").addEventListener("click", executeSelected);
+  document.getElementById("connectBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); }catch(e){ alert(e?.message || e); } });
+  document.getElementById("fundBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); await fundPremium(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); } });
+  document.getElementById("flashBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); await startFlashLoan(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); } });
 
-/* Badges + initial UI */
-document.getElementById("rpcPill").textContent = "RPC: Alchemy (wired)";
-document.getElementById("tokensPill").textContent = "Tokens: " + TOKENS.length;
-document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("rpcPill").textContent = "RPC: Alchemy (wired)";
+  document.getElementById("tokensPill").textContent = "Tokens: " + TOKENS.length;
   const box=document.getElementById("execContract");
   if(box && /^0x[a-fA-F0-9]{40}$/.test(DEFAULT_EXECUTOR_ADDR)) box.value = DEFAULT_EXECUTOR_ADDR;
-});
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", wireUI);
+} else {
+  wireUI();
+}
 
 /* Account / network listeners */
 if (window.ethereum) {

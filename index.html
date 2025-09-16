@@ -214,7 +214,7 @@ function getExecAddr(){
 
 /* ========= ETH & GAS ========= */
 let ETH_USD = null, GAS_GWEI = null;
-const READ_PROVIDER = new ethers.providers.JsonRpcProvider("https://arb-mainnet.g.alchemy.com/v2/demo"); // replace with your key
+const READ_PROVIDER = new ethers.providers.JsonRpcProvider("h4YaGX9cc_WywAx5cvsez"); // replace with your key
 async function fetchEthUsd(){
   try{
     const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.44</title>
+<title>Crypto Kings • TestBed v9.9.45</title>
 <style>
   :root{
     --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -64,7 +64,7 @@
       <div class="logo">CK</div>
       <div>
         <div style="font-weight:800;line-height:1">Crypto Kings</div>
-        <div class="hint">TestBed v9.9.44 • Arbitrum (router-verified scan, Sushi↔Camelot)</div>
+        <div class="hint">TestBed v9.9.45 • Arbitrum (router-verified, Sushi↔Camelot↔Ramses)</div>
       </div>
     </div>
     <div class="burger" title="Menu">&#9776;</div>
@@ -173,31 +173,25 @@ const ARBITRUM_CHAIN_ID_DEC = 42161;
 const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
 const WETH = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"; // Arbitrum WETH (lowercase)
 const USDCe = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
-const SUSHI = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506";
-const CAMELOT = "0xC873FECbD354f5A56E00E710B90EF4201Db2448d";
 
-/* start simple: same router both sides; flip SELL to CAMELOT when ready */
-const BUY_ROUTER  = SUSHI;
-const SELL_ROUTER = SUSHI;
-
-/* DEX → router map for Execute Selected + router checks */
+/* Routers (V2-like) */
 const ROUTER_BY_DEX = {
   "SUSHISWAP": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
-  "CAMELOT":   "0xc873fecbd354f5a56e00e710b90ef4201db2448d"
+  "CAMELOT":   "0xc873fecbd354f5a56e00e710b90ef4201db2448d",
+  "RAMSES":    "0xAAEAfD6e975fF4811fB8F8bBF27106e2164F3E3E" // NOTE: update if your deployment differs
 };
-
-const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/demo"; // replace with your key
-const FLASH_FEE = 0.0005; // 0.05%
 
 /* ========= SCANNER CONFIG ========= */
 const DEX_FEE   = 0.003;
 const SLIP_FEE  = 0.002;
-const SPREAD_CAP = 50;
+const SPREAD_CAP = 75;
 const GAS_LIMIT = 380000;
-const MIN_LIQ_USD = 50000;
-const EXEC_LIQ_MULT = 4;
-const EXEC_MIN_TX_M5 = 5;
-const KNOWN_EXEC_DEX = new Set(["UNISWAP-V3","SUSHISWAP","CAMELOT","TRADERJOE","RAMSES","KYBERSWAP"]);
+const MIN_LIQ_USD = 1;              // keep but unused (router verified)
+const EXEC_LIQ_MULT = 1.5;          // loosened from 4x -> 1.5x
+const EXEC_MIN_TX_M5 = 0;           // remove freshness gate
+const KNOWN_EXEC_DEX = new Set(Object.keys(ROUTER_BY_DEX));
+
+/* Token universe (your previous list) */
 const TOKENS = [
   "WETH","WBTC","USDC","USDT","DAI","ARB","LINK","GMX","AAVE","RDNT",
   "PENDLE","FRAX","CRV","BAL","UNI","wstETH","SNX","COMP","YFI","GRT",
@@ -220,7 +214,7 @@ function getExecAddr(){
 
 /* ========= ETH & GAS ========= */
 let ETH_USD = null, GAS_GWEI = null;
-const READ_PROVIDER = new ethers.providers.JsonRpcProvider(ALCHEMY_URL);
+const READ_PROVIDER = new ethers.providers.JsonRpcProvider("https://arb-mainnet.g.alchemy.com/v2/demo"); // replace with your key
 async function fetchEthUsd(){
   try{
     const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
@@ -231,7 +225,7 @@ async function fetchEthUsd(){
 async function fetchGasGwei(){
   try{
     const body={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
-    const r=await fetch(ALCHEMY_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    const r=await fetch("https://arb-mainnet.g.alchemy.com/v2/demo",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
     const j=await r.json(); const wei=parseInt(j?.result||"0x0",16);
     GAS_GWEI = wei/1e9;
     $("#gasPill").textContent = "Gas: " + GAS_GWEI.toFixed(2) + " gwei";
@@ -249,7 +243,7 @@ async function fetchPairsForSymbol(sym){
       const base = (p?.baseToken?.symbol||"").toUpperCase();
       const dex  = (p?.dexId||"").toUpperCase();
       return p?.chainId==="arbitrum" && base===sym.toUpperCase()
-             && (dex==="SUSHISWAP" || dex==="CAMELOT"); // limit to V2 we can execute now
+             && KNOWN_EXEC_DEX.has(dex);
     });
     const byDex = new Map();
     for(const p of pairs){
@@ -307,10 +301,8 @@ async function routeForPairs(pairs, loanUsd, amountWei){
     for(const sell of pairs){
       if(buy.dexId===sell.dexId) continue;
 
-      // sanity liquidity/freshness check (Dexscreener)
-      const liqOK = Math.min(liqUsd(buy), liqUsd(sell)) >= loanUsd*EXEC_LIQ_MULT;
-      const freshOK = (sumM5(buy)+sumM5(sell)) >= EXEC_MIN_TX_M5;
-      if(!liqOK || !freshOK) continue;
+      // very light liquidity check
+      const liqOK = Math.min(buy.liq||0, sell.liq||0) >= loanUsd*EXEC_LIQ_MULT;
 
       // live on-chain round-trip for this token/DEX pair
       const rt = await quoteRoundTrip(amountWei, buy.tokenAddr, buy.dexId, sell.dexId);
@@ -320,7 +312,7 @@ async function routeForPairs(pairs, loanUsd, amountWei){
       const backWei  = rt.backWei;
 
       // fees (buy+sell DEX + slippage, flash, gas)
-      const totalPct = (DEX_FEE + SLIP_FEE)*2 + FLASH_FEE; // e.g. 1.05% total
+      const totalPct = (DEX_FEE + SLIP_FEE)*2 + 0.0005; // flash 0.05%
       const ppm = Math.floor(totalPct * 1e6); // millionths to avoid float
       const feeWei = amountIn.mul(ppm).div(1e6);
 
@@ -330,26 +322,29 @@ async function routeForPairs(pairs, loanUsd, amountWei){
       const netBackWei = backWei.sub(feeWei).sub(gasWei);
       const netPLWei   = netBackWei.sub(amountIn);
 
-      // display metrics (use DexScreener prices for table visuals)
+      // display metrics (DexScreener prices for visuals only)
       const pa=Number(buy.priceUsd), pb=Number(sell.priceUsd);
-      const spreadPct=(pb-pa)/pa*100;
+      const spreadPct=isFinite((pb-pa)/pa*100) ? (pb-pa)/pa*100 : 0;
 
       const netPLUsd = ETH_USD ? Number(ethers.utils.formatUnits(netPLWei,18))*ETH_USD : 0;
 
-      const execFlag = "✅ Router-verified";
-      if (!best || netPLWei.gt(best.netPLWei)) {
-        best = {
-          token: buy.tokenSymbol,
-          tokenAddr: buy.tokenAddr,
-          buyDex: buy.dexId, sellDex: sell.dexId,
-          buyPrice: pa, sellPrice: pb,
-          spreadPct, usdcBack: loanUsd*(pb/pa),
-          netPL: netPLUsd, netPLWei, execFlag
-        };
-      }
+      const execFlag = (rt && liqOK) ? "✅ Router-verified" : "⚠️ Thin liquidity";
+      const row = {
+        token: buy.tokenSymbol,
+        tokenAddr: buy.tokenAddr,
+        buyDex: buy.dexId, sellDex: sell.dexId,
+        buyPrice: pa, sellPrice: pb,
+        spreadPct, usdcBack: loanUsd*(pb/pa),
+        netPL: netPLUsd, netPLWei, execFlag
+      };
+
+      if (!best || netPLWei.gt(best.netPLWei)) best = row;
+
+      // Push all rows (we show everything; sort later)
+      collect.push(row);
     }
   }
-  return (best && best.netPLWei.gt(0)) ? best : null;
+  return best;
 }
 
 function renderRows(rows){
@@ -374,11 +369,11 @@ function renderRows(rows){
     tr.innerHTML = `
       <td class="sel"><input type="checkbox" class="pick" ${r.netPL>0?"checked":""}></td>
       <td class="tok">${r.token}</td>
-      <td><div class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex} @ ${Number(r.buyPrice).toLocaleString(undefined,{maximumFractionDigits:6})}</span></div></td>
-      <td><div class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex} @ ${Number(r.sellPrice).toLocaleString(undefined,{maximumFractionDigits:6})}</span></div></td>
+      <td><div class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex} @ ${isFinite(r.buyPrice)?Number(r.buyPrice).toLocaleString(undefined,{maximumFractionDigits:6}):'—'}</span></div></td>
+      <td><div class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex} @ ${isFinite(r.sellPrice)?Number(r.sellPrice).toLocaleString(undefined,{maximumFractionDigits:6}):'—'}</span></div></td>
       <td class="right mono">${isFinite(r.spreadPct)?r.spreadPct.toFixed(2):'—'}%</td>
-      <td class="right mono">${usd(r.usdcBack)}</td>
-      <td class="right mono ${r.netPL>0?'ok':'bad'}">${(r.netPL>=0?'+':'-')+usd(Math.abs(r.netPL)).replace('$','')}</td>
+      <td class="right mono">${isFinite(r.usdcBack)?usd(r.usdcBack):'—'}</td>
+      <td class="right mono ${r.netPL>0?'ok':'bad'}">${isFinite(r.netPL)?((r.netPL>=0?'+':'-')+usd(Math.abs(r.netPL)).replace('$','')):'—'}</td>
       <td class="flags"><span class="tag ${r.execFlag.includes('Router-verified')?'ok':'warn'}">${r.execFlag}</span></td>
     `;
     tbody.appendChild(tr);
@@ -393,11 +388,11 @@ function updateSelectedTotal(){
   $("#selTotal").textContent = (sum>=0?'++$':'−$') + Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
 }
 
-/* ========= SCAN FLOW (now router-verified) ========= */
-let stopFlag=false, scanning=false;
+/* ========= SCAN FLOW (router-verified; show all) ========= */
+let stopFlag=false, scanning=false, collect=[];
 async function runScan(){
   if(scanning) return;
-  scanning = true; stopFlag=false;
+  scanning = true; stopFlag=false; collect=[];
   $("#progPill").textContent="Preparing (gas, ETH)…";
   tbody.innerHTML=""; updateSelectedTotal(); logEl.textContent="Ready.\n";
 
@@ -406,7 +401,7 @@ async function runScan(){
   $("#progPill").textContent="Scanning live pools…";
   log(`[${new Date().toLocaleTimeString()}] CLICK Scan; tokens=${TOKENS.length}; loan=${loan.toLocaleString()}`);
 
-  // use WETH size from UI for router quoting
+  // WETH size from UI for router quoting
   const humanAmt = String($("#wethAmt").value||"0.001");
   const amountWei = ethers.utils.parseUnits(humanAmt, 18);
 
@@ -417,18 +412,20 @@ async function runScan(){
     $("#progPill").textContent = `Scanning ${i+1}/${TOKENS.length} — ${sym}`;
     log(`${sym}: fetching pools…`);
     const pairs = await fetchPairsForSymbol(sym);
-    if(!pairs.length){ log(`${sym}: no Sushi/Camelot pools`); continue; }
+    if(!pairs.length){ log(`${sym}: no Sushi/Camelot/Ramses pools`); continue; }
 
-    const route = await routeForPairs(pairs, loan, amountWei);
-    if(route){
-      log(`${sym}: EXEC • ${route.buyDex}→${route.sellDex} router-verified net ${usd(route.netPL)}`);
-      found.push(route);
+    // routeForPairs pushes rows to 'collect' (all rows), and returns 'best'
+    const best = await routeForPairs(pairs, loan, amountWei);
+    if(best){
+      found.push(best);
+      log(`${sym}: top route ${best.buyDex}→${best.sellDex} net ${usd(best.netPL)} (${humanAmt} WETH)`);
     } else {
-      log(`${sym}: no router-verified profit at ${humanAmt} WETH`);
+      log(`${sym}: no profitable top route at ${humanAmt} WETH`);
     }
   }
-  renderRows(found);
-  $("#progPill").textContent = `Done. Found ${found.filter(r=>r.netPL>0).length} profitable route(s), ${found.length} total rows.`;
+  // merge: show every router-verified row (collect), not just best-per-token
+  renderRows(collect.length ? collect : found);
+  $("#progPill").textContent = `Done. Green=${collect.filter(r=>r.netPL>0).length} / Rows=${collect.length||found.length}.`;
   scanning=false;
 }
 
@@ -510,9 +507,9 @@ async function startFlashLoan(){
   const amount = ethers.utils.parseUnits(human, 18);
   const c = __ckfe || await connectWallet();
 
-  // quote minOuts @ 99% safety
-  const rBuy  = new ethers.Contract(BUY_ROUTER,  V2_QUOTE_ABI, READ_PROVIDER);
-  const rSell = new ethers.Contract(SELL_ROUTER, V2_QUOTE_ABI, READ_PROVIDER);
+  // quote minOuts @ 98% safety (looser to avoid reverts)
+  const rBuy  = new ethers.Contract(ROUTER_BY_DEX.SUSHISWAP,  V2_QUOTE_ABI, READ_PROVIDER);
+  const rSell = new ethers.Contract(ROUTER_BY_DEX.SUSHISWAP, V2_QUOTE_ABI, READ_PROVIDER);
   const buyPath  = [WETH, USDCe];
   const sellPath = [USDCe, WETH];
 
@@ -523,13 +520,13 @@ async function startFlashLoan(){
     const usdcOut = buyOut[buyOut.length-1];
     const sellOut = await rSell.getAmountsOut(usdcOut, sellPath);
     const wethBack= sellOut[sellOut.length-1];
-    minBuyOut  = usdcOut.mul(99).div(100);
-    minSellOut = wethBack.mul(99).div(100);
+    minBuyOut  = usdcOut.mul(98).div(100);  // 98%
+    minSellOut = wethBack.mul(98).div(100); // 98%
   }catch(_){}
 
   const route = {
-    buyRouter: BUY_ROUTER,
-    sellRouter: SELL_ROUTER,
+    buyRouter: ROUTER_BY_DEX.SUSHISWAP,
+    sellRouter: ROUTER_BY_DEX.SUSHISWAP,
     targetToken: USDCe,
     minBuyOut, minSellOut,
     deadline: 0
@@ -562,7 +559,7 @@ async function executeSelected(){
   const buyRouter  = ROUTER_BY_DEX[buyDex]  || null;
   const sellRouter = ROUTER_BY_DEX[sellDex] || null;
   if (!buyRouter || !sellRouter) {
-    alert(`Router missing for ${!buyRouter ? buyDex : sellDex}. Choose a Sushi/Camelot row.`);
+    alert(`Router missing for ${!buyRouter ? buyDex : sellDex}. Choose a Sushi/Camelot/Ramses row.`);
     return;
   }
 
@@ -578,7 +575,7 @@ async function executeSelected(){
 
   const c = __ckfe || await connectWallet();
 
-  // quote 99% minOuts on the chosen routers (read provider ok)
+  // quote 98% minOuts on the chosen routers (more tolerant)
   const rBuy  = new ethers.Contract(buyRouter,  V2_QUOTE_ABI, READ_PROVIDER);
   const rSell = new ethers.Contract(sellRouter, V2_QUOTE_ABI, READ_PROVIDER);
 
@@ -592,8 +589,8 @@ async function executeSelected(){
     const midOut  = buyOut[buyOut.length-1];
     const sellOut = await rSell.getAmountsOut(midOut, sellPath);
     const back    = sellOut[sellOut.length-1];
-    minBuyOut  = midOut.mul(99).div(100);
-    minSellOut = back.mul(99).div(100);
+    minBuyOut  = midOut.mul(98).div(100);
+    minSellOut = back.mul(98).div(100);
   } catch (_) {
     log("Quote failed; using minOut=1.");
   }

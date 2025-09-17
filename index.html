@@ -328,7 +328,7 @@ async function v3BestOut(tokenIn, tokenOut, amount){
   let path="direct";
   if(chosen===b) path="viaUSDC";
   if(chosen===c) path="viaUSDCe";
-  return {out:chosen.out, fee:chosen.fe e, path};
+  return {out:chosen.out, fee:chosen.fee, path};
 }
 
 /* ========= ROUND-TRIP QUOTES ========= */

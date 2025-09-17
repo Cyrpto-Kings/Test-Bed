@@ -82,16 +82,14 @@ footer li{margin:6px 0}
       <label class="hint">Max tokens:</label>
       <input id="maxTokens" type="number" min="10" max="300" step="10" value="120" title="Upper bound if auto-discover"/>
       <button id="scanBtn" class="btn-primary">Scan</button>
-      <button id="stopBtn" class="btn-ghost">Stop</button>
-      <button id="discoverBtn" class="btn-ghost" title="Fetch tokens (DexScreener + Subgraphs)">Auto-discover</button>
-    </div>
+      <button id="stopBtn" class="btn-ghost">Stop</button></div>
     <div class="chips">
       <span class="pill" id="rpcPill">RPC: —</span>
       <span class="pill" id="tokensPill">Tokens: —</span>
       <span class="pill" id="gasPill">Gas: —</span>
       <span class="pill" id="ethPill">ETH: —</span>
       <span class="pill" id="progPill">Idle.</span>
-      <span class="pill" id="discoverPill">Discover: —</span>
+      <span class="pill" id="discoverPill">Discover: auto</span>
     </div>
     <div class="row" style="margin-top:8px">
       <label class="hint"><input id="onlyProfitable" type="checkbox" checked/> Show only profitable</label>
@@ -622,12 +620,11 @@ document.getElementById("execSelected").addEventListener("click", executeSelecte
 document.getElementById("connectBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); }catch(e){ alert(e?.message || e); } });
 document.getElementById("fundBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); await fundPremium(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); } });
 document.getElementById("flashBtn").addEventListener("click", async ()=>{ try{ await connectWallet(); await startFlashLoan(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); } });
-document.getElementById("discoverBtn").addEventListener("click", async ()=>{ const limit = Number($("#maxTokens").value||120); $("#discoverPill").textContent = "Discover: running…"; await discoverTopTokens(limit); });
 
 // Badges + initial UI
 document.getElementById("rpcPill").textContent = "RPC: Public (arb1.arbitrum.io)";
 document.getElementById("tokensPill").textContent = "Tokens: " + TOKEN_SYMBOLS.length;
-document.addEventListener("DOMContentLoaded",()=>{ const box=document.getElementById("execContract"); if(box && /^0x[a-fA-F0-9]{40}$/.test(DEFAULT_EXECUTOR_ADDR)) box.value = DEFAULT_EXECUTOR_ADDR; });
+document.addEventListener("DOMContentLoaded", async ()=>{ $1 const limit = Number($("#maxTokens").value||120); $("#discoverPill").textContent = "Discover: running…"; try{ await discoverTopTokens(limit); }catch(e){ log("Auto-discover on load failed: "+(e?.message||e)); } });
 
 /* Account / network listeners */
 if (window.ethereum) {

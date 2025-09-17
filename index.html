@@ -183,9 +183,11 @@ let   GAS_GWEI    = 0.10;
 const V2_ABI = ["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
 // Struct-encoded input for V3 quoter (ethers v5 tuple encoding OK if names provided)
 const V3_QUOTER_ABI = [
-  "function quoteExactInputSingle((address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut)"
+  "function quoteExactInputSingle((address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut)",
+  "function quoteExactInput(bytes path,uint256 amountIn) external returns (uint256 amountOut)"
 ];
 const V3_FEES = [500, 3000, 10000]; // 0.05%, 0.3%, 1%
+const MIN_MID_OUT_WEI = ethers.BigNumber.from("1000000000000000"); // 0.001 token (approx in wei) guard // 0.05%, 0.3%, 1%
 
 const READ_PROVIDER = new ethers.providers.JsonRpcProvider(RPC_URL);
 
@@ -256,8 +258,22 @@ async function v2GetOut(amountWei, path, routerAddr){
   const c = new ethers.Contract(routerAddr, V2_ABI, READ_PROVIDER);
   return await c.getAmountsOut(amountWei, path);
 }
-async function v3Quote(tokenIn, tokenOut, fee, amountIn){
-  if (toAddr(tokenIn)===toAddr(tokenOut)) throw new Error("V3 identical tokens");
+
+// --- V3 helpers ---
+function encodePath(tokens, fees){
+  // tokens: [a,b,c], fees: [feeAB, feeBC]
+  if (tokens.length !== fees.length + 1) throw new Error("bad path");
+  const FEE_SIZE = 3; // uint24
+  let hex = "0x";
+  for(let i=0;i<fees.length;i++){
+    hex += tokens[i].slice(2).toLowerCase();
+    hex += fees[i].toString(16).padStart(FEE_SIZE*2, '0');
+  }
+  hex += tokens[tokens.length-1].slice(2).toLowerCase();
+  return hex;
+}
+
+async function v3QuoteSingle(tokenIn, tokenOut, fee, amountIn){
   const iface = new ethers.utils.Interface(V3_QUOTER_ABI);
   const data = iface.encodeFunctionData("quoteExactInputSingle", [{
     tokenIn: toAddr(tokenIn),
@@ -269,7 +285,17 @@ async function v3Quote(tokenIn, tokenOut, fee, amountIn){
   const call = { to: UNIV3_QUOTER, data };
   const raw = await READ_PROVIDER.call(call);
   const [amountOut] = iface.decodeFunctionResult("quoteExactInputSingle", raw);
-  return amountOut; // BigNumber
+  return amountOut;
+}
+
+async function v3QuotePath(tokens, fees, amountIn){
+  const iface = new ethers.utils.Interface(V3_QUOTER_ABI);
+  const path = encodePath(tokens.map(toAddr), fees);
+  const data = iface.encodeFunctionData("quoteExactInput", [path, amountIn]);
+  const call = { to: UNIV3_QUOTER, data };
+  const raw = await READ_PROVIDER.call(call);
+  const [amountOut] = iface.decodeFunctionResult("quoteExactInput", raw);
+  return amountOut;
 }
 
 /* ========= PROFIT / FEES ========= */
@@ -642,3 +668,4 @@ if (window.ethereum) {
 </script>
 </body>
 </html>
+

@@ -100,47 +100,18 @@ footer li{margin:6px 0}
       <button id="stopBtn" class="btn-ghost">Stop</button>
       <button id="discoverBtn" class="btn-ghost" title="Fetch top tokens from DexScreener">Auto-discover</button>
     </div>
-    <div class="chips">
-      <span class="pill" id="rpcPill">RPC: —</span>
-      <span class="pill" id="tokensPill">Tokens: —</span>
-      <span class="pill" id="gasPill">Gas: —</span>
-      <span class="pill" id="ethPill">ETH: —</span>
-      <span class="pill" id="progPill">Idle.</span>
+    <div class=\"chips\">
+      <span class=\"pill\" id=\"rpcPill\">RPC: —</span>
+      <span class=\"pill\" id=\"tokensPill\">Tokens: —</span>
+      <span class=\"pill\" id=\"gasPill\">Gas: —</span>
+      <span class=\"pill\" id=\"ethPill\">ETH: —</span>
+      <span class=\"pill\" id=\"progPill\">Idle.</span>
     </div>
-  </div>
-
-  <!-- Results Panel -->
-  <div class="panel">
-    <div class="toolbar">
-      <button id="selectProfitable" class="btn-ghost">Select all profitable</button>
-      <button id="clearSel" class="btn-ghost">Clear</button>
-      <span id="selTotal" class="pill">++$0</span>
-      <button id="execSelected" class="btn-primary" style="margin-left:auto">Execute Selected (one route)</button>
+    <div class=\"row\" style=\"margin-top:8px\">
+      <label class=\"hint\"><input id=\"onlyProfitable\" type=\"checkbox\" checked/> Show only profitable</label>
+      <label class=\"hint\">Min P/L ($):</label>
+      <input id=\"minProfitUsd\" type=\"number\" step=\"0.01\" value=\"0.50\" title=\"Hide rows below this net profit in USD\"/>
     </div>
-    <table id="results">
-      <thead>
-        <tr>
-          <th style="width:42px">Select</th>
-          <th>Token</th>
-          <th>Buy (DEX)</th>
-          <th>Sell (DEX)</th>
-          <th class="right">Spread %</th>
-          <th class="right">USDC Back</th>
-          <th class="right">Net P/L</th>
-          <th>Executable?</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
-
-  <!-- Logs Panel -->
-  <div class="panel">
-    <div class="row" style="justify-content:space-between">
-      <div style="font-weight:700">Details / Logs</div>
-      <span class="hint">Live gas • ETH/USD • Dex quotes (v2/v3) • Router-verified</span>
-    </div>
-    <div id="log" class="logs">Ready.</div>
   </div>
 </div>
 
@@ -175,7 +146,7 @@ const UNIV3_QUOTER      = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"; // Unisw
 
 // Fees / gas / constraints (tunable)
 const DEX_FEE_PCT = 0.003;   // v2 assumed, each leg
-const SLIP_PCT    = 0.002;   // cushion per leg
+let   SLIP_PCT    = 0.0015;  // tightened cushion per leg (was 0.002)
 const FLASH_PCT   = 0.0005;  // 0.05%
 const GAS_LIMIT   = 380000;  // on-chain exec (rough)
 let   GAS_GWEI    = 0.10;
@@ -187,9 +158,22 @@ const V3_QUOTER_ABI = [
   "function quoteExactInput(bytes path,uint256 amountIn) external returns (uint256 amountOut)"
 ];
 const V3_FEES = [500, 3000, 10000]; // 0.05%, 0.3%, 1%
-const MIN_MID_OUT_WEI = ethers.BigNumber.from("1000000000000000"); // 0.001 token (approx in wei) guard // 0.05%, 0.3%, 1%
+const MIN_MID_OUT_WEI = ethers.BigNumber.from("1000000000000000"); // 0.001 token (approx) guard // 0.05%, 0.3%, 1%
 
 const READ_PROVIDER = new ethers.providers.JsonRpcProvider(RPC_URL);
+
+// v2 candidate paths builder (allow stable hops)
+const V2_STABLES = [USDC, USDCe];
+function buildV2Paths(token){
+  const paths = [];
+  // direct WETH->TOKEN
+  paths.push([WETH, token]);
+  // 2-hop via stables
+  for(const s of V2_STABLES){
+    paths.push([WETH, s, token]);
+  }
+  return paths; // for buy; sell will be reversed
+}
 
 /* ========= TOKENS ========= */
 const TOKENS = {
@@ -261,7 +245,6 @@ async function v2GetOut(amountWei, path, routerAddr){
 
 // --- V3 helpers ---
 function encodePath(tokens, fees){
-  // tokens: [a,b,c], fees: [feeAB, feeBC]
   if (tokens.length !== fees.length + 1) throw new Error("bad path");
   const FEE_SIZE = 3; // uint24
   let hex = "0x";
@@ -317,29 +300,50 @@ async function quoteRoundTripAllDexes(amountWei, token){
   const rows = [];
   if (toAddr(token)===toAddr(WETH)) return rows;
 
-  // Sushi -> Camelot
-  try{
-    const buy1 = await v2GetOut(amountWei, [WETH, token], ROUTER_SUSHI_V2);
-    const mid1 = buy1[buy1.length-1];
-    const sell1= await v2GetOut(mid1, [token, WETH], ROUTER_CAMELOT_V2);
-    rows.push({ buyDex:"SUSHI v2", sellDex:"CAMELOT v2", backWei:sell1[sell1.length-1], ok:true, buyMid:mid1 });
-  }catch(e){ log("  ↳ SUSHI→CAMELOT v2 fail: "+(e?.reason||e?.message||"revert")); }
+  // --- V2 cross-DEX with multi-hop support (paths on each router)
+  const buyPaths  = buildV2Paths(token);
+  const sellPaths = buyPaths.map(p=>[...p].reverse());
+  const v2Combos = [
+    {nameB:"SUSHI v2",  routerB:ROUTER_SUSHI_V2,  nameS:"CAMELOT v2", routerS:ROUTER_CAMELOT_V2},
+    {nameB:"CAMELOT v2",routerB:ROUTER_CAMELOT_V2,nameS:"SUSHI v2",  routerS:ROUTER_SUSHI_V2}
+  ];
+  for (const combo of v2Combos){
+    for (let i=0;i<buyPaths.length;i++){
+      const bp = buyPaths[i]; const sp = sellPaths[i];
+      try{
+        const buyOut = await v2GetOut(amountWei, bp, combo.routerB);
+        const mid    = buyOut[buyOut.length-1];
+        if (mid.gte(MIN_MID_OUT_WEI)){
+          const sellOut= await v2GetOut(mid, sp, combo.routerS);
+          rows.push({ buyDex:combo.nameB, sellDex:combo.nameS, backWei:sellOut[sellOut.length-1], ok:true, buyMid:mid, amountWei });
+        }
+      }catch(_){ /* skip bad path */ }
+    }
+  }
 
-  // Camelot -> Sushi
-  try{
-    const buy2 = await v2GetOut(amountWei, [WETH, token], ROUTER_CAMELOT_V2);
-    const mid2 = buy2[buy2.length-1];
-    const sell2= await v2GetOut(mid2, [token, WETH], ROUTER_SUSHI_V2);
-    rows.push({ buyDex:"CAMELOT v2", sellDex:"SUSHI v2", backWei:sell2[sell2.length-1], ok:true, buyMid:mid2 });
-  }catch(e){ log("  ↳ CAMELOT→SUSHI v2 fail: "+(e?.reason||e?.message||"revert")); }
-
-  // UniV3 symmetric (same fee both ways)
+  // --- V3: direct + 2-hop via USDC/USDCe
+  const v3Stables = [USDC, USDCe];
   for (const f of V3_FEES){
+    // direct
     try{
-      const mid = await v3Quote(WETH, token, f, amountWei);
-      const back= await v3Quote(token, WETH, f, mid);
-      rows.push({ buyDex:`UniV3 ${f/10000}%`, sellDex:`UniV3 ${f/10000}%`, backWei:back, ok:true, buyMid:mid });
-    }catch(e){ log(`  ↳ UniV3 ${f/10000}% fail: `+(e?.reason||e?.message||"revert")); }
+      const mid = await v3QuoteSingle(WETH, token, f, amountWei);
+      if (mid.gte(MIN_MID_OUT_WEI)){
+        const back= await v3QuoteSingle(token, WETH, f, mid);
+        rows.push({ buyDex:`UniV3 ${f/10000}%`, sellDex:`UniV3 ${f/10000}%`, backWei:back, ok:true, buyMid:mid, amountWei });
+      }
+    }catch(_){ }
+
+    for (const stab of v3Stables){
+      for (const g of V3_FEES){
+        try{
+          const midA = await v3QuotePath([WETH, stab, token], [f, g], amountWei);
+          if (midA.gte(MIN_MID_OUT_WEI)){
+            const backA= await v3QuotePath([token, stab, WETH], [g, f], midA);
+            rows.push({ buyDex:`UniV3 ${f/10000}%/${g/10000}%`, sellDex:`UniV3 ${g/10000}%/${f/10000}%`, backWei:backA, ok:true, buyMid:midA, amountWei });
+          }
+        }catch(_){ }
+      }
+    }
   }
 
   return rows;
@@ -354,11 +358,20 @@ async function weiToUsdc(wei){
 }
 
 function renderRows(rows){
+  // attach P/L USD if needed
   rows.forEach(r=>{ r.netPLUsd = ETH_USD ? Number(ethers.utils.formatUnits(r.netPLWei,18))*ETH_USD : 0; });
-  rows.sort((a,b)=> (b.netPLUsd||-1e99)-(a.netPLUsd||-1e99));
+
+  // filters
+  const onlyProf = !!document.getElementById('onlyProfitable')?.checked;
+  const minUsd = Number(document.getElementById('minProfitUsd')?.value||0);
+  let view = rows.slice();
+  if (onlyProf) view = view.filter(r=> r.netPLUsd > 0 && r.netPLUsd >= minUsd);
+
+  // sort by net P/L desc
+  view.sort((a,b)=> (b.netPLUsd||-1e99)-(a.netPLUsd||-1e99));
 
   tbody.innerHTML="";
-  for(const r of rows){
+  for(const r of view){
     const spreadPct = ((Number(ethers.utils.formatUnits(r.backWei,18)) / Number(ethers.utils.formatUnits(r.amountWei,18))) - 1) * 100;
     const tr=document.createElement("tr");
     tr.className = r.netPLUsd>0 ? "profit" : "loss";
@@ -369,14 +382,14 @@ function renderRows(rows){
     tr.dataset.sellDex = r.sellDex;
 
     tr.innerHTML = `
-      <td class="sel"><input type="checkbox" class="pick" ${r.netPLUsd>0?"checked":""}></td>
-      <td class="tok">${r.tokenSym}</td>
-      <td><div class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex}</span></div></td>
-      <td><div class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex}</span></div></td>
-      <td class="right mono">${spreadPct.toFixed(2)}%</td>
-      <td class="right mono">${usd(r.usdcBack||0)}</td>
-      <td class="right mono ${r.netPLUsd>0?'ok':'bad'}">${(r.netPLUsd>=0?'+':'-')+usd(Math.abs(r.netPLUsd)).replace('$','')}</td>
-      <td class="flags"><span class="tag ${r.netPLUsd>0?'ok':'warn'}">${r.ok?'Router-verified':'—'}</span></td>
+      <td class=\"sel\"><input type=\"checkbox\" class=\"pick\" ${r.netPLUsd>0?"checked":""}></td>
+      <td class=\"tok\">${r.tokenSym}</td>
+      <td><div class=\"cell\"><span class=\"lbl\">Buy</span><span class=\"val\">${r.buyDex}</span></div></td>
+      <td><div class=\"cell\"><span class=\"lbl\">Sell</span><span class=\"val\">${r.sellDex}</span></div></td>
+      <td class=\"right mono\">${Number.isFinite(spreadPct)?spreadPct.toFixed(2):'—'}%</td>
+      <td class=\"right mono\">${usd(r.usdcBack||0)}</td>
+      <td class=\"right mono ${r.netPLUsd>0?'ok':'bad'}\">${(r.netPLUsd>=0?'+':'-')+usd(Math.abs(r.netPLUsd)).replace('$','')}</td>
+      <td class=\"flags\"><span class=\"tag ${r.netPLUsd>0?'ok':'warn'}\">${r.ok?'Router-verified':'—'}</span></td>
     `;
     tbody.appendChild(tr);
   }

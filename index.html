@@ -2,111 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Arbitrum Triangular Arbitrage – v9.9.63</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Arbitrum Tri-DEX Scanner — v9.9.64</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0b0f14; color:#e6edf3; margin:0; }
-    header { padding:16px 20px; background:#111826; border-bottom:1px solid #1f2937; display:flex; align-items:center; gap:12px; }
-    h1 { font-size:18px; margin:0; }
-    main { display:grid; grid-template-columns: 320px 1fr; gap:16px; padding:16px; }
-    .card { background:#0f1722; border:1px solid #1f2937; border-radius:10px; }
-    .card h3 { margin:0; padding:12px 14px; border-bottom:1px solid #1f2937; font-size:14px; color:#9ab; }
-    .card .body { padding:12px 14px; }
-    input, select, button, textarea {
-      font: inherit; background:#0c121b; color:#e6edf3; border:1px solid #223045; border-radius:8px; padding:8px 10px;
-    }
-    input:focus, select:focus, button:focus, textarea:focus { outline: none; border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.25); }
-    button { cursor:pointer; }
-    .grid { display:grid; gap:10px; }
-    .row { display:flex; gap:8px; align-items:center; }
-    .small { font-size:12px; color:#9ab; }
-    .muted { color:#7c8ea3; }
-    .pill { padding:2px 8px; border:1px solid #243246; border-radius:999px; font-size:12px; color:#b7c6d9;}
-    .warn { color:#fbbf24; }
-    .err  { color:#f87171; }
-    .ok   { color:#34d399; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    #log { height: 45vh; resize: vertical; }
-    table { width:100%; border-collapse: collapse; }
-    th, td { border-bottom:1px solid #1f2937; padding:6px 8px; font-size:13px; }
-    th { text-align:left; color:#9ab; position:sticky; top:0; background:#0f1722; }
-    .right { text-align:right; }
+    :root { --bg:#0b0f14; --panel:#0f1722; --line:#1f2937; --text:#e6edf3; --muted:#8aa0b6; --accent:#3b82f6; --ok:#22c55e; --err:#ef4444; --warn:#f59e0b; }
+    * { box-sizing:border-box }
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text) }
+    header { padding:14px 18px; border-bottom:1px solid var(--line); background:#111826; display:flex; gap:12px; align-items:center }
+    h1 { margin:0; font-size:18px }
+    .pill{border:1px solid #243246; border-radius:999px; padding:2px 8px; font-size:12px; color:#b7c6d9}
+    main { display:grid; grid-template-columns:320px 1fr; gap:16px; padding:16px }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden }
+    .card h3 { margin:0; padding:10px 12px; border-bottom:1px solid var(--line); font-size:14px; color:#9ab }
+    .body { padding:12px }
+    input,select,button,textarea{font:inherit; background:#0c121b; color:var(--text); border:1px solid #223045; border-radius:8px; padding:8px 10px}
+    input:focus,select:focus,button:focus,textarea:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(59,130,246,.25)}
+    button{cursor:pointer}
+    .grid{display:grid; gap:10px}
+    .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .small{font-size:12px; color:#9ab}
+    .muted{color:var(--muted)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .right{text-align:right}
+    #log{height:42vh; resize:vertical}
+    table{width:100%; border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--line); padding:6px 8px; font-size:13px}
+    th{position:sticky; top:0; background:var(--panel); color:#9ab; text-align:left}
+    .ok{color:var(--ok)} .err{color:var(--err)} .warn{color:var(--warn)}
+    .nowrap{white-space:nowrap}
+    .btn-sml{padding:6px 10px; font-size:13px}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 <header>
-  <h1>Arbitrum Triangular Arbitrage <span class="pill">v9.9.63</span></h1>
-  <span class="small muted">SushiV2 + CamelotV2 + UniV3 (Quoter)</span>
+  <h1>Arbitrum Tri-DEX Scanner</h1>
+  <span class="pill">v9.9.64</span>
+  <span class="small muted">Sushi V2 • Camelot V2 • UniV3 (Quoter)</span>
 </header>
 
 <main>
+  <!-- Controls -->
   <section class="card">
     <h3>Controls</h3>
     <div class="body grid">
       <div class="grid">
         <label class="small">Wallet / RPC</label>
         <div class="row">
-          <button id="btnConnect">Connect MetaMask</button>
+          <button id="btnConnect" class="btn-sml">Connect MetaMask</button>
           <select id="rpcSel" title="RPC">
-            <option value="alchemy">Alchemy (hardwired)</option>
+            <option value="alchemy" selected>Alchemy (hardwired)</option>
             <option value="metamask">Use MetaMask Provider</option>
           </select>
         </div>
-        <div class="small muted" id="connInfo">Not connected</div>
+        <div id="connInfo" class="small muted">Not connected</div>
       </div>
 
       <div class="grid">
         <label class="small">Parameters</label>
         <div class="row">
           <label class="small">Tokens</label>
-          <input id="tokenCount" type="number" value="120" min="10" step="10" style="width:90px"/>
-          <span class="small muted">auto-discovered on load</span>
+          <input id="tokenCount" type="number" value="150" min="10" step="10" style="width:100px"/>
+          <span class="small muted">static + auto-discovered</span>
         </div>
         <div class="row">
           <label class="small">Loan (WETH)</label>
-          <input id="loan" type="number" value="10" step="0.5" style="width:110px"/>
-          <span class="small muted">for profit calc only</span>
+          <input id="loan" type="number" value="10" step="0.5" style="width:120px"/>
+          <span class="small muted">for net calc</span>
         </div>
         <div class="row">
           <label class="small">Probe (WETH)</label>
-          <input id="probe" type="number" value="0.001" step="0.001" style="width:110px"/>
-          <span class="small muted">smaller = find edges</span>
+          <input id="probe" type="number" value="0.001" step="0.001" style="width:120px"/>
+          <span class="small muted">smaller finds edges</span>
         </div>
         <div class="row">
-          <label class="small">Premium</label>
-          <input id="premiumBps" type="number" value="5" step="1" style="width:90px"/>
-          <span class="small muted">bps (e.g. 5 = 0.05%)</span>
+          <label class="small">Premium (bps)</label>
+          <input id="premiumBps" type="number" value="5" step="1" style="width:100px"/>
+          <span class="small muted">e.g. 5 = 0.05%</span>
         </div>
         <div class="row">
           <label class="small">Gas (gwei)</label>
-          <input id="gasGwei" type="number" value="0.35" step="0.01" style="width:90px"/>
-          <span class="small muted">arb avg low</span>
+          <input id="gasGwei" type="number" value="0.35" step="0.01" style="width:100px"/>
+          <span class="small muted">rough Arbitrum</span>
         </div>
       </div>
 
       <div class="row">
         <button id="btnScan">Scan</button>
         <button id="btnDiscover">Re-Discover Tokens</button>
+        <button id="btnClear">Clear Results</button>
         <span id="scanStatus" class="small muted">Ready.</span>
       </div>
     </div>
   </section>
 
-  <section class="card" style="min-height:60vh;">
+  <!-- Results -->
+  <section class="card" style="min-height:58vh">
     <h3>Results</h3>
     <div class="body">
-      <table id="resTable">
+      <table>
         <thead>
           <tr>
             <th>#</th>
             <th>Token</th>
-            <th>Path</th>
+            <th>Route</th>
             <th class="right">Back (WETH)</th>
             <th class="right">Net (WETH)</th>
             <th class="right">Net ($)</th>
-            <th>Route Type</th>
-            <th>Note</th>
+            <th>Type</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody id="resBody"></tbody>
@@ -114,6 +118,7 @@
     </div>
   </section>
 
+  <!-- Log -->
   <section class="card">
     <h3>Log</h3>
     <div class="body">
@@ -123,359 +128,311 @@
 </main>
 
 <script>
-(async function() {
-  // ---------- Constants (Arbitrum) ----------
-  const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; // your hardwired key
-  const WETH = "0x82aF49447D8a07e3BD95BD0d56f35241523fBab1";
-  const SUSHI_ROUTER = "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
+(async function(){
+  // ===== Hardwired Arbitrum infra =====
+  const ALCHEMY_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez"; // leave hardwired
+  const WETH  = "0x82aF49447D8a07e3BD95BD0d56f35241523fBab1";
+  const SUSHI_ROUTER   = "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
   const CAMELOT_ROUTER = "0xC873FECbD354f5A56E00E710B90EF4201Db2448d";
-  const UNIV3_QUOTER = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
+  const UNIV3_QUOTER   = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
 
-  // common stables
-  const USDC = "0xaf88d065e77c8cc2239327c5edb3a432268e5831";
-  const USDCE= "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8";
+  // Blue-chip stables
+  const USDC  = "0xaf88d065e77c8cc2239327c5edb3a432268e5831"; // native
+  const USDCE = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8"; // bridged
 
-  // ABI fragments
+  // ===== Static token map (only known-safe Arbitrum addresses) =====
+  // (We merge this with auto-discovered tokens so you get breadth without bad addrs.)
+  const STATIC_TOKENS = {
+    WETH:  WETH,
+    WBTC:  "0x2f2a2543B76A4166549F7aAB2e75Bef0aefC5B0f",
+    USDC:  USDC,
+    "USDC.e": USDCE,
+    USDT:  "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+    DAI:   "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+    ARB:   "0x912ce59144191c1204e64559fe8253a0e49e6548",
+    LINK:  "0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
+    GMX:   "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a",
+    RDNT:  "0x0c4681e6c0235179ec3d4f4fc4df3d14fdd96017",
+    wstETH:"0x5979D7b546E38E414F7E9822514be443A4800529",
+    MAGIC: "0x539bdE0d7DbD336b79148AA742883198BBF60342",
+    GRAIL: "0x3d9907F9a368ad0a51Be60f7Da3B97cf940982D8"
+  };
+
+  // ===== ABIs =====
   const IUniswapV2Router = [
     "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)"
   ];
+  // IMPORTANT: positional params, not struct (fixes 'cannot encode object...' issue)
   const IUniswapV3Quoter = [
-    "function quoteExactInputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint160 sqrtPriceLimitX96) external returns (uint256 amountOut)"
+    "function quoteExactInputSingle(address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96) external returns (uint256 amountOut)"
   ];
-
-  // fee tiers to try for UniV3
   const V3_FEES = [500, 3000, 10000]; // 0.05%, 0.3%, 1%
 
-  // State
-  let provider, signer, account;
+  // ===== State / DOM =====
   const $ = s => document.querySelector(s);
-  const logEl = $("#log");
-  const resBody = $("#resBody");
-  const scanStatus = $("#scanStatus");
-  const tokenSet = new Map(); // symbol -> address
+  const logEl = $("#log"), resBody = $("#resBody"), statusEl = $("#scanStatus");
+  let provider = null, signer = null, account = null;
+  const tokens = new Map();
 
-  // ---------- Helpers ----------
-  const fmt = n => Number(n).toLocaleString(undefined, { maximumFractionDigits: 6 });
-  const fmt4 = n => Number(n).toLocaleString(undefined, { maximumFractionDigits: 4 });
-  const usd = n => Number(n).toLocaleString(undefined, { style:"currency", currency:"USD", maximumFractionDigits:2 });
-
-  function log(line) {
-    logEl.value += (logEl.value ? "\n" : "") + line;
-    logEl.scrollTop = logEl.scrollHeight;
+  // ===== UI helpers =====
+  function log(line){ logEl.value += (logEl.value? "\n":"") + line; logEl.scrollTop = logEl.scrollHeight; }
+  function setStatus(t){ statusEl.textContent = t; }
+  const fmt = n => Number(n).toLocaleString(undefined,{maximumFractionDigits:6});
+  const fmt4= n => Number(n).toLocaleString(undefined,{maximumFractionDigits:4});
+  const usd = n => Number(n).toLocaleString(undefined,{style:"currency",currency:"USD",maximumFractionDigits:2});
+  function time(){return new Date().toTimeString().slice(0,8);}
+  function shortErr(e){
+    const m = (e && e.message) ? e.message : String(e);
+    if (m.includes("IDENTICAL_ADDRESSES")) return "IDENTICAL_ADDRESSES";
+    if (m.includes("CALL_EXCEPTION")) return "call exception";
+    if (m.includes("execution reverted")) return "execution reverted";
+    if (m.includes("INSUFFICIENT_LIQUIDITY")) return "INSUFFICIENT_LIQUIDITY";
+    if (m.includes("cannot encode object")) return "encode error";
+    return m.slice(0,120);
   }
 
-  function setStatus(text) {
-    scanStatus.textContent = text;
-  }
-
-  function addToken(symbol, address) {
-    if (!address) return;
-    const key = symbol.trim().toUpperCase();
-    if (!tokenSet.has(key)) tokenSet.set(key, ethers.utils.getAddress(address));
-  }
-
-  function skipIdentical(a, b) {
-    return ethers.utils.getAddress(a) === ethers.utils.getAddress(b);
-  }
-
-  function calcCosts(loanWeth, premiumBps, gasGwei) {
-    // crude approximate costs (no flash executor yet)
-    const premium = loanWeth * (premiumBps / 10000); // in WETH
-    const gasEth = (Number(gasGwei) * 1e-9) * 450000; // rough 450k gas for tri swap (view only signal)
-    return { premium, gasEth };
-  }
-
-  function estUsdPerWeth() {
-    // quick static approx to avoid another onchain call; adjust if needed
-    return 3000; // adjust if you want
-  }
-
-  // ---------- Providers ----------
-  function makeProvider(kind) {
-    if (kind === "metamask" && window.ethereum) {
-      return new ethers.providers.Web3Provider(window.ethereum);
-    }
+  // ===== Provider / wallet =====
+  function makeProvider(mode){
+    if (mode==="metamask" && window.ethereum) return new ethers.providers.Web3Provider(window.ethereum);
     return new ethers.providers.JsonRpcProvider(ALCHEMY_URL);
   }
-
-  async function connectWallet() {
-    try {
-      if (!window.ethereum) throw new Error("MetaMask not found");
-      await window.ethereum.request({ method: "eth_requestAccounts" });
+  async function connectWallet(){
+    try{
+      if(!window.ethereum) throw new Error("MetaMask not found");
+      await window.ethereum.request({method:"eth_requestAccounts"});
       const web3 = new ethers.providers.Web3Provider(window.ethereum);
       const net = await web3.getNetwork();
-      if (String(net.chainId) !== "42161") {
-        log("[WARN] Switch MetaMask to Arbitrum One (42161).");
-      }
-      provider = $("#rpcSel").value === "metamask" ? web3 : new ethers.providers.JsonRpcProvider(ALCHEMY_URL);
+      if (String(net.chainId)!=="42161") log("[WARN] Switch MetaMask to Arbitrum One (42161).");
+      provider = ($("#rpcSel").value==="metamask") ? web3 : new ethers.providers.JsonRpcProvider(ALCHEMY_URL);
       signer = provider.getSigner();
       account = await signer.getAddress();
       $("#connInfo").textContent = `Connected: ${account.slice(0,6)}…${account.slice(-4)}`;
       log("Wallet connected.");
-    } catch (e) {
-      log(`[ERR] connect: ${e.message}`);
-    }
+    }catch(e){ log(`[ERR] connect: ${e.message}`); }
   }
 
-  // ---------- DEX Clients ----------
-  const sushi = new ethers.Contract(SUSHI_ROUTER, IUniswapV2Router, () => provider);
+  // ===== DEX clients =====
+  const sushi   = new ethers.Contract(SUSHI_ROUTER, IUniswapV2Router, () => provider);
   const camelot = new ethers.Contract(CAMELOT_ROUTER, IUniswapV2Router, () => provider);
-  const quoter = new ethers.Contract(UNIV3_QUOTER, IUniswapV3Quoter, () => provider);
+  const quoter  = new ethers.Contract(UNIV3_QUOTER, IUniswapV3Quoter, () => provider);
 
-  async function v2Quote(router, amountIn, path) {
-    try {
-      if (path.length < 2) return null;
-      // guard identical path (causes IDENTICAL_ADDRESSES revert)
-      for (let i = 1; i < path.length; i++) {
-        if (skipIdentical(path[i-1], path[i])) return null;
+  // ===== Maths / costs =====
+  function calcCosts(loanWeth, premiumBps, gasGwei){
+    const premium = loanWeth * (premiumBps / 10000.0);
+    const gasEth  = (Number(gasGwei) * 1e-9) * 450000; // rough
+    return { premium, gasEth, total: premium + gasEth };
+  }
+  function estUsdPerWeth(){ return 3000; } // static approx to keep it snappy
+
+  // ===== Tokens =====
+  function addToken(symbol, address){
+    try{
+      if (!symbol || !address) return;
+      const norm = ethers.utils.getAddress(address);
+      const sym  = String(symbol).trim().toUpperCase();
+      if (!tokens.has(sym)) tokens.set(sym, norm);
+    }catch{}
+  }
+  function seedStatic(){
+    Object.entries(STATIC_TOKENS).forEach(([s,a]) => addToken(s,a));
+  }
+
+  async function discoverTokens(limit=150){
+    // Pull 2-3 pages from DexScreener; prefer tokens paired with WETH/USDC/USDC.e
+    const pages = [
+      "https://api.dexscreener.com/latest/dex/pairs/arbitrum",
+      "https://api.dexscreener.com/latest/dex/pairs/arbitrum?page=2",
+      "https://api.dexscreener.com/latest/dex/pairs/arbitrum?page=3"
+    ];
+    const preferred = new Set([WETH.toLowerCase(), USDC.toLowerCase(), USDCE.toLowerCase()]);
+    let added = 0;
+    for (const url of pages){
+      try{
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (!data || !Array.isArray(data.pairs)) continue;
+        for (const p of data.pairs){
+          const t0 = p.baseToken, t1 = p.quoteToken;
+          if (!t0 || !t1) continue;
+          const a0 = (t0.address||"").toLowerCase();
+          const a1 = (t1.address||"").toLowerCase();
+          const s0 = (t0.symbol||a0.slice(0,6)).toUpperCase();
+          const s1 = (t1.symbol||a1.slice(0,6)).toUpperCase();
+
+          // prefer tokens where the counterparty is WETH/USDC/USDC.e
+          const prefer0 = a0 && preferred.has(a1);
+          const prefer1 = a1 && preferred.has(a0);
+
+          if (prefer0) { addToken(s0, a0); added++; }
+          if (prefer1) { addToken(s1, a1); added++; }
+
+          if (tokens.size >= limit) break;
+        }
+      }catch(e){ log(`[WARN] discover: ${e.message}`); }
+      if (tokens.size >= limit) break;
+    }
+    return added;
+  }
+
+  // ===== Quotes =====
+  function skipIdentical(a,b){ return ethers.utils.getAddress(a)===ethers.utils.getAddress(b); }
+
+  async function v2Quote(router, amountInWei, path){
+    try{
+      if (path.length<2) return null;
+      for (let i=1;i<path.length;i++){
+        if (skipIdentical(path[i-1], path[i])) return null; // guard IDENTICAL_ADDRESSES
       }
-      const amounts = await router.getAmountsOut(amountIn, path);
-      return amounts[amounts.length - 1];
-    } catch (e) {
-      return { __error: e };
-    }
+      const amounts = await router.getAmountsOut(amountInWei, path);
+      return amounts[amounts.length-1];
+    }catch(e){ return {__error:e}; }
   }
 
-  async function v3QuoteSingle(tokenIn, tokenOut, fee, amountIn) {
-    try {
+  async function v3QuoteSingle(tokenIn, tokenOut, fee, amountInWei){
+    try{
       if (skipIdentical(tokenIn, tokenOut)) return null;
-      // *** IMPORTANT FIX: positional args, not a struct ***
-      const amountOut = await quoter.quoteExactInputSingle(
-        tokenIn,
-        tokenOut,
-        fee,
-        amountIn,
-        0 // sqrtPriceLimitX96
+      // FIX: positional args (ethers v5)
+      return await quoter.quoteExactInputSingle(
+        tokenIn, tokenOut, fee, amountInWei, 0
       );
-      return amountOut;
-    } catch (e) {
-      return { __error: e };
-    }
+    }catch(e){ return {__error:e}; }
   }
 
-  // Try V2 pairs and V3 fees for WETH<->TOKEN round trip
-  async function roundTrip(tokenAddr, probeWei, sym) {
+  async function roundTrip(tokenAddr, probeWei){
     const routes = [];
 
-    // ----- V2 routes (Sushi <-> Camelot): WETH -> TOKEN -> WETH
-    // SUSHI then CAMELOT
-    routes.push({ name:"SUSHI v2 → CAMELOT v2", exec: async () => {
-      const out1 = await v2Quote(sushi, probeWei, [WETH, tokenAddr]);
-      if (out1 && out1.__error) throw out1.__error;
-
-      const out2 = await v2Quote(camelot, out1, [tokenAddr, WETH]);
-      if (out2 && out2.__error) throw out2.__error;
-
-      return out2;
-    }});
-    // CAMELOT then SUSHI
-    routes.push({ name:"CAMELOT v2 → SUSHI v2", exec: async () => {
-      const out1 = await v2Quote(camelot, probeWei, [WETH, tokenAddr]);
-      if (out1 && out1.__error) throw out1.__error;
-
-      const out2 = await v2Quote(sushi, out1, [tokenAddr, WETH]);
-      if (out2 && out2.__error) throw out2.__error;
-
-      return out2;
+    // V2 SUSHI -> CAMELOT -> (WETH->TOKEN then TOKEN->WETH)
+    routes.push({ name:"SUSHI v2 → CAMELOT v2", type:"V2", exec: async ()=>{
+      const a = await v2Quote(sushi,   probeWei, [WETH, tokenAddr]); if (a && a.__error) throw a.__error;
+      const b = await v2Quote(camelot, a,        [tokenAddr, WETH]); if (b && b.__error) throw b.__error;
+      return b;
     }});
 
-    // ----- V3 routes: try fee tiers for each leg
-    for (const fA of V3_FEES) {
-      for (const fB of V3_FEES) {
-        routes.push({ name:`UniV3 ${fA/10000}% → ${fB/10000}%`, exec: async () => {
-          const out1 = await v3QuoteSingle(WETH, tokenAddr, fA, probeWei);
-          if (out1 && out1.__error) throw out1.__error;
+    // V2 CAMELOT -> SUSHI
+    routes.push({ name:"CAMELOT v2 → SUSHI v2", type:"V2", exec: async ()=>{
+      const a = await v2Quote(camelot, probeWei, [WETH, tokenAddr]); if (a && a.__error) throw a.__error;
+      const b = await v2Quote(sushi,   a,        [tokenAddr, WETH]); if (b && b.__error) throw b.__error;
+      return b;
+    }});
 
-          const out2 = await v3QuoteSingle(tokenAddr, WETH, fB, out1);
-          if (out2 && out2.__error) throw out2.__error;
-
-          return out2;
+    // V3 (try fee combos)
+    for (const fA of V3_FEES){
+      for (const fB of V3_FEES){
+        routes.push({ name:`UniV3 ${fA/10000}% → ${fB/10000}%`, type:"V3", exec: async ()=>{
+          const a = await v3QuoteSingle(WETH, tokenAddr, fA, probeWei); if (a && a.__error) throw a.__error;
+          const b = await v3QuoteSingle(tokenAddr, WETH, fB, a);        if (b && b.__error) throw b.__error;
+          return b;
         }});
       }
     }
 
-    // Run all and collect best
-    let best = null;
-    const notes = [];
-    for (const r of routes) {
-      try {
-        const back = await r.exec();
-        if (!back) continue;
-        if (!best || back.gt(best.back)) best = { name:r.name, back };
-      } catch (e) {
-        notes.push(`${r.name} fail: ${shortErr(e)}`);
-      }
+    let best=null; const notes=[];
+    for (const r of routes){
+      try{
+        const out = await r.exec();
+        if (!out) continue;
+        if (!best || out.gt(best.back)) best = {name:r.name, type:r.type, back:out};
+      }catch(e){ notes.push(`${r.name} fail: ${shortErr(e)}`); }
     }
-
-    return { best, notes };
+    return {best, notes};
   }
 
-  function shortErr(e) {
-    const msg = (e && e.message) ? e.message : String(e);
-    // make logs shorter
-    if (msg.includes("CALL_EXCEPTION")) return "call exception";
-    if (msg.includes("execution reverted")) return "execution reverted";
-    if (msg.includes("IDENTICAL_ADDRESSES")) return "IDENTICAL_ADDRESSES";
-    if (msg.includes("INSUFFICIENT_LIQUIDITY")) return "INSUFFICIENT_LIQUIDITY";
-    if (msg.includes("cannot encode object")) return "encode error";
-    return msg.slice(0, 120);
-  }
-
-  // ---------- Auto-discover tokens (DexScreener) ----------
-  async function discoverTokens(limit=120) {
-    try {
-      setStatus("Discovering tokens…");
-      log(`[${time()}] Discovering top pairs from DexScreener…`);
-
-      // Pull multiple pages to get ~150 tokens (unique)
-      const pages = [
-        "https://api.dexscreener.com/latest/dex/pairs/arbitrum",
-        "https://api.dexscreener.com/latest/dex/pairs/arbitrum?page=2",
-        "https://api.dexscreener.com/latest/dex/pairs/arbitrum?page=3"
-      ];
-
-      const seen = new Set([WETH.toLowerCase()]);
-      // Always seed a few majors
-      addToken("WETH", WETH);
-      addToken("USDC", USDC);
-      addToken("USDC.e", USDCE);
-
-      for (const url of pages) {
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const data = await res.json();
-        if (!data || !data.pairs) continue;
-
-        for (const p of data.pairs) {
-          const t0 = p.baseToken, t1 = p.quoteToken;
-          // prefer tokens paired with WETH or stables
-          const preferred = [WETH.toLowerCase(), USDC.toLowerCase(), USDCE.toLowerCase()];
-          const a0 = (t0 && t0.address || "").toLowerCase();
-          const a1 = (t1 && t1.address || "").toLowerCase();
-          const sym0= (t0 && t0.symbol || "").toUpperCase();
-          const sym1= (t1 && t1.symbol || "").toUpperCase();
-
-          // keep unique by address, avoid LPs / nulls
-          const good0 = a0 && !seen.has(a0) && a0 !== "0x0000000000000000000000000000000000000000";
-          const good1 = a1 && !seen.has(a1) && a1 !== "0x0000000000000000000000000000000000000000";
-
-          const prefer0 = good0 && (preferred.includes(a1) || sym0==="WETH");
-          const prefer1 = good1 && (preferred.includes(a0) || sym1==="WETH");
-
-          if (prefer0) { addToken(sym0 || a0.slice(0,6), a0); seen.add(a0); }
-          if (prefer1) { addToken(sym1 || a1.slice(0,6), a1); seen.add(a1); }
-
-          if (tokenSet.size >= limit) break;
-        }
-        if (tokenSet.size >= limit) break;
-      }
-
-      setStatus(`Discovered ${tokenSet.size} tokens.`);
-      log(`Discovered ${tokenSet.size} tokens.`);
-      return tokenSet.size;
-    } catch (e) {
-      log(`[ERR] discoverTokens: ${e.message}`);
-      return tokenSet.size;
-    }
-  }
-
-  // ---------- Scan ----------
-  function time(){ const d=new Date(); return d.toTimeString().slice(0,8); }
-
-  function row(i, sym, route, backWeth, netWeth, netUsd, note) {
+  // ===== Rendering =====
+  function row(i, sym, route, backWeth, netWeth, netUsd, rtype, note){
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${i}</td>
-      <td>${sym}</td>
-      <td>${route || "-"}</td>
-      <td class="right">${backWeth != null ? fmt4(backWeth) : "-"}</td>
-      <td class="right ${netWeth>0?'ok':(netWeth<0?'err':'')}">${netWeth != null ? fmt4(netWeth) : "-"}</td>
-      <td class="right ${netUsd>0?'ok':(netUsd<0?'err':'')}">${netUsd != null ? usd(netUsd) : "-"}</td>
-      <td>${route && route.startsWith("UniV3") ? "V3" : (route ? "V2" : "-")}</td>
-      <td class="small muted">${note || ""}</td>
+      <td class="nowrap">${sym}</td>
+      <td>${route||"-"}</td>
+      <td class="right">${backWeth!=null? fmt4(backWeth):"-"}</td>
+      <td class="right ${netWeth>0?"ok":(netWeth<0?"err":"")}">${netWeth!=null? fmt4(netWeth):"-"}</td>
+      <td class="right ${netUsd>0?"ok":(netUsd<0?"err":"")}">${netUsd!=null? usd(netUsd):"-"}</td>
+      <td>${rtype||"-"}</td>
+      <td class="small muted">${note||""}</td>
     `;
     resBody.appendChild(tr);
   }
 
-  async function scan() {
-    resBody.innerHTML = "";
-    const nWant = Math.max(10, Number($("#tokenCount").value)|0);
+  // ===== Scan =====
+  function listTargets(nWant){
+    // merge map -> array, skip WETH itself
+    return Array.from(tokens.entries())
+      .filter(([sym,addr]) => addr.toLowerCase()!==WETH.toLowerCase())
+      .slice(0, nWant);
+  }
+
+  function costsForUI(){
     const loanWeth = Number($("#loan").value);
-    const probeWeth = Number($("#probe").value);
     const premiumBps = Number($("#premiumBps").value);
     const gasGwei = Number($("#gasGwei").value);
-    const usdPerW = estUsdPerWeth();
+    return { loanWeth, premiumBps, gasGwei, usdPerW: estUsdPerWeth(), ...calcCosts(loanWeth, premiumBps, gasGwei) };
+  }
 
-    const { premium, gasEth } = calcCosts(loanWeth, premiumBps, gasGwei);
-    const costWeth = premium + gasEth;
+  async function scan(){
+    resBody.innerHTML = "";
+    const nWant   = Math.max(10, Number($("#tokenCount").value)|0);
+    const probeW  = Number($("#probe").value);
+    const probeWei= ethers.utils.parseEther(String(probeW));
+    const {loanWeth, total, usdPerW} = costsForUI();
 
-    const all = Array.from(tokenSet.entries())
-      .filter(([sym, addr]) => addr && addr.toLowerCase() !== WETH.toLowerCase())
-      .slice(0, nWant);
+    const targets = listTargets(nWant);
+    log(`Ready.\n[${time()}] CLICK Scan; tokens=${targets.length}; loan=${loanWeth.toLocaleString()}; probe=${probeW} WETH`);
+    setStatus(`Scanning ${targets.length} tokens…`);
 
-    log(`Ready.\n[${time()}] CLICK Scan; tokens=${all.length}; loan=${loanWeth.toLocaleString()}; probe=${probeWeth} WETH`);
-    setStatus(`Scanning ${all.length} tokens…`);
-
-    const probeWei = ethers.utils.parseEther(String(probeWeth));
     let i=0;
-
-    for (const [sym, addr] of all) {
+    for (const [sym, addr] of targets){
       i++;
       log(`${sym}: quoting Sushi/Camelot/UniV3…`);
-      let bestBack = null, bestName = null, errs = [];
-
-      try {
-        const { best, notes } = await roundTrip(addr, probeWei, sym);
-        errs = notes || [];
-        if (best && best.back) {
-          bestBack = Number(ethers.utils.formatEther(best.back));
-          bestName = best.name;
+      let route=null, type=null, back=null, notes=[];
+      try{
+        const r = await roundTrip(addr, probeWei);
+        notes = r.notes || [];
+        if (r.best){
+          route = r.best.name; type = r.best.type;
+          back  = Number(ethers.utils.formatEther(r.best.back));
         }
-      } catch (e) {
-        errs.push(shortErr(e));
-      }
+      }catch(e){ notes.push(shortErr(e)); }
 
-      if (bestBack == null) {
-        row(i, sym, null, null, null, null, errs.join(" | "));
+      if (back==null){
+        row(i, sym, null, null, null, null, null, notes.join(" | "));
         continue;
       }
 
-      // net calc at probe scale, then scale linearly to loan size (same % edge)
-      const edgeWeth = bestBack - probeWeth; // gross edge at probe
-      const estEdgePct = edgeWeth / probeWeth;
-      const estBackAtLoan = loanWeth * (1 + estEdgePct);
-      const netWeth = estBackAtLoan - loanWeth - costWeth;
-      const netUsd = netWeth * usdPerW;
+      // scale linearly from probe edge to loan
+      const edgePct = (back - probeW) / probeW;
+      const estBackAtLoan = loanWeth * (1 + edgePct);
+      const netWeth = estBackAtLoan - loanWeth - total;
+      const netUsd  = netWeth * usdPerW;
 
-      row(i, sym, bestName, bestBack, netWeth, netUsd, errs.join(" | "));
+      row(i, sym, route, back, netWeth, netUsd, type, notes.join(" | "));
     }
 
     setStatus("Done.");
   }
 
-  // ---------- UI Events ----------
+  // ===== Events =====
   $("#btnConnect").addEventListener("click", connectWallet);
   $("#btnScan").addEventListener("click", scan);
-  $("#btnDiscover").addEventListener("click", async () => {
-    await discoverTokens(Number($("#tokenCount").value)|0);
+  $("#btnClear").addEventListener("click", ()=>{ resBody.innerHTML=""; log("Cleared results."); });
+  $("#btnDiscover").addEventListener("click", async ()=>{
+    setStatus("Re-discovering…");
+    const nBefore = tokens.size;
+    const n = await discoverTokens(Number($("#tokenCount").value)|0);
+    setStatus(`Discovered +${n} (total ${tokens.size}).`);
+    log(`Re-discovered: +${n} tokens (from ${nBefore} to ${tokens.size}).`);
   });
-
-  $("#rpcSel").addEventListener("change", () => {
+  $("#rpcSel").addEventListener("change", ()=>{
     provider = makeProvider($("#rpcSel").value);
     log(`RPC switched to: ${$("#rpcSel").value}`);
   });
 
-  // ---------- Boot: provider + auto-discover ----------
+  // ===== Boot =====
   provider = makeProvider($("#rpcSel").value);
-  // seed a few we absolutely want
-  addToken("WETH", WETH);
-  addToken("USDC", USDC);
-  addToken("USDC.e", USDCE);
-
-  // auto-discover on load
-  await discoverTokens(Number($("#tokenCount").value)|0);
+  seedStatic(); // ensure majors are present
+  const added = await discoverTokens(Number($("#tokenCount").value)|0);
+  log(`Boot: static=${Object.keys(STATIC_TOKENS).length}, discovered=+${added}, total=${tokens.size}.`);
   setStatus("Ready.");
-  log("Auto-discovery complete. You can Scan now.");
 })();
 </script>
 </body>

@@ -185,8 +185,10 @@ const GAS_LIMIT   = 380000;  // on-chain exec (rough)
 let   GAS_GWEI    = 0.05;
 
 const V2_ABI = ["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
+
+/* --- FIXED: give names to the tuple so object params encode correctly --- */
 const V3_QUOTER_ABI = [
-  "function quoteExactInputSingle((address,address,uint24,uint256,uint160)) external returns (uint256)"
+  "function quoteExactInputSingle((address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut)"
 ];
 
 const V3_FEES = [500, 3000, 10000]; // 0.05%, 0.3%, 1%

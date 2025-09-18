@@ -308,7 +308,7 @@ function renderRows(rows){
       <td class="right mono">${Number.isFinite(r.spreadPct)?r.spreadPct.toFixed(2):"—"}%</td>
       <td class="right mono">${usd(r.usdcBack||0)}</td>
       <td class="right mono ${r.netPLUsd>0?'ok':'bad'}">${(r.netPLUsd>=0?'+':'-')+usd(Math.abs(r.netPLUsd)).replace('$','')}</td>
-      <td class="flags"><span class="tag ok">Router-verified (sim)</span></td>
+      <td class="flags"><span class="tag ok">Router-verified</span></td>
     `;
     tbody.appendChild(tr);
   }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v10.1 (Arbitrum)</title>
+<title>Crypto Kings • TestBed v10.1.1 (Arbitrum)</title>
 <style>
 :root{ --bg:#fff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --card:#f9fafb;
        --ok:#059669; --warn:#b45309; --bad:#e11d48; --g1:#2563eb; --g2:#7c3aed;}
@@ -20,6 +20,7 @@ input[type=text],input[type=number]{padding:10px 12px;border:1px solid var(--lin
 button{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
 .btn-primary{color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 8px 24px rgba(37,99,235,.2)}
 .btn-ghost{background:#eef2f7;color:#111}
+.btn-mini{padding:6px 10px;border-radius:8px;font-weight:600}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .pill{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;color:#111}
 .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:10px}
@@ -125,8 +126,13 @@ footer li{margin:6px 0}
 
   <!-- Logs Panel -->
   <div class="panel">
-    <div class="row" style="justify-content:space-between">
+    <div class="row" style="justify-content:space-between;align-items:center">
       <div style="font-weight:700">Details / Logs</div>
+      <div class="row">
+        <button id="copyLogBtn" class="btn-mini btn-ghost" title="Copy full log to clipboard">Copy Log</button>
+        <button id="downloadLogBtn" class="btn-mini btn-ghost" title="Download log as .txt">Download Log</button>
+        <button id="clearLogBtn" class="btn-mini btn-ghost" title="Clear the log">Clear</button>
+      </div>
     </div>
     <div id="log" class="logs">[boot] waiting…</div>
   </div>
@@ -200,10 +206,7 @@ const MIN_MID_OUT_WEI = ethers.BigNumber.from("1000000000000000"); // 0.001
 // Provider
 let READ_PROVIDER = new ethers.providers.JsonRpcProvider(RPC_URL);
 
-/* ========= SEED TOKENS (no discovery; ~160 hand-curated) =========
-   NOTE: It’s okay if some don’t have pools; we skip quickly with timeouts.
-   (Major L1/L2 staples, perps, bluechips, Arbitrum-natives, stables, etc.)
-*/
+/* ========= SEED TOKENS (hand-curated; extend as needed) ========= */
 const TOKENS = {
   WETH, WBTC, USDC, USDCe,
   USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
@@ -244,7 +247,7 @@ const TOKENS = {
   INCH:"0x111111111117dc0aa78b770fa6a738034120c302",
   BADGER:"0x3472a5a71965499acd81997a54bba8d852c6e53d",
   PLS:"0x51318b7d00db7acc4026c88c3952b66278b6a67f",
-  TCR:"0x2409c4fbed e3e3bf1befb07603a8a65bad22e7ba".replace(/\s/g,''), /* fixed typo spacing */
+  TCR:"0x2409c4fbedE3E3bF1bEFb07603A8A65BaD22E7bA".toLowerCase()
   // add more as needed…
 };
 const TOKEN_SYMBOLS = Object.keys(TOKENS);
@@ -433,7 +436,7 @@ async function runScan(){
     $("#progPill").textContent="Preparing…";
     tbody.innerHTML=""; updateSelectedTotal(); logEl.textContent="[SELF-TEST]\n";
 
-    // Self test block — if these three lines don't appear, JS didn't run
+    // Self test block
     log("• provider="+RPC_URL);
     const netv = await READ_PROVIDER.getNetwork().catch(e=>({chainId:"?", name:"?"}));
     log("• network="+(netv.chainId||"?")+" ("+(netv.name||"?")+")");
@@ -559,6 +562,32 @@ async function startFlashLoan(){
   log(`Executed | Block ${rcpt.blockNumber} | logs: ${rcpt.logs.length}`);
 }
 
+/* ========= LOG UTIL BUTTONS ========= */
+function getLogText(){ return document.getElementById('log')?.textContent || ""; }
+async function copyLog(){
+  const txt = getLogText();
+  try{
+    await navigator.clipboard.writeText(txt);
+    alert(`Log copied (${txt.length.toLocaleString()} chars).`);
+  }catch(_){
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    alert(`Log copied (${txt.length.toLocaleString()} chars).`);
+  }
+}
+function downloadLog(){
+  const txt = getLogText();
+  const blob = new Blob([txt], {type: "text/plain;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:.]/g,'-');
+  a.href = url; a.download = `ck-log-${ts}.txt`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function clearLog(){ const el=document.getElementById('log'); if(el) el.textContent=""; }
+
 /* ========= UI WIRING ========= */
 document.getElementById("connectBtn").addEventListener("click", async ()=>{ try { await connectWallet(); } catch(e){ alert(e?.message||e); }});
 document.getElementById("scanBtn").addEventListener("click", runScan);
@@ -571,6 +600,11 @@ document.getElementById("selectProfitable").addEventListener("click", ()=>{
   updateSelectedTotal();
 });
 document.getElementById("clearSel").addEventListener("click", ()=>{ document.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
+
+// NEW: log buttons
+document.getElementById("copyLogBtn").addEventListener("click", copyLog);
+document.getElementById("downloadLogBtn").addEventListener("click", downloadLog);
+document.getElementById("clearLogBtn").addEventListener("click", clearLog);
 
 /* ======== BOOT SELF-TEST ======== */
 document.addEventListener("DOMContentLoaded", async ()=>{

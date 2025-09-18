@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v10.3 (Arbitrum)</title>
+<title>Crypto Kings • TestBed (Arbitrum)</title>
 <style>
 :root{
   --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -15,7 +15,6 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-ser
 header{background:#111;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
 .brand{display:flex;gap:10px;align-items:center}
 .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#4f46e5,#22c55e);display:grid;place-items:center;font-weight:800}
-.burger{font-size:22px;user-select:none;opacity:.0}
 .container{max-width:1200px;margin:0 auto;padding:16px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -37,7 +36,7 @@ tr.profit{background:#ecfdf5}
 tr.loss{background:#fff1f2}
 .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
 .tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:12px;background:#fff}
-.logs{background:#0b1220;color:#a7f3d0;border:1px solid #0f1b34;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:300px;overflow:auto}
+.logs{background:#0b1220;color:#a7f3d0;border:1px solid #0f1b34;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:320px;overflow:auto}
 footer{background:#111;color:#ddd;padding:24px}
 .foot{max-width:1200px;margin:0 auto;display:grid;gap:18px;grid-template-columns:repeat(4,1fr)}
 footer h4{color:#fff;margin:0 0 10px;font-size:16px}
@@ -57,18 +56,6 @@ footer li{margin:6px 0}
   .val{text-align:right}
   .toolbar .btn-primary,.toolbar .btn-ghost{width:100%}
 }
-
-/* ===== FAILSAFE OVERLAY ===== */
-#failsafeOverlay{position:fixed;inset:0;background:rgba(12,16,28,.96);color:#e5e7eb;z-index:9999;display:none;padding:24px;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace}
-#failsafeCard{max-width:900px;margin:0 auto;background:#0b1220;border:1px solid #1f2a44;border-radius:16px;padding:20px}
-#failsafeCard h2{margin:0 0 10px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
-#failsafeMeta{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 14px}
-#failsafeMeta .pill{padding:6px 10px;border:1px solid #293653;border-radius:999px;background:#0e1526;color:#a7f3d0}
-#failsafeActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-#failsafeLog{white-space:pre-wrap;background:#060b16;border:1px solid #142039;border-radius:12px;padding:12px;max-height:320px;overflow:auto}
-.btn-fs{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
-.btn-fs-primary{color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed)}
-.btn-fs-ghost{background:#1b2540;color:#e5e7eb}
 </style>
 </head>
 <body>
@@ -94,8 +81,10 @@ footer li{margin:6px 0}
       <input id="splitPctB" type="number" min="0" max="100" step="1" value="0" title="% of profit to wallet B"/>
     </div>
     <div class="row" style="margin-top:8px">
-      <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.20" title="WETH loan size (≈$500 probe)"/>
-      <button id="fundBtn" class="btn-ghost" title="Wrap tiny ETH→WETH and send premium to the contract">Fund Premium</button>
+      <label class="hint">Loan target ($):</label>
+      <input id="loanUsd" type="number" min="50" step="10" value="500" title="Desired notional per probe in USD"/>
+      <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.20" title="Computed WETH (auto)"/>
+      <button id="fundBtn" class="btn-ghost" title="Wrap tiny ETH→WETH and send premium">Fund Premium</button>
       <button id="flashBtn" class="btn-primary">Start Flash Loan (WETH)</button>
     </div>
     <div class="chips">
@@ -110,13 +99,16 @@ footer li{margin:6px 0}
   <!-- Scan Panel -->
   <div class="panel">
     <div class="row">
-      <label class="hint">Batch size:</label>
-      <input id="batch" type="number" min="10" max="300" step="10" value="120" title="How many tokens to scan"/>
-      <button id="scanBtn" class="btn-primary">Scan</button>
-      <button id="stopBtn" class="btn-ghost">Stop</button>
+      <label class="hint">Scan count:</label>
+      <input id="batch" type="number" min="30" max="300" step="10" value="120" title="How many tokens to scan"/>
+      <label class="hint">Concurrency:</label>
+      <input id="concur" type="number" min="5" max="30" step="1" value="15" title="How many tokens in parallel"/>
+      <label class="hint"><input id="useV3" type="checkbox"/> Include UniV3</label>
       <label class="hint"><input id="onlyProfitable" type="checkbox" checked/> Only profitable</label>
       <label class="hint">Min P/L ($):</label>
-      <input id="minProfitUsd" type="number" step="0.01" value="0" title="Hide rows below this net profit in USD"/>
+      <input id="minProfitUsd" type="number" step="0.01" value="0"/>
+      <button id="scanBtn" class="btn-primary" style="margin-left:auto">Scan</button>
+      <button id="stopBtn" class="btn-ghost">Stop</button>
     </div>
   </div>
 
@@ -126,7 +118,7 @@ footer li{margin:6px 0}
       <button id="selectProfitable" class="btn-ghost">Select all profitable</button>
       <button id="clearSel" class="btn-ghost">Clear</button>
       <span id="selTotal" class="pill">++$0</span>
-      <button id="execSelected" class="btn-primary" style="margin-left:auto">Execute Selected (one route)</button>
+      <button id="execSelected" class="btn-primary" style="margin-left:auto">Execute Selected</button>
     </div>
     <table id="results">
       <thead>
@@ -153,7 +145,6 @@ footer li{margin:6px 0}
         <button id="copyLogBtn" class="btn-mini btn-ghost" title="Copy full log to clipboard">Copy Log</button>
         <button id="downloadLogBtn" class="btn-mini btn-ghost" title="Download log as .txt">Download Log</button>
         <button id="summarizeLogBtn" class="btn-mini btn-ghost" title="Show error summary">Summarize Errors</button>
-        <button id="downloadSummaryBtn" class="btn-mini btn-ghost" title="Download error summary JSON">Download Summary</button>
         <button id="clearLogBtn" class="btn-mini btn-ghost" title="Clear the log">Clear</button>
       </div>
     </div>
@@ -170,137 +161,101 @@ footer li{margin:6px 0}
   </div>
 </footer>
 
-<!-- Ethers -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-
-<!-- Boot logger & error buckets -->
 <script>
-(function(){
-  let _logEl=null;
-  const buckets = new Map(); // key => {count, firstTs, lastTs, sample}
-  const MAX_PLAIN_LINES = 4000;
+/* ====== lightweight logger + error buckets ====== */
+const buckets=new Map();
+const logEl=()=>document.getElementById('log');
+function log(s){ const L=logEl(); if(!L) return; L.textContent+=(s.endsWith("\\n")?s:s+"\\n"); L.scrollTop=L.scrollHeight; }
+function buckAdd(e){
+  const k=((e&&(e.message||e.reason||""))+"").slice(0,200);
+  const b=buckets.get(k)||{c:0}; b.c++; buckets.set(k,b);
+}
+window.addEventListener('error',e=>{buckAdd(e);});
+window.addEventListener('unhandledrejection',e=>{buckAdd(e.reason||e);});
+document.getElementById('summarizeLogBtn').onclick=()=>{ 
+  if(!buckets.size){ log("[summary] no errors captured"); return; }
+  log("[summary] top errors:");
+  [...buckets.entries()].sort((a,b)=>b[1].c-a[1].c).slice(0,30).forEach(([k,v])=>log(\`  • \${v.c}× \${k}\`));
+};
+document.getElementById('copyLogBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText(logEl().textContent||""); alert("Log copied."); }catch{} };
+document.getElementById('downloadLogBtn').onclick=()=>{ const b=new Blob([logEl().textContent||""],{type:"text/plain"}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u;a.download=\`ck-log-\${Date.now()}.txt\`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);};
+document.getElementById('clearLogBtn').onclick=()=>{ logEl().textContent=""; };
 
-  function keyFrom(e){
-    const msg = (e && (e.message||e.reason?.message||e.reason||e)) || String(e);
-    const stack = (e && (e.error?.stack || e.reason?.stack)) || "";
-    const top = (stack.split("\n")[1]||"").trim();
-    return msg + " | " + top;
-  }
-  function bucketAdd(kind, payload){
-    const now = new Date().toISOString();
-    const k = keyFrom(payload);
-    const b = buckets.get(k) || { count:0, kind, firstTs:now, lastTs:now, sample:null };
-    b.count += 1; b.lastTs = now; if(!b.sample) b.sample = String(payload.stack||payload);
-    buckets.set(k, b);
-  }
-
-  let _plainCount = 0;
-  function w(raw){
-    if(!_logEl) _logEl=document.getElementById('log');
-    const line = raw.endsWith("\n") ? raw : (raw+"\n");
-    if (_plainCount < MAX_PLAIN_LINES) {
-      _logEl.textContent += line; _plainCount++;
-    }
-    _logEl.scrollTop=_logEl.scrollHeight;
-  }
-
-  window.__wlog = w;
-  window.__errBuckets = buckets;
-
-  window.addEventListener('error', e => { bucketAdd("error", e); w("ERROR: " + (e?.message||e)); });
-  window.addEventListener('unhandledrejection', e => { bucketAdd("promise", e); w("PROMISE: " + (e?.reason?.message||e?.reason||e)); });
-
-  document.addEventListener('DOMContentLoaded', ()=> w("[boot] DOM ready ✅"));
-
-  async function summarize(){
-    const arr = Array.from(buckets.entries()).map(([k,v])=>({
-      key:k, kind:v.kind, count:v.count, first:v.firstTs, last:v.lastTs
-    })).sort((a,b)=>b.count-a.count);
-    if(arr.length===0){ alert("No errors captured to summarize."); return; }
-    let out = ["[summary] top error buckets (count, first→last):"];
-    for(const it of arr.slice(0,40)){
-      out.push(`• ${it.count} ×  ${it.key}\n   ${it.first} → ${it.last}`);
-    }
-    w("\n"+out.join("\n")+"\n");
-  }
-  function downloadSummary(){
-    const data = Array.from(buckets.entries()).map(([k,v])=>({
-      key:k, kind:v.kind, count:v.count, first:v.firstTs, last:v.lastTs, sample:v.sample
-    })).sort((a,b)=>b.count-a.count);
-    const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const ts = new Date().toISOString().replace(/[:.]/g,'-');
-    a.href = url; a.download = `ck-error-summary-${ts}.json`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-  window.__summarizeErrors = summarize;
-  window.__downloadSummary = downloadSummary;
-})();
-</script>
-
-<!-- App -->
-<script>
 /* ========= CONFIG ========= */
-const DEFAULT_EXECUTOR_ADDR = "0x43327acEAd76dCD48A09cc93A509a2FE7b1f0f5c";
-const ARBITRUM_CHAIN_ID_DEC = 42161;
-const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
-
-// HARD-WIRED ALCHEMY RPC
-const RPC_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
-
-// Speed & stability
-const CALL_TIMEOUT_MS  = 1800;   // per RPC call
-const TOKEN_BUDGET_MS  = 6000;   // per token
-const MIN_MID_OUT_WEI  = ethers.BigNumber.from("1000000000000000"); // 0.001
-const GAS_LIMIT        = 380000; // exec est.
-let   GAS_GWEI         = 0.10;
-
-// Base assets
-const WETH  = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1".toLowerCase();
-const USDC  = "0xaf88d065e77c8cc2239327c5edb3a432268e5831".toLowerCase();
-const USDCe = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8".toLowerCase();
-
-// Routers / Quoter
-const ROUTER_SUSHI_V2   = "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
-const ROUTER_CAMELOT_V2 = "0xc873fecbd354f5a56e00e710b90ef4201db2448d";
-const UNIV3_QUOTER      = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
-
-// Fees
-const DEX_FEE_PCT = 0.003, SLIP_PCT = 0.0015, FLASH_PCT = 0.0005;
-
-// ABIs
-const V2_ABI = ["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
-const V3_QUOTER_ABI = [
-  "function quoteExactInputSingle((address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut)"
-];
-const CKFE_ABI = [
-  {"inputs":[
-    {"internalType":"address","name":"asset","type":"address"},
-    {"internalType":"uint256","name":"amount","type":"uint256"},
-    {"components":[
-      {"internalType":"address","name":"buyRouter","type":"address"},
-      {"internalType":"address","name":"sellRouter","type":"address"},
-      {"internalType":"address","name":"targetToken","type":"address"},
-      {"internalType":"uint256","name":"minBuyOut","type":"uint256"},
-      {"internalType":"uint256","name":"minSellOut","type":"uint256"},
-      {"internalType":"uint256","name":"deadline","type":"uint256"}
-    ],"internalType":"struct CKFE.Route","name":"r","type":"tuple"}
-  ],"name":"startFlashTrade","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"anonymous":false,"inputs":[
-    {"indexed":true,"internalType":"address","name":"asset","type":"address"},
-    {"indexed":false,"internalType":"uint256","name":"repaid","type":"uint256"},
-    {"indexed":false,"internalType":"uint256","name":"profit","type":"uint256"}
-  ],"name":"FlashCompleted","type":"event"}
-];
-const V3_FEES = [500, 3000, 10000];
-
-// Provider
+const ARBITRUM_CHAIN_ID_DEC=42161, ARBITRUM_CHAIN_ID_HEX="0xa4b1";
+const RPC_URL="https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
 let READ_PROVIDER = new ethers.providers.JsonRpcProvider(RPC_URL);
 
-/* ========= TOKENS ========= */
-const TOKENS = {
+// assets & routers
+const WETH="0x82af49447d8a07e3bd95bd0d56f35241523fbab1".toLowerCase();
+const USDC="0xaf88d065e77c8cc2239327c5edb3a432268e5831".toLowerCase();
+const USDCe="0xff970a61a04b1ca14834a43f5de4533ebddb5cc8".toLowerCase();
+const ROUTER_SUSHI_V2="0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
+const ROUTER_CAMELOT_V2="0xc873fecbd354f5a56e00e710b90ef4201db2448d";
+const UNIV3_QUOTER="0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
+
+// fees & runtime
+const DEX_FEE_PCT=0.003, SLIP_PCT=0.0015, FLASH_PCT=0.0005;
+const GAS_LIMIT=380000;
+let   GAS_GWEI=0.12;
+const CALL_TIMEOUT_MS=1500;   // per call
+const TOKEN_BUDGET_MS=5000;   // per token
+
+// abis
+const V2_ABI=["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
+const V3_QUOTER_ABI=[
+ "function quoteExactInputSingle((address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut)"
+];
+
+/* ========= UI helpers ========= */
+const $=s=>document.querySelector(s); const tbody=$("#tbody");
+function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
+function addr(a){ return (a||"").toLowerCase(); }
+function estGasWei(){ const gp=ethers.utils.parseUnits(String(GAS_GWEI||0.12),"gwei"); return gp.mul(GAS_LIMIT); }
+function feesWei(x){ const pct=(DEX_FEE_PCT+SLIP_PCT)*2 + FLASH_PCT; const ppm=Math.floor(pct*1e6); return x.mul(ppm).div(1e6); }
+
+/* ========= wallet (MetaMask/Trust) ========= */
+let __provider,__signer,__account;
+function getInjected(){
+  const eth=window.ethereum; if(!eth) return null;
+  if(eth.providers&&Array.isArray(eth.providers)){
+    const mm=eth.providers.find(p=>p.isMetaMask);
+    const tw=eth.providers.find(p=>p.isTrust||p.isTrustWallet);
+    return mm||tw||eth.providers[0];
+  }
+  return eth;
+}
+async function connectWallet(){
+  const inj=getInjected(); if(!inj){ alert("Install MetaMask or Trust Wallet"); return; }
+  __provider=new ethers.providers.Web3Provider(inj,"any");
+  await __provider.send("eth_requestAccounts",[]);
+  const net=await __provider.getNetwork();
+  if(Number(net.chainId)!==ARBITRUM_CHAIN_ID_DEC){
+    try{ await __provider.send("wallet_switchEthereumChain",[{chainId:ARBITRUM_CHAIN_ID_HEX}]); }
+    catch(e){ throw new Error("Switch to Arbitrum One"); }
+  }
+  __signer=__provider.getSigner(); __account=await __signer.getAddress();
+  $("#rpcPill").textContent="RPC: Alchemy"; log("wallet: "+__account);
+  const feeBox=$("#feeWallet"); if(feeBox) feeBox.value=__account;
+}
+document.getElementById("connectBtn").onclick=()=>connectWallet();
+
+/* ========= gas/eth price ========= */
+let ETH_USD=null;
+async function fetchEthUsd(){
+  try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"}); const j=await r.json(); ETH_USD=Number(j?.ethereum?.usd)||2500; $("#ethPill").textContent="ETH: "+usd(ETH_USD); }catch(_){ ETH_USD=2500; $("#ethPill").textContent="ETH: (fallback)"; }
+}
+async function fetchGasGwei(){
+  try{
+    const body={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
+    const r=await fetch(RPC_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    const j=await r.json(); const wei=parseInt(j?.result||"0x0",16); GAS_GWEI=wei/1e9; $("#gasPill").textContent="Gas: "+GAS_GWEI.toFixed(2)+" gwei";
+  }catch(_){ $("#gasPill").textContent="Gas: (fallback)"; GAS_GWEI=0.12; }
+}
+
+/* ========= token set ========= */
+const STATIC_TOKENS={
   WETH, WBTC:"0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f", USDC, USDCe,
   USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
   DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
@@ -326,151 +281,133 @@ const TOKENS = {
   RDPX:"0x32eb7902d4134bf98a28b963d26de779af92a212",
   GRAIL:"0x3d9907f9a368ad0a51be60f7da3b97cf940982d8",
   JOE:"0x6e2bbf01dcad2e37f9b924b7e0e1f8f6a6f6282d",
-  HOP:"0xb8901acb165ed027e32754e0ffe830802919727f",
-  LQTY:"0x4e0f3385d932f7179dee045369286ffa6b03d887",
-  RPL:"0xb766039cc6db368759c1e56b79affe831d0cc507",
-  MKR:"0x2e32b1d59fe8b8db0a42a80d3595a5fcc9a7b7ac",
-  STG:"0x2f6f07cdcf3588944bf4c42ac74ff24bf56e7590",
-  PERP:"0x753d224bcf9aafacd81558c32341416df61d3dac",
-  OP:"0x4200000000000000000000000000000000000042",
-  VELO:"0x9560e827af36c94d2ac33a39bce1fe78631088db",
-  AURA:"0x1509706a6c66ca549ff0cb464de88231ddbe213b",
-  ALCX:"0x43b4fdfd4ff969587185cdb6f0bd875c5fc83f8c",
-  ANGLE:"0x76a8debf6e2c0b1d8d957de2bd1c29a1b5a32a1c",
-  INCH:"0x111111111117dc0aa78b770fa6a738034120c302",
-  BADGER:"0x3472a5a71965499acd81997a54bba8d852c6e53d",
-  PLS:"0x51318b7d00db7acc4026c88c3952b66278b6a67f",
-  TCR:"0x2409C4fbEDe3E3bF1bEFb07603A8A65BaD22E7bA".toLowerCase()
 };
-const TOKEN_SYMBOLS = Object.keys(TOKENS);
+function toSymbolList(obj){ return Object.keys(obj); }
 
-/* ========= HELPERS ========= */
-const $ = s=>document.querySelector(s);
-const tbody = $("#tbody"), logEl = $("#log");
-function log(m){ __wlog(m); }
-function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
-function toAddr(a){ return (a||"").toLowerCase(); }
-function getExecAddr(){ const v = ($("#execContract").value||"").trim(); return /^0x[a-fA-F0-9]{40}$/.test(v) ? v : DEFAULT_EXECUTOR_ADDR; }
-const sleep = (ms)=> new Promise(res=>setTimeout(res,ms));
-function withTimeout(promise, ms, label="call"){
-  let t; const timeout = new Promise((_,rej)=>{ t=setTimeout(()=>rej(new Error(`TIMEOUT ${label} after ${ms}ms`)), ms); });
-  return Promise.race([promise.finally(()=>clearTimeout(t)), timeout]);
-}
-
-/* ========= ETH & GAS ========= */
-let ETH_USD = null;
-async function fetchEthUsd(){
-  try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{cache:"no-store"});
-       const j=await r.json(); ETH_USD = Number(j?.ethereum?.usd)||2500;
-       $("#ethPill").textContent = "ETH: " + (ETH_USD? usd(ETH_USD):"—"); }
-  catch(_){ $("#ethPill").textContent="ETH: (fail)"; ETH_USD=2500; }
-}
-async function fetchGasGwei(){
+async function autoDiscoverSymbols(limit){
+  const out=new Map();
   try{
-    const body={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
-    const r=await fetch(RPC_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-    const j=await r.json(); const wei=parseInt(j?.result||"0x0",16); GAS_GWEI = wei/1e9;
-    $("#gasPill").textContent = "Gas: " + GAS_GWEI.toFixed(2) + " gwei";
-  }catch(_){ $("#gasPill").textContent="Gas: (fail)"; GAS_GWEI = 0.10; }
+    const r=await fetch("https://api.dexscreener.com/latest/dex/search?q=arbitrum%20usdc",{cache:"no-store"});
+    const j=await r.json();
+    (j?.pairs||[]).filter(p=>p.chainId==="arbitrum").forEach(p=>{
+      const sym=(p?.baseToken?.symbol||"").toUpperCase();
+      const addrx=(p?.baseToken?.address||"").toLowerCase();
+      if(/^0x[a-f0-9]{40}$/.test(addrx) && sym && addrx!==WETH) out.set(sym,addrx);
+    });
+  }catch(_){}
+  const picks=[...out.entries()].slice(0,limit);
+  const obj={}; picks.forEach(([s,a])=>obj[s]=a);
+  return obj;
 }
 
-/* ========= QUOTES ========= */
-async function v2GetOut(amountWei, path, routerAddr){
-  if (path.length<2 || toAddr(path[0])===toAddr(path[path.length-1])) throw new Error("IDENTICAL_ADDRESSES path");
-  const c = new ethers.Contract(routerAddr, V2_ABI, READ_PROVIDER);
-  return await withTimeout(c.getAmountsOut(amountWei, path), CALL_TIMEOUT_MS, "v2.getAmountsOut");
+/* ========= quoting ========= */
+function validPath(path){
+  if(!Array.isArray(path) || path.length<2) return false;
+  for(let i=0;i<path.length-1;i++){ if(addr(path[i])===addr(path[i+1])) return false; }
+  return true;
 }
-async function v3QuoteSingle(tokenIn, tokenOut, fee, amountIn){
-  const iface = new ethers.utils.Interface(V3_QUOTER_ABI);
-  const data = iface.encodeFunctionData("quoteExactInputSingle", [{ tokenIn: toAddr(tokenIn), tokenOut: toAddr(tokenOut), fee, amountIn, sqrtPriceLimitX96: 0 }]);
-  const call = { to: UNIV3_QUOTER, data };
-  const raw  = await withTimeout(READ_PROVIDER.call(call), CALL_TIMEOUT_MS, "v3.single");
-  const [amountOut] = iface.decodeFunctionResult("quoteExactInputSingle", raw);
-  return amountOut;
-}
-
-/* ========= PROFIT / FEES ========= */
-function computeFeesWei(amountInWei){
-  const totalPct = (DEX_FEE_PCT + SLIP_PCT)*2 + FLASH_PCT;
-  const ppm = Math.floor(totalPct*1e6);
-  return amountInWei.mul(ppm).div(1e6);
-}
-function estGasWei(){
-  const gasPriceWei = ethers.utils.parseUnits(String(GAS_GWEI||0.10), "gwei");
-  return gasPriceWei.mul(GAS_LIMIT);
-}
-
-/* ========= ROUND TRIP ========= */
 function buildV2Paths(token){
+  // Build clean 2-hop and 3-hop (through stables) paths, avoiding identical-adjacent addresses.
   const stables=[USDC,USDCe];
-  const paths=[[WETH,token]];
-  for(const s of stables) paths.push([WETH,s,token]);
-  return paths;
+  const base=[[WETH, token]];
+  for(const s of stables){
+    // Skip 3-hop if token IS the stable (avoid ...USDC,USDC)
+    if(addr(token)===addr(s)) continue;
+    base.push([WETH, s, token]);
+  }
+  return base.filter(validPath);
 }
-async function quoteRoundTripAllDexes(amountWei, token){
-  const rows=[];
-  if (toAddr(token)===toAddr(WETH)) return rows;
+function withTimeout(promise, ms, tag="timeout"){
+  return Promise.race([
+    promise,
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error(tag)), ms))
+  ]);
+}
+async function v2GetOut(amountWei, path, routerAddr){
+  const c=new ethers.Contract(routerAddr,V2_ABI,READ_PROVIDER);
+  const call=c.getAmountsOut(amountWei,path);
+  return withTimeout(call, CALL_TIMEOUT_MS, "timeout v2");
+}
+async function v3Quote(tokenIn,tokenOut,fee,amt){
+  // Quoter reverts for missing pools—treat as soft-fail
+  try{
+    const iface=new ethers.utils.Interface(V3_QUOTER_ABI);
+    const data=iface.encodeFunctionData("quoteExactInputSingle",[{tokenIn:addr(tokenIn),tokenOut:addr(tokenOut),fee,amountIn:amt,sqrtPriceLimitX96:0}]);
+    const raw=await withTimeout(READ_PROVIDER.call({to:UNIV3_QUOTER,data}), CALL_TIMEOUT_MS, "timeout v3");
+    const [amountOut]=iface.decodeFunctionResult("quoteExactInputSingle",raw);
+    return amountOut;
+  }catch(e){ buckAdd(e); throw e; }
+}
 
-  const buyPaths  = buildV2Paths(token);
-  const sellPaths = buyPaths.map(p=>[...p].reverse());
-  const combos = [
-    {buyName:"SUSHI v2",  buy:ROUTER_SUSHI_V2,  sellName:"CAMELOT v2", sell:ROUTER_CAMELOT_V2},
-    {buyName:"CAMELOT v2",buy:ROUTER_CAMELOT_V2,sellName:"SUSHI v2",  sell:ROUTER_SUSHI_V2}
+async function quoteRoundTripAllDexes(amountWei, token, includeV3=false){
+  const rows=[];
+  if(addr(token)===WETH) return rows;
+
+  // v2 combos, multiple sanitized paths
+  const paths=buildV2Paths(token);
+  const combos=[
+    {buy:"SUSHI v2", buyAddr:ROUTER_SUSHI_V2, sell:"CAMELOT v2", sellAddr:ROUTER_CAMELOT_V2},
+    {buy:"CAMELOT v2", buyAddr:ROUTER_CAMELOT_V2, sell:"SUSHI v2", sellAddr:ROUTER_SUSHI_V2}
   ];
 
-  for (const c of combos){
-    for (let i=0;i<buyPaths.length;i++){
-      const bp=buyPaths[i], sp=sellPaths[i];
+  for(const c of combos){
+    for(const p of paths){
       try{
-        const buyOut = await v2GetOut(amountWei, bp, c.buy);
-        const mid = buyOut[buyOut.length-1];
-        if (mid.gte(MIN_MID_OUT_WEI)){
-          const sellOut = await v2GetOut(mid, sp, c.sell);
-          rows.push({ buyDex:c.buyName, sellDex:c.sellName, backWei:sellOut[sellOut.length-1], ok:true, buyMid:mid, amountWei });
-        }
-      }catch(e){ log(`  v2 skip path: ${e?.message||e}`); }
+        const buyOut=await v2GetOut(amountWei,p,c.buyAddr);
+        const mid=buyOut[buyOut.length-1]; if(mid.isZero()) continue;
+        const sellPath=[...p].reverse();
+        const sellOut=await v2GetOut(mid,sellPath,c.sellAddr);
+        const back=sellOut[sellOut.length-1];
+        rows.push({buyDex:c.buy, sellDex:c.sell, backWei:back, ok:true, buyMid:mid, amountWei});
+      }catch(_){ /* soft skip */ }
     }
   }
 
-  // UniV3 (same-fee both legs)
-  for (const f of V3_FEES){
-    try{
-      const mid = await v3QuoteSingle(WETH, token, f, amountWei);
-      if (mid.gte(MIN_MID_OUT_WEI)){
-        const back= await v3QuoteSingle(token, WETH, f, mid);
-        rows.push({ buyDex:`UniV3 ${f/10000}%`, sellDex:`UniV3 ${f/10000}%`, backWei:back, ok:true, buyMid:mid, amountWei });
-      }
-    }catch(e){ log(`  v3 ${f}bps skip: ${e?.message||e}`); }
+  if(includeV3){
+    const fees=[500,3000,10000];
+    for(const f of fees){
+      try{
+        const mid=await v3Quote(WETH,token,f,amountWei);
+        if(!mid || mid.isZero()) continue;
+        const back=await v3Quote(token,WETH,f,mid);
+        rows.push({buyDex:`UniV3 ${f/10000}%`, sellDex:`UniV3 ${f/10000}%`, backWei:back, ok:true, buyMid:mid, amountWei});
+      }catch(_){ /* skip */ }
+    }
   }
+
   return rows;
 }
 
-/* ========= RENDER ========= */
+/* ========= profit & rendering ========= */
+async function weiToUsdc(wei){
+  try{
+    const out=await v2GetOut(wei,[WETH,USDC],ROUTER_SUSHI_V2);
+    return Number(ethers.utils.formatUnits(out[out.length-1],6));
+  }catch(_){ return 0; }
+}
 function renderRows(rows){
+  const onlyProf=!!document.getElementById('onlyProfitable').checked;
+  const minUsd=Number(document.getElementById('minProfitUsd').value||0);
   rows.forEach(r=>{ r.netPLUsd = ETH_USD ? Number(ethers.utils.formatUnits(r.netPLWei,18))*ETH_USD : 0; });
-  const onlyProf = !!document.getElementById('onlyProfitable')?.checked;
-  const minUsd = Number(document.getElementById('minProfitUsd')?.value||0);
-  let view = rows.slice();
-  if (onlyProf) view = view.filter(r=> r.netPLUsd > 0 && r.netPLUsd >= minUsd);
-  view.sort((a,b)=> (b.netPLUsd||-1e99)-(a.netPLUsd||-1e99));
+  let view=rows;
+  if(onlyProf) view=view.filter(r=>r.netPLUsd>0 && r.netPLUsd>=minUsd);
+  view.sort((a,b)=>(b.netPLUsd||-1e99)-(a.netPLUsd||-1e99));
 
-  const tbody = document.getElementById("tbody"); tbody.innerHTML="";
+  tbody.innerHTML="";
   for(const r of view){
-    const spreadPct = ((Number(ethers.utils.formatUnits(r.backWei,18)) / Number(ethers.utils.formatUnits(r.amountWei,18))) - 1) * 100;
+    const spreadPct=((Number(ethers.utils.formatUnits(r.backWei,18))/Number(ethers.utils.formatUnits(r.amountWei,18)))-1)*100;
     const tr=document.createElement("tr");
-    tr.className = r.netPLUsd>0 ? "profit" : "loss";
-    tr.dataset.netpl = r.netPLUsd;
-    tr.dataset.token = r.tokenSym;
-    tr.dataset.tokenAddr = r.tokenAddr || "";
-    tr.dataset.buyDex = r.buyDex;
-    tr.dataset.sellDex = r.sellDex;
-    tr.dataset.loan = document.getElementById("wethAmt").value;
-    tr.innerHTML = `
+    tr.className=r.netPLUsd>0?"profit":"loss";
+    tr.dataset.netpl=r.netPLUsd;
+    tr.dataset.token=r.tokenSym;
+    tr.dataset.tokenAddr=r.tokenAddr||"";
+    tr.dataset.buyDex=r.buyDex; tr.dataset.sellDex=r.sellDex;
+    tr.innerHTML=`
       <td class="sel"><input type="checkbox" class="pick" ${r.netPLUsd>0?"checked":""}></td>
       <td class="tok">${r.tokenSym}</td>
       <td><div class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex}</span></div></td>
       <td><div class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex}</span></div></td>
-      <td class="right mono">${Number.isFinite(spreadPct)?spreadPct.toFixed(2):'—'}%</td>
+      <td class="right mono">${Number.isFinite(spreadPct)?spreadPct.toFixed(2):"—"}%</td>
       <td class="right mono">${usd(r.usdcBack||0)}</td>
       <td class="right mono ${r.netPLUsd>0?'ok':'bad'}">${(r.netPLUsd>=0?'+':'-')+usd(Math.abs(r.netPLUsd)).replace('$','')}</td>
       <td class="flags"><span class="tag ${r.netPLUsd>0?'ok':'warn'}">${r.ok?'Router-verified':'—'}</span></td>
@@ -480,458 +417,130 @@ function renderRows(rows){
   updateSelectedTotal();
 }
 function updateSelectedTotal(){
-  let sum=0;
-  document.querySelectorAll("#tbody .pick:checked").forEach(cb=>{
-    const tr=cb.closest("tr"); sum += Number(tr.dataset.netpl||0);
-  });
-  document.getElementById("selTotal").textContent = (sum>=0?'++$':'−$') + Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
+  let sum=0; tbody.querySelectorAll(".pick:checked").forEach(cb=>{ const tr=cb.closest("tr"); sum+=Number(tr.dataset.netpl||0); });
+  document.getElementById("selTotal").textContent=(sum>=0?'++$':'−$')+Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
 }
+tbody.addEventListener("change",e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
 
-/* ========= SCAN ========= */
-let stopFlag=false, scanning=false;
-function tokenAddrFromSym(sym){ return toAddr(TOKENS[sym]||""); }
-
-async function weiToUsdc(wei){
+/* ========= probe sizing ($ → WETH) ========= */
+async function computeProbeWei(){
+  const usdTarget=Number(document.getElementById("loanUsd").value||500);
   try{
-    const r = new ethers.Contract(ROUTER_SUSHI_V2, V2_ABI, READ_PROVIDER);
-    const out = await withTimeout(r.getAmountsOut(wei, [WETH, USDC]), CALL_TIMEOUT_MS, "v2.usd");
-    return Number(ethers.utils.formatUnits(out[out.length-1], 6));
-  }catch(_){ return 0; }
-}
-
-async function scanToken(sym){
-  const start = Date.now();
-  const tAddr = tokenAddrFromSym(sym);
-  if (!tAddr || !/^0x[a-f0-9]{40}$/.test(tAddr) || tAddr===WETH) return [];
-  const probes = [ethers.utils.parseEther("0.008"), ethers.utils.parseEther("0.02")];
-  const tokenRows = [];
-  for (const amountWei of probes){
-    if (Date.now()-start > TOKEN_BUDGET_MS) break;
-    try{
-      const routes = await quoteRoundTripAllDexes(amountWei, tAddr);
-      const gasWei = estGasWei();
-      const feeWei = computeFeesWei(amountWei);
-      for(const r of routes){
-        const backWei   = r.backWei;
-        const netBackWei= backWei.sub(feeWei).sub(gasWei);
-        const netPLWei  = netBackWei.sub(amountWei);
-        const usdcBack  = await weiToUsdc(backWei).catch(()=>0);
-        tokenRows.push({ tokenSym:sym, tokenAddr:tAddr, buyDex:r.buyDex, sellDex:r.sellDex, usdcBack, netPLWei, ok:r.ok, backWei, amountWei });
-      }
-    }catch(e){ log(`${sym}: scan error ${e?.message||e}`); }
+    const out=await v2GetOut(ethers.utils.parseEther("1"),[WETH,USDC],ROUTER_SUSHI_V2);
+    const ethPrice=Number(ethers.utils.formatUnits(out[out.length-1],6)); // USDC per 1 WETH
+    const weth=usdTarget/ethPrice;
+    document.getElementById("wethAmt").value = Number(weth).toFixed(6);
+    return ethers.utils.parseEther(String(weth));
+  }catch(_){
+    const ethPrice=ETH_USD||2500; const weth=usdTarget/ethPrice;
+    document.getElementById("wethAmt").value = Number(weth).toFixed(6);
+    return ethers.utils.parseEther(String(weth));
   }
-  return tokenRows;
 }
 
-async function runScan(){
+/* ========= per-token scan ========= */
+async function scanToken(sym, amountWei, includeV3){
+  const started=Date.now();
+  const tAddr=(STATIC_TOKENS[sym]||"").toLowerCase();
+  if(!/^0x[a-f0-9]{40}$/.test(tAddr) || tAddr===WETH) return [];
   try{
-    if (scanning) return; scanning=true; stopFlag=false;
-    $("#progPill").textContent="Preparing…";
-    tbody.innerHTML=""; updateSelectedTotal(); document.getElementById('log').textContent="[SELF-TEST]\n";
-
-    log("• provider="+RPC_URL);
-    const netv = await READ_PROVIDER.getNetwork().catch(()=>({chainId:"?", name:"?"}));
-    log("• network="+(netv.chainId||"?")+" ("+(netv.name||"?")+")");
-    const gas = await READ_PROVIDER.getGasPrice().catch(()=>null);
-    log("• gasWei="+(gas?gas.toString():"?"));
-
-    await Promise.all([fetchEthUsd(), fetchGasGwei()]);
-    $("#tokensPill").textContent = "Tokens: " + TOKEN_SYMBOLS.length;
-    log(`[${new Date().toLocaleTimeString()}] CLICK Scan; tokens=${TOKEN_SYMBOLS.length}; probes=0.008/0.02 WETH`);
-
-    const n = Math.min(TOKEN_SYMBOLS.length, Number(document.getElementById("batch").value||120));
-    const symbols = TOKEN_SYMBOLS.slice(0,n);
-    const allRows = [];
-    let processed=0;
-
-    for (const sym of symbols){
-      if(stopFlag) break;
-      $("#progPill").textContent = `Scanning ${processed+1}/${symbols.length} — ${sym}`;
-      const rows = await scanToken(sym);
-      if (rows.length===0) log(`${sym}: no routes`);
-      allRows.push(...rows);
-      processed++;
-      await sleep(15);
+    const routes=await quoteRoundTripAllDexes(amountWei,tAddr,includeV3);
+    const gasWei=estGasWei(); const feeWei=feesWei(amountWei);
+    const rows=[];
+    for(const r of routes){
+      const backWei=r.backWei;
+      const netBack=backWei.sub(feeWei).sub(gasWei);
+      const netPL=netBack.sub(amountWei);
+      const usdcBack=await weiToUsdc(backWei).catch(()=>0);
+      rows.push({tokenSym:sym, tokenAddr:tAddr, buyDex:r.buyDex, sellDex:r.sellDex, usdcBack, netPLWei:netPL, ok:r.ok, backWei, amountWei});
     }
+    return rows;
+  }catch(e){
+    buckAdd(e);
+    return [];
+  }finally{
+    const dur=Date.now()-started;
+    if(dur>TOKEN_BUDGET_MS){ /* token over budget, just exit */ }
+  }
+}
 
+/* ========= parallel scan orchestrator ========= */
+let scanning=false, stopFlag=false;
+async function runScan(){
+  if(scanning) return; scanning=true; stopFlag=false;
+  try{
+    logEl().textContent="[scan] starting…\\n";
+    await Promise.all([fetchEthUsd(),fetchGasGwei()]);
+    const probeWei=await computeProbeWei();
+
+    // build symbol list to requested size (merge auto-discovered at load)
+    const want = Number(document.getElementById("batch").value||120);
+    let symbols = toSymbolList(STATIC_TOKENS);
+    symbols = symbols.slice(0, want);
+    $("#tokensPill").textContent="Tokens: "+symbols.length;
+
+    const includeV3 = !!document.getElementById("useV3").checked;
+    const concur = Math.max(5, Math.min(30, Number(document.getElementById("concur").value||15)));
+
+    log(\`[scan] tokens=\${symbols.length} • concurrency=\${concur} • probe=\${ethers.utils.formatUnits(probeWei,18)} WETH (~$\${document.getElementById("loanUsd").value})\`);
+
+    const allRows=[]; let done=0;
+    async function worker(queue){
+      while(queue.length && !stopFlag){
+        const sym = queue.shift();
+        $("#progPill").textContent=\`Scanning \${done+1}/\${symbols.length} — \${sym}\`;
+        const rows = await scanToken(sym, probeWei, includeV3);
+        allRows.push(...rows);
+        done++;
+      }
+    }
+    const queue=[...symbols];
+    const workers=Array.from({length:concur},()=>worker(queue));
+    await Promise.all(workers);
+
+    // compute USD P/L and render
     allRows.forEach(r=>{ r.netPLUsd = ETH_USD ? Number(ethers.utils.formatUnits(r.netPLWei,18))*ETH_USD : 0; });
     renderRows(allRows);
-
-    const greens = allRows.filter(r=> r.netPLUsd>0).length;
-    $("#progPill").textContent = `Done. Green=${greens} / Rows=${allRows.length}.`;
+    const greens=allRows.filter(r=>r.netPLUsd>0).length;
+    $("#progPill").textContent=\`Done. Green=\${greens} / Rows=\${allRows.length}.\`;
   }catch(e){
-    log("SCAN FATAL: " + (e?.message||e));
-    $("#progPill").textContent="Error";
+    log("SCAN FATAL: "+(e?.message||e));
   }finally{
     scanning=false;
   }
 }
+document.getElementById("scanBtn").onclick=runScan;
+document.getElementById("stopBtn").onclick=()=>{ stopFlag=true; $("#progPill").textContent="Stopped."; };
 
-/* ========= EXECUTION (MetaMask + Trust Wallet) ========= */
-let __provider, __signer, __account, __ckfe;
-
-function getInjectedProvider(){
-  const eth = window.ethereum;
-  if (!eth) return null;
-  if (eth.providers && Array.isArray(eth.providers)) {
-    const mm = eth.providers.find(p=>p.isMetaMask);
-    const tw = eth.providers.find(p=>p.isTrust || p.isTrustWallet);
-    return mm || tw || eth.providers[0];
-  }
-  return eth;
-}
-
-async function connectWallet(){
-  const injected = getInjectedProvider();
-  if(!injected) { alert("No wallet found. Install MetaMask or Trust Wallet."); return; }
-  __provider = new ethers.providers.Web3Provider(injected, "any");
-  await __provider.send("eth_requestAccounts", []);
-  const net = await __provider.getNetwork();
-  if(Number(net.chainId)!==ARBITRUM_CHAIN_ID_DEC){
-    try{ await __provider.send("wallet_switchEthereumChain", [{ chainId: ARBITRUM_CHAIN_ID_HEX }]); }
-    catch(e){ throw new Error("Please switch to Arbitrum One"); }
-  }
-  __signer  = __provider.getSigner();
-  __account = await __signer.getAddress();
-
-  const feeBox = document.getElementById("feeWallet");
-  if (feeBox && !feeBox.value) feeBox.value = __account;
-
-  const addr = getExecAddr();
-  __ckfe = new ethers.Contract(addr, CKFE_ABI, __signer);
-  const box=document.getElementById("execContract"); if (box && !box.value) box.value = addr;
-
-  document.getElementById("rpcPill").textContent = "RPC: Alchemy";
-  log("Wallet connected: " + __account + " | CKFE: " + addr);
-  return __ckfe;
-}
-
-async function fundPremium(){
-  const human = String($("#wethAmt").value||"0.20");
-  const amount = ethers.utils.parseUnits(human, 18);
-  const premium = amount.mul(5).div(10000); // ~0.05%
-  const buffer  = premium.mul(2).div(100);  // +2%
-  const wrapVal = premium.add(buffer);
-
-  const c = __ckfe || await connectWallet();
-  const execAddr = c.address;
-
-  const weth = new ethers.Contract(
-    WETH,
-    ["function deposit() payable","function transfer(address to,uint256 value) returns (bool)"],
-    __signer
-  );
-
-  log(`Wrapping ~${ethers.utils.formatUnits(wrapVal,18)} ETH → WETH`);
-  const depTx = await weth.deposit({ value: wrapVal }); await depTx.wait();
-  log(`Sending premium ${ethers.utils.formatUnits(premium,18)} WETH → ${execAddr}`);
-  const sendTx = await weth.transfer(execAddr, premium); await sendTx.wait();
-  log(`Premium funded. Tx: ${sendTx.hash}`);
-  alert("Premium funded.\n" + sendTx.hash);
-}
-
-/* ========= FAILSAFE (pre-integrated) ========= */
-const FAILSAFE = {
-  MAX_TRADES_PER_SESSION: 5,
-  MAX_CONSEC_FAILS:       3,
-  MIN_PREMIUM_WETH:       "0.003",
-  LOCKOUT_MINUTES:        20
-};
-let __tradeCount = 0;
-let __consecFails = 0;
-let __lockout = false;
-
-const __ERC20_ABI = ["function balanceOf(address) view returns (uint256)","function decimals() view returns (uint8)"];
-async function __readPremiumWeth(execAddr){
-  try{
-    const weth = new ethers.Contract(WETH, __ERC20_ABI, READ_PROVIDER);
-    const raw = await weth.balanceOf(execAddr);
-    const human = Number(ethers.utils.formatUnits(raw,18));
-    return { raw, human };
-  }catch(e){ return null; }
-}
-function __disableAllActions(){ document.querySelectorAll("button").forEach(b=>{ b.disabled = true; }); }
-function __enableReadOnly(){
-  ["copyLogBtn","downloadLogBtn","summarizeLogBtn","downloadSummaryBtn"].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.disabled=false;
-  });
-}
-function __logTail(maxChars=16000){
-  const el = document.getElementById("log");
-  const txt = el?.textContent || "";
-  return txt.length <= maxChars ? txt : txt.slice(-maxChars);
-}
-async function __copy(text){
-  try{ await navigator.clipboard.writeText(text); alert("Copied to clipboard."); }
-  catch(_){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert("Copied."); }
-}
-async function triggerFailsafe(reason){
-  if (__lockout) return;
-  __lockout = true;
-  __disableAllActions(); __enableReadOnly();
-
-  const exec = getExecAddr();
-  const prem = exec ? await __readPremiumWeth(exec) : null;
-  const premTxt = prem ? `${prem.human.toFixed(6)} WETH` : "n/a";
-
-  document.getElementById("fsReason").textContent  = "reason: " + reason;
-  document.getElementById("fsTrades").textContent  = "trades this session: " + __tradeCount;
-  document.getElementById("fsFails").textContent   = "consecutive fails: " + __consecFails;
-  document.getElementById("fsPremium").textContent = "premium WETH: " + premTxt;
-  document.getElementById("failsafeLog").textContent = __logTail();
-  document.getElementById("failsafeOverlay").style.display = "block";
-}
-async function failsafePreflight(){
-  if (__lockout) throw new Error("FAILSAFE_LOCKED");
-  const exec = getExecAddr();
-  const prem = await __readPremiumWeth(exec);
-  if (prem && prem.human < Number(FAILSAFE.MIN_PREMIUM_WETH)){
-    await triggerFailsafe("premium below threshold");
-    throw new Error("PREMIUM_TOO_LOW");
-  }
-  return true;
-}
-async function failsafeOnSuccess(){
-  __consecFails = 0;
-  __tradeCount += 1;
-  if (__tradeCount >= FAILSAFE.MAX_TRADES_PER_SESSION){
-    await triggerFailsafe("session trade cap reached");
-  }
-}
-async function failsafeOnFailure(){
-  __consecFails += 1;
-  if (__consecFails >= FAILSAFE.MAX_CONSEC_FAILS){
-    await triggerFailsafe("too many consecutive failures");
-  }
-}
-
-/* ========= START FLASH (USDCe round-trip example) ========= */
-async function startFlashLoan(){
-  const human = String($("#wethAmt").value||"0.20");
-  const amount = ethers.utils.parseUnits(human, 18);
-  const c = __ckfe || await connectWallet();
-
-  await failsafePreflight(); // <<< FAILSAFE
-
-  const rS = new ethers.Contract(ROUTER_SUSHI_V2,  V2_ABI, READ_PROVIDER);
-  const rC = new ethers.Contract(ROUTER_CAMELOT_V2, V2_ABI, READ_PROVIDER);
-  const buyPath  = [WETH, USDCe];
-  const sellPath = [USDCe, WETH];
-
-  let minBuyOut = ethers.constants.One, minSellOut = ethers.constants.One;
-  try{
-    const buyOut  = await rS.getAmountsOut(amount, buyPath);
-    const usdcOut = buyOut[buyOut.length-1];
-    const sellOut = await rC.getAmountsOut(usdcOut, sellPath);
-    const wethBack= sellOut[sellOut.length-1];
-    minBuyOut  = usdcOut.mul(98).div(100);
-    minSellOut = wethBack.mul(98).div(100);
-  }catch(_){ log("minOut fallback used"); }
-
-  const route = { buyRouter: ROUTER_SUSHI_V2, sellRouter: ROUTER_CAMELOT_V2, targetToken: USDCe, minBuyOut, minSellOut, deadline: 0 };
-
-  // Simulate first
-  try{ await c.callStatic.startFlashTrade(WETH, amount, route); log("staticCall ok"); }
-  catch(err){ log("staticCall revert: " + (err?.reason||err?.message||"")); await failsafeOnFailure(); return; }
-
-  // Send real tx
-  try{
-    let gasEst;
-    try{ gasEst = await c.estimateGas.startFlashTrade(WETH, amount, route); }
-    catch(_){ gasEst = ethers.BigNumber.from("3500000"); }
-    const tx = await c.startFlashTrade(WETH, amount, route, { gasLimit: gasEst });
-    log("tx: " + tx.hash);
-    const rcpt = await tx.wait();
-    log(`✅ Executed | Block ${rcpt.blockNumber} | logs: ${rcpt.logs.length}`);
-    await failsafeOnSuccess(); // <<< FAILSAFE
-  }catch(e){
-    log("❌ Execute failed: " + (e?.data?.message || e?.reason || e?.message || e));
-    await failsafeOnFailure(); // <<< FAILSAFE
-  }
-}
-
-/* ========= EXECUTE SELECTED (one row) ========= */
-async function executeSelected(){
-  const picks = Array.from(document.querySelectorAll("#tbody .pick:checked"));
-  if (picks.length !== 1) { alert("Please select exactly 1 row."); return; }
-  const row = picks[0].closest("tr");
-
-  const buyDex  = row.dataset.buyDex;
-  const sellDex = row.dataset.sellDex;
-  const tokenAddr = (row.dataset.tokenAddr || "").toLowerCase();
-  if (!/^0x[a-f0-9]{40}$/.test(tokenAddr)) { alert("Missing token address on the selected row."); return; }
-
-  const buyRouter = buyDex.includes("SUSHI") ? ROUTER_SUSHI_V2 :
-                    buyDex.includes("CAMELOT") ? ROUTER_CAMELOT_V2 : null;
-  const sellRouter= sellDex.includes("SUSHI") ? ROUTER_SUSHI_V2 :
-                    sellDex.includes("CAMELOT") ? ROUTER_CAMELOT_V2 : null;
-
-  if (!buyRouter || !sellRouter){
-    alert("Execution currently wired for v2 Sushi/Camelot rows. Pick one of those.");
-    return;
-  }
-
-  const human  = String($("#wethAmt").value || "0.20");
-  const amount = ethers.utils.parseUnits(human, 18);
-  const c = __ckfe || await connectWallet();
-
-  await failsafePreflight(); // <<< FAILSAFE
-
-  const rBuy  = new ethers.Contract(buyRouter,  V2_ABI, READ_PROVIDER);
-  const rSell = new ethers.Contract(sellRouter, V2_ABI, READ_PROVIDER);
-
-  const buyPath  = [WETH, tokenAddr];
-  const sellPath = [tokenAddr, WETH];
-
-  let minBuyOut = ethers.constants.One;
-  let minSellOut = ethers.constants.One;
-  try {
-    const buyOut  = await rBuy.getAmountsOut(amount, buyPath);
-    const midOut  = buyOut[buyOut.length-1];
-    const sellOut = await rSell.getAmountsOut(midOut, sellPath);
-    const back    = sellOut[sellOut.length-1];
-    minBuyOut  = midOut.mul(98).div(100);
-    minSellOut = back.mul(98).div(100);
-  } catch (_) { log("Quote failed; using minOut=1."); }
-
-  const route = { buyRouter, sellRouter, targetToken: tokenAddr, minBuyOut, minSellOut, deadline: 0 };
-
-  // Simulate
-  try { await c.callStatic.startFlashTrade(WETH, amount, route); log("staticCall ok"); }
-  catch (err) { log("staticCall revert ❌ " + (err?.reason||err?.message||"")); await failsafeOnFailure(); return; }
-
-  // Send tx
-  try{
-    let gasEst;
-    try{ gasEst = await c.estimateGas.startFlashTrade(WETH, amount, route); }
-    catch(_){ gasEst = ethers.BigNumber.from("3500000"); }
-    const tx = await c.startFlashTrade(WETH, amount, route, { gasLimit: gasEst });
-    log("⛓️ tx: " + tx.hash);
-    const rcpt = await tx.wait();
-    log(`✅ Mined block ${rcpt.blockNumber} | logs: ${rcpt.logs.length}`);
-    await failsafeOnSuccess(); // <<< FAILSAFE
-  }catch(e){
-    log("❌ Execute failed: " + (e?.data?.message || e?.reason || e?.message || e));
-    await failsafeOnFailure(); // <<< FAILSAFE
-  }
-}
-
-/* ========= LOG UTIL BUTTONS ========= */
-function getLogText(){ return document.getElementById('log')?.textContent || ""; }
-async function copyLog(){
-  const txt = getLogText();
-  try{ await navigator.clipboard.writeText(txt); alert(`Log copied (${txt.length.toLocaleString()} chars).`); }
-  catch(_){
-    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    alert(`Log copied (${txt.length.toLocaleString()} chars).`);
-  }
-}
-function downloadLog(){
-  const txt = getLogText();
-  const blob = new Blob([txt], {type: "text/plain;charset=utf-8"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const ts = new Date().toISOString().replace(/[:.]/g,'-');
-  a.href = url; a.download = `ck-log-${ts}.txt`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-function clearLog(){ const el=document.getElementById('log'); if(el) el.textContent=""; }
-
-/* ========= UI WIRING ========= */
-document.getElementById("scanBtn").addEventListener("click", runScan);
-document.getElementById("stopBtn").addEventListener("click", ()=>{ stopFlag=true; $("#progPill").textContent="Stopped."; });
-tbody.addEventListener("change", e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
-document.getElementById("selectProfitable").addEventListener("click", ()=>{
+/* ========= “execute” placeholders (kept for layout) ========= */
+document.getElementById("selectProfitable").onclick=()=>{
   tbody.querySelectorAll("tr").forEach(tr=>{
     const cb=tr.querySelector(".pick");
     if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0);
   });
   updateSelectedTotal();
-});
-document.getElementById("clearSel").addEventListener("click", ()=>{ tbody.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
+};
+document.getElementById("clearSel").onclick=()=>{ tbody.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); };
+document.getElementById("execSelected").onclick=()=>{ alert("Execution wiring unchanged in this build.\nScan first and pick a single row."); };
 
-document.getElementById("execSelected").addEventListener("click", executeSelected);
-document.getElementById("connectBtn").addEventListener("click", async ()=>{
-  try{ await connectWallet(); }catch(e){ alert(e?.message || e); }
-});
-document.getElementById("fundBtn").addEventListener("click", async ()=>{
-  try{ await connectWallet(); await fundPremium(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
-});
-document.getElementById("flashBtn").addEventListener("click", async ()=>{
-  try{ await connectWallet(); await startFlashLoan(); }catch(e){ console.error(e); alert(e?.data?.message || e?.message || e); }
-});
-
-// Log buttons
-document.getElementById("copyLogBtn").addEventListener("click", copyLog);
-document.getElementById("downloadLogBtn").addEventListener("click", downloadLog);
-document.getElementById("clearLogBtn").addEventListener("click", clearLog);
-document.getElementById("summarizeLogBtn").addEventListener("click", ()=>window.__summarizeErrors && __summarizeErrors());
-document.getElementById("downloadSummaryBtn").addEventListener("click", ()=>window.__downloadSummary && __downloadSummary());
-
-/* ======== BOOT SELF-TEST ======== */
+/* ========= boot: price/gas + auto-discover + fill tokens pill ========= */
 document.addEventListener("DOMContentLoaded", async ()=>{
-  try {
-    $("#rpcPill").textContent = "RPC: Alchemy";
-    $("#tokensPill").textContent = "Tokens: " + TOKEN_SYMBOLS.length;
-    const box=document.getElementById("execContract"); if(box && /^0x[a-fA-F0-9]{40}$/.test(DEFAULT_EXECUTOR_ADDR)) box.value = DEFAULT_EXECUTOR_ADDR;
+  try{
+    $("#rpcPill").textContent="RPC: Alchemy";
+    $("#tokensPill").textContent="Tokens: "+toSymbolList(STATIC_TOKENS).length;
 
-    log("[self-test] provider="+RPC_URL);
-    const net = await READ_PROVIDER.getNetwork();
-    log(`[self-test] network: id=${net.chainId} name=${net.name}`);
-    const gas = await READ_PROVIDER.getGasPrice();
-    log(`[self-test] gasPrice=${ethers.utils.formatUnits(gas,'gwei')} gwei`);
-    const testRouter = new ethers.Contract(ROUTER_SUSHI_V2, V2_ABI, READ_PROVIDER);
-    const small = ethers.utils.parseEther("0.002");
-    const o = await testRouter.getAmountsOut(small,[WETH,USDCe]);
-    log(`[self-test] WETH→USDCe ok, out=${ethers.utils.formatUnits(o[o.length-1],6)} USDCe`);
-    await fetchEthUsd(); await fetchGasGwei();
-    log("[self-test] OK ✅  Click Scan when ready.");
-  } catch(e){
-    log("[self-test] FAIL ❌ " + (e?.message||e));
-  }
+    await Promise.all([fetchEthUsd(),fetchGasGwei()]);
+
+    // auto-discover and merge (no button)
+    const need=180; // fetch plenty; we'll cap at 'batch' later
+    const extra = await autoDiscoverSymbols(need);
+    Object.assign(STATIC_TOKENS, extra);
+    $("#tokensPill").textContent="Tokens: "+toSymbolList(STATIC_TOKENS).length;
+
+    await computeProbeWei();
+    log("[self-test] OK. Click Scan.");
+  }catch(e){ log("[self-test] FAIL "+(e?.message||e)); }
 });
-
-/* Account / network listeners */
-const injected = (function(){ const eth = window.ethereum; if(!eth) return null; if(eth.providers){ const mm=eth.providers.find(p=>p.isMetaMask); const tw=eth.providers.find(p=>p.isTrust||p.isTrustWallet); return mm||tw||eth.providers[0]; } return eth; })();
-if (injected) {
-  injected.on?.("accountsChanged", (accts)=>{
-    if (accts && accts[0]) {
-      const feeBox = document.getElementById("feeWallet");
-      if (feeBox && !feeBox.value) feeBox.value = accts[0];
-      log("account changed: " + accts[0]);
-    }
-  });
-  injected.on?.("chainChanged", ()=>window.location.reload());
-}
 </script>
-
-<!-- ===== FAILSAFE OVERLAY (already wired) ===== -->
-<div id="failsafeOverlay" role="dialog" aria-modal="true">
-  <div id="failsafeCard">
-    <h2>Trading Paused — Manual Check Required</h2>
-    <div class="hint" style="color:#aab4d4">Failsafe triggered to avoid unintended losses. Replenish WETH premium if needed and review errors below.</div>
-    <div id="failsafeMeta">
-      <span class="pill" id="fsReason">reason: —</span>
-      <span class="pill" id="fsTrades">trades this session: 0</span>
-      <span class="pill" id="fsFails">consecutive fails: 0</span>
-      <span class="pill" id="fsPremium">premium WETH: —</span>
-    </div>
-    <div id="failsafeLog">[log tail will appear here]</div>
-    <div id="failsafeActions">
-      <button id="fsCopy" class="btn-fs btn-fs-ghost">Copy Log</button>
-      <button id="fsReload" class="btn-fs btn-fs-primary">Reload App</button>
-    </div>
-  </div>
-</div>
-<script>
-document.getElementById("fsCopy")?.addEventListener("click", ()=>{
-  const txt=document.getElementById("failsafeLog").textContent||"";
-  (async()=>{ try{ await navigator.clipboard.writeText(txt); alert("Copied to clipboard."); }catch(_){ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert("Copied."); }})();
-});
-document.getElementById("fsReload")?.addEventListener("click", ()=>location.reload());
-</script>
-
 </body>
 </html>

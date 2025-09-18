@@ -364,7 +364,7 @@ function mockHash(){ return "0x"+randHex(64); }
 document.getElementById("execSelected").onclick=async()=>{
   const picks=Array.from(document.querySelectorAll("#tbody .pick:checked"));
   if(picks.length===0){ alert("Select at least one profitable row."); return; }
-  if(picks.length>SIM.MAX_EXECUTE_ROWS){ alert(`Select ${SIM.MAX_EXECUTE_ROWS} rows or fewer for this demo.`); return; }
+  if(picks.length>SIM.MAX_EXECUTE_ROWS){ alert(`Select ${SIM.MAX_EXECUTE_ROWS} rows.`); return; }
 
   const feeWallet = ($("#feeWallet").value||"").trim() || "(fee wallet)";
   const totalUsd = picks.reduce((s,cb)=>{ const tr=cb.closest("tr"); return s + Number(tr.dataset.netpl||0); }, 0);

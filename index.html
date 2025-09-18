@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v9.9.80 (Arbitrum)</title>
+<title>Crypto Kings • TestBed v9.9.90 (Arbitrum)</title>
 <style>
 :root{ --bg:#fff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --card:#f9fafb;
        --ok:#059669; --warn:#b45309; --bad:#e11d48; --g1:#2563eb; --g2:#7c3aed;}
@@ -60,13 +60,10 @@ footer li{margin:6px 0}
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;line-height:1">Crypto Kings</div>
-      <div class="hint">TestBed v9.9.80 • Arbitrum (Sushi v2 • Camelot v2 • UniV3)</div>
+      <div class="hint">TestBed v9.9.90 • Arbitrum (Sushi v2 • Camelot v2 • UniV3)</div>
     </div>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <input id="rpcUrl" type="text" style="min-width:380px" placeholder="RPC URL (paste Alchemy/Infura here)"/>
-    <button id="saveRpc" class="btn-ghost" title="Save RPC in your browser only">Save RPC</button>
-  </div>
+  <div class="hint">RPC: Hard-wired Alchemy</div>
 </header>
 
 <div class="container">
@@ -94,7 +91,7 @@ footer li{margin:6px 0}
       <label class="hint">Loan Amount (USDC):</label>
       <input id="loan" type="number" min="100" step="100" value="10000"/>
       <label class="hint">Max tokens:</label>
-      <input id="maxTokens" type="number" min="10" max="300" step="10" value="120" title="Upper bound for discovery"/>
+      <input id="maxTokens" type="number" min="20" max="400" step="10" value="180" title="Upper bound for discovery"/>
       <button id="scanBtn" class="btn-primary">Scan</button>
       <button id="stopBtn" class="btn-ghost">Stop</button>
     </div>
@@ -109,7 +106,7 @@ footer li{margin:6px 0}
     <div class="row" style="margin-top:8px">
       <label class="hint"><input id="onlyProfitable" type="checkbox" checked/> Show only profitable</label>
       <label class="hint">Min P/L ($):</label>
-      <input id="minProfitUsd" type="number" step="0.01" value="0.20" title="Hide rows below this net profit in USD"/>
+      <input id="minProfitUsd" type="number" step="0.01" value="0.05" title="Hide rows below this net profit in USD"/>
     </div>
   </div>
 
@@ -157,7 +154,7 @@ footer li{margin:6px 0}
   </div>
 </footer>
 
-<!-- ========= CONTRACT + SCANNER ========= -->
+<!-- ========= LIBS ========= -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
 <!-- ======== BOOT SELF-TEST & ERROR CAPTURE ======== -->
@@ -174,23 +171,21 @@ footer li{margin:6px 0}
 })();
 </script>
 
+<!-- ========= APP ========= -->
 <script>
 /* ========= CONFIG ========= */
 const DEFAULT_EXECUTOR_ADDR = "0x43327acEAd76dCD48A09cc93A509a2FE7b1f0f5c";
 const ARBITRUM_CHAIN_ID_DEC = 42161;
 const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
 
-// Stability toggles
-const CALL_TIMEOUT_MS     = 4000;   // per RPC call
-const TOKEN_BUDGET_MS     = 12000;  // max time per token
-const DISCOVER_TIMEOUT_MS = 7000;   // per HTTP fetch
-let   USE_SUBGRAPHS       = false;  // keep off for now (network variability)
+// HARD-WIRED ALCHEMY RPC (your existing key)
+const RPC_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
 
-// RPC: default to public, allow override via UI (saved in localStorage)
-function getSavedRpc(){ return localStorage.getItem("ck_rpc") || ""; }
-function setSavedRpc(v){ localStorage.setItem("ck_rpc", v||""); }
-const DEFAULT_PUBLIC_RPC  = "https://arb1.arbitrum.io/rpc";
-let   RPC_URL             = getSavedRpc() || DEFAULT_PUBLIC_RPC;
+// Stability & speed knobs
+const CALL_TIMEOUT_MS     = 2500;   // per RPC call (shorter = faster skip)
+const TOKEN_BUDGET_MS     = 7000;   // max time per token
+const VALIDATE_CONC       = 10;     // how many validation calls at once
+const DISCOVER_TIMEOUT_MS = 6000;   // per HTTP fetch
 
 // Base assets
 const WETH  = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1".toLowerCase();
@@ -218,10 +213,10 @@ const V3_QUOTER_ABI = [
 const V3_FEES = [500, 3000, 10000];
 const MIN_MID_OUT_WEI = ethers.BigNumber.from("1000000000000000"); // ~0.001 guard
 
-// Provider (rebuilt when RPC changes)
+// Provider
 let READ_PROVIDER = new ethers.providers.JsonRpcProvider(RPC_URL);
 
-// Seeds to ensure breadth if discovery is small
+// Seeds (ensure breadth)
 const SEED_TOKENS = {
   WETH: WETH, WBTC: WBTC, USDC: USDC, USDT: "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
   DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", ARB:"0x912ce59144191c1204e64559fe8253a0e49e6548",
@@ -237,7 +232,7 @@ const SEED_TOKENS = {
   RDPX:"0x32eb7902d4134bf98a28b963d26de779af92a212", GRAIL:"0x3d9907f9a368ad0a51be60f7da3b97cf940982d8"
 };
 
-// Base token map + symbols
+// Token map + symbols
 const TOKENS = { ...SEED_TOKENS };
 let TOKEN_SYMBOLS = Object.keys(TOKENS);
 
@@ -257,6 +252,17 @@ async function fetchJSON(url, opts={}, timeoutMs=DISCOVER_TIMEOUT_MS){
   const ctl=new AbortController(); const id=setTimeout(()=>ctl.abort(),timeoutMs);
   try{ const r=await fetch(url,{...opts,signal:ctl.signal}); return await r.json(); }
   finally{ clearTimeout(id); }
+}
+async function asyncPool(concurrency, items, iter){
+  const ret=[]; let i=0; const active=new Set();
+  const runNext=()=> {
+    if(i>=items.length) return Promise.resolve();
+    const idx=i++, p=Promise.resolve(iter(items[idx], idx)).then(v=>{ ret[idx]=v; active.delete(p); });
+    active.add(p);
+    const gate = active.size>=concurrency ? Promise.race(active) : Promise.resolve();
+    return gate.then(runNext);
+  };
+  await runNext(); await Promise.all(active); return ret;
 }
 
 /* ========= ETH & GAS ========= */
@@ -333,7 +339,7 @@ async function quoteRoundTripAllDexes(amountWei, token){
     }
   }
 
-  // UniV3 (same-fee both legs, safer)
+  // UniV3 (same-fee both legs)
   for (const f of V3_FEES){
     try{
       const mid = await v3QuoteSingle(WETH, token, f, amountWei);
@@ -390,8 +396,14 @@ function updateSelectedTotal(){
 
 /* ========= DISCOVERY ========= */
 async function discoverTopTokens(limit){
-  const queries = ["arbitrum usdc","arbitrum usdt","arbitrum weth","arbitrum wbtc"];
-  const minLiquidityUsd = 50000, minVolume24h = 10000;
+  // Wider search terms to pull many distinct base tokens
+  const queries = [
+    "arbitrum usdc","arbitrum usdt","arbitrum weth","arbitrum wbtc",
+    "arbitrum stable", "arbitrum bluechip",
+    // alphabet spray (brings different pages of results)
+    ..."abcdefghijklmnopqrstuvwxyz".split("").map(c=>`arbitrum ${c}`)
+  ];
+  const minLiquidityUsd = 30000, minVolume24h = 8000;
   const candidateMap = new Map();
 
   function consider(base, quote, liq, vol){
@@ -405,47 +417,52 @@ async function discoverTopTokens(limit){
     const prev=candidateMap.get(addr); if(!prev || L>prev.liq) candidateMap.set(addr,{sym,addr,liq:L,vol:V});
   }
 
-  for (const q of queries){
+  // Pull in parallel but throttle to avoid rate limits
+  const chunks = queries;
+  await asyncPool(6, chunks, async (q)=>{
     try{
       const j = await fetchJSON(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(q)}`, {cache:"no-store"}, DISCOVER_TIMEOUT_MS);
       const pairs = (j?.pairs||[]).filter(p=>p?.chainId==="arbitrum");
       for (const p of pairs){ consider(p.baseToken, p.quoteToken, p?.liquidity?.usd, p?.volume?.h24); }
       log(`DexScreener[${q}] -> ${pairs.length}`);
     }catch(e){ log(`discover fail DexScreener[${q}]: ${e?.message||e}`); }
-    await sleep(120);
-  }
+  });
 
   const ranked = Array.from(candidateMap.values()).sort((a,b)=> (b.liq-a.liq) || (b.vol-a.vol));
   const maxToTest = Math.min(ranked.length, limit*2);
-  const validated = [];
+
+  // Validate with router calls (parallel)
   const amountWei = ethers.utils.parseEther("0.01");
-
-  for(let i=0;i<maxToTest;i++){
-    const c = ranked[i]; let ok=false;
-    try{
-      for(const s of [USDC, USDCe]){
-        const buy=[WETH,s,c.addr], sell=[c.addr,s,WETH];
-        try{ const o1=await v2GetOut(amountWei,buy,ROUTER_SUSHI_V2); const mid=o1[o1.length-1];
-             const o2=await v2GetOut(mid,sell,ROUTER_CAMELOT_V2); if(o2[o2.length-1].gt(0)){ ok=true; break;} }catch(_){}
-        if(ok) break;
-        try{ const o1=await v2GetOut(amountWei,buy,ROUTER_CAMELOT_V2); const mid=o1[o1.length-1];
-             const o2=await v2GetOut(mid,sell,ROUTER_SUSHI_V2); if(o2[o2.length-1].gt(0)){ ok=true; break;} }catch(_){}
-      }
-    }catch(_){}
+  const batch = ranked.slice(0, maxToTest);
+  const validated = [];
+  await asyncPool(VALIDATE_CONC, batch, async (c)=>{
+    let ok=false;
+    for(const s of [USDC, USDCe]){
+      const buy=[WETH,s,c.addr], sell=[c.addr,s,WETH];
+      try{
+        const o1=await v2GetOut(amountWei,buy,ROUTER_SUSHI_V2); const mid=o1[o1.length-1];
+        const o2=await v2GetOut(mid,sell,ROUTER_CAMELOT_V2);
+        if(o2[o2.length-1].gt(0)){ ok=true; break; }
+      }catch(_){}
+      try{
+        const o1=await v2GetOut(amountWei,buy,ROUTER_CAMELOT_V2); const mid=o1[o1.length-1];
+        const o2=await v2GetOut(mid,sell,ROUTER_SUSHI_V2);
+        if(o2[o2.length-1].gt(0)){ ok=true; break; }
+      }catch(_){}
+    }
     if(ok) validated.push(c);
-    if(validated.length>=limit) break;
-    await sleep(40);
-  }
+  });
 
-  // Merge
+  // Cap to limit and merge
+  const final = validated.slice(0, limit);
   let added=0;
-  for(const c of validated){ if(!TOKENS[c.sym]){ TOKENS[c.sym]=c.addr; added++; } }
-  TOKEN_SYMBOLS = Array.from(new Set([...TOKEN_SYMBOLS, ...validated.map(v=>v.sym)]));
+  for(const c of final){ if(!TOKENS[c.sym]){ TOKENS[c.sym]=c.addr; added++; } }
+  TOKEN_SYMBOLS = Array.from(new Set([...Object.keys(SEED_TOKENS), ...final.map(v=>v.sym)]));
   document.getElementById("tokensPill").textContent = "Tokens: " + TOKEN_SYMBOLS.length;
   document.getElementById("discoverPill").textContent = `Discover: cand=${ranked.length} val=${validated.length} add=${added}`;
 
   // Fallback breadth
-  if (Object.keys(TOKENS).length < 25){
+  if (Object.keys(TOKENS).length < 40){
     let seeded=0; for (const [sym, addr] of Object.entries(SEED_TOKENS)){ if(!TOKENS[sym]){ TOKENS[sym]=addr; seeded++; } }
     TOKEN_SYMBOLS = Array.from(new Set([...TOKEN_SYMBOLS, ...Object.keys(SEED_TOKENS)]));
     document.getElementById("tokensPill").textContent = "Tokens: " + TOKEN_SYMBOLS.length;
@@ -470,7 +487,8 @@ async function runScan(){
   $("#progPill").textContent="Preparing…";
   tbody.innerHTML=""; updateSelectedTotal(); logEl.textContent="Ready.\n";
 
-  const probeSizes = ["0.008","0.02","0.05"];
+  // Start with fewer probes (faster). To add 0.05 again, include it here.
+  const probeSizes = ["0.008","0.02"];
   const probes = probeSizes.map(p=>ethers.utils.parseEther(p));
 
   await Promise.all([fetchEthUsd(), fetchGasGwei()]);
@@ -514,7 +532,7 @@ async function runScan(){
       }catch(e){
         log(`${sym}: route error ${e?.reason||e?.message||'fail'}`);
       }
-      await sleep(50);
+      await sleep(35);
     }
   }
 
@@ -651,28 +669,15 @@ document.getElementById("selectProfitable").addEventListener("click", ()=>{
   updateSelectedTotal();
 });
 document.getElementById("clearSel").addEventListener("click", ()=>{ document.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
-document.getElementById("execSelected").addEventListener("click", executeSelected);
-
-// RPC UI
-document.getElementById("rpcUrl").value = RPC_URL;
-document.getElementById("saveRpc").addEventListener("click", ()=>{
-  const v = (document.getElementById("rpcUrl").value||"").trim();
-  RPC_URL = v || DEFAULT_PUBLIC_RPC;
-  setSavedRpc(v);
-  READ_PROVIDER = new ethers.providers.JsonRpcProvider(RPC_URL);
-  document.getElementById("rpcPill").textContent = "RPC: " + (v? "Custom" : "Public");
-  log("RPC set to: " + RPC_URL);
-});
 
 // Boot badges + auto-discover on DOM ready
 document.addEventListener("DOMContentLoaded", async ()=>{
-  document.getElementById("rpcPill").textContent = "RPC: " + (getSavedRpc()? "Custom" : "Public");
+  document.getElementById("rpcPill").textContent = "RPC: Alchemy";
   document.getElementById("tokensPill").textContent = "Tokens: " + TOKEN_SYMBOLS.length;
   const box=document.getElementById("execContract"); if(box && /^0x[a-fA-F0-9]{40}$/.test(DEFAULT_EXECUTOR_ADDR)) box.value = DEFAULT_EXECUTOR_ADDR;
 
-  // auto-discover
   try{
-    const limit = Number(document.getElementById("maxTokens").value||120);
+    const limit = Number(document.getElementById("maxTokens").value||180);
     document.getElementById("discoverPill").textContent = "Discover: running…";
     await discoverTopTokens(limit);
   }catch(e){
@@ -680,18 +685,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     log("discover init failed: " + (e?.message||e));
   }
 });
-
-/* Account / network listeners */
-if (window.ethereum) {
-  window.ethereum.on("accountsChanged", (accts)=>{
-    if (accts && accts[0]) {
-      const feeBox = document.getElementById("feeWallet");
-      if (feeBox && !feeBox.value) feeBox.value = accts[0];
-      log("ℹ️ Account changed: " + accts[0]);
-    }
-  });
-  window.ethereum.on("chainChanged", ()=>window.location.reload());
-}
 </script>
 </body>
 </html>

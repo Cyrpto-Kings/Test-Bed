@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed v10.1.1 (Arbitrum)</title>
+<title>Crypto Kings • TestBed v10.2.0 (Arbitrum)</title>
 <style>
 :root{ --bg:#fff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --card:#f9fafb;
        --ok:#059669; --warn:#b45309; --bad:#e11d48; --g1:#2563eb; --g2:#7c3aed;}
@@ -131,6 +131,8 @@ footer li{margin:6px 0}
       <div class="row">
         <button id="copyLogBtn" class="btn-mini btn-ghost" title="Copy full log to clipboard">Copy Log</button>
         <button id="downloadLogBtn" class="btn-mini btn-ghost" title="Download log as .txt">Download Log</button>
+        <button id="summarizeLogBtn" class="btn-mini btn-ghost" title="Show error summary">Summarize Errors</button>
+        <button id="downloadSummaryBtn" class="btn-mini btn-ghost" title="Download error summary JSON">Download Summary</button>
         <button id="clearLogBtn" class="btn-mini btn-ghost" title="Clear the log">Clear</button>
       </div>
     </div>
@@ -150,18 +152,75 @@ footer li{margin:6px 0}
 <!-- LIB -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
-<!-- BOOT LOGGER -->
+<!-- BOOT LOGGER with error bucketing -->
 <script>
 (function(){
-  var _logEl=null;
-  function w(msg){
-    if(!_logEl) _logEl=document.getElementById('log');
-    if(_logEl){ _logEl.textContent += (msg.endsWith("\n")? msg : msg+"\n"); _logEl.scrollTop=_logEl.scrollHeight; }
+  let _logEl=null;
+  const buckets = new Map(); // key => {count, firstTs, lastTs, sample}
+  const MAX_PLAIN_LINES = 4000;
+
+  function keyFrom(e){
+    const msg = (e && (e.message||e.reason?.message||e.reason||e)) || String(e);
+    const stack = (e && (e.error?.stack || e.reason?.stack)) || "";
+    const top = (stack.split("\\n")[1]||"").trim();
+    return msg + " | " + top;
   }
-  window.__wlog = w; // expose
-  window.addEventListener('error', e => w("ERROR: " + (e?.message||e)));
-  window.addEventListener('unhandledrejection', e => w("PROMISE: " + (e?.reason?.message||e?.reason||e)));
+  function bucketAdd(kind, payload){
+    const now = new Date().toISOString();
+    const k = keyFrom(payload);
+    const b = buckets.get(k) || { count:0, kind, firstTs:now, lastTs:now, sample:null };
+    b.count += 1; b.lastTs = now; if(!b.sample) b.sample = String(payload.stack||payload);
+    buckets.set(k, b);
+  }
+
+  let _plainCount = 0;
+  function w(raw){
+    if(!_logEl) _logEl=document.getElementById('log');
+    const line = raw.endsWith("\\n") ? raw : (raw+"\\n");
+    if (_plainCount < MAX_PLAIN_LINES) {
+      _logEl.textContent += line; _plainCount++;
+    }
+    _logEl.scrollTop=_logEl.scrollHeight;
+  }
+
+  window.__wlog = w;
+  window.__errBuckets = buckets;
+
+  window.addEventListener('error', e => { bucketAdd("error", e); w("ERROR: " + (e?.message||e)); });
+  window.addEventListener('unhandledrejection', e => { bucketAdd("promise", e); w("PROMISE: " + (e?.reason?.message||e?.reason||e)); });
+
   document.addEventListener('DOMContentLoaded', ()=> w("[boot] DOM ready ✅"));
+
+  async function summarize(){
+    const arr = Array.from(buckets.entries()).map(([k,v])=>({
+      key:k, kind:v.kind, count:v.count, first:v.firstTs, last:v.lastTs
+    })).sort((a,b)=>b.count-a.count);
+    if(arr.length===0){ alert("No errors captured to summarize."); return; }
+    let out = ["[summary] top error buckets (count, first→last):"];
+    for(const it of arr.slice(0,40)){
+      out.push(`• ${it.count} ×  ${it.key}\\n   ${it.first} → ${it.last}`);
+    }
+    w("\\n"+out.join("\\n")+"\\n");
+  }
+  function downloadSummary(){
+    const data = Array.from(buckets.entries()).map(([k,v])=>({
+      key:k, kind:v.kind, count:v.count, first:v.firstTs, last:v.lastTs, sample:v.sample
+    })).sort((a,b)=>b.count-a.count);
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const ts = new Date().toISOString().replace(/[:.]/g,'-');
+    a.href = url; a.download = `ck-error-summary-${ts}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  window.__summarizeErrors = summarize;
+  window.__downloadSummary = downloadSummary;
+
+  document.addEventListener('click', (e)=>{
+    if(e.target?.id==="summarizeLogBtn") summarize();
+    if(e.target?.id==="downloadSummaryBtn") downloadSummary();
+  });
 })();
 </script>
 
@@ -176,24 +235,24 @@ const ARBITRUM_CHAIN_ID_HEX = "0xa4b1";
 const RPC_URL = "https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
 
 // Speed & stability
-const CALL_TIMEOUT_MS  = 1800;  // per RPC call
-const TOKEN_BUDGET_MS  = 6000;  // per token
-const VALIDATE_CONC    = 8;
+const CALL_TIMEOUT_MS  = 1800;   // per RPC call
+const TOKEN_BUDGET_MS  = 6000;   // per token
+const MIN_MID_OUT_WEI  = ethers.BigNumber.from("1000000000000000"); // 0.001
+const GAS_LIMIT        = 380000; // exec est.
+let   GAS_GWEI         = 0.10;
 
 // Base assets
 const WETH  = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1".toLowerCase();
 const USDC  = "0xaf88d065e77c8cc2239327c5edb3a432268e5831".toLowerCase();
 const USDCe = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8".toLowerCase();
-const WBTC  = "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f".toLowerCase();
 
-// Routers
+// Routers / Quoter
 const ROUTER_SUSHI_V2   = "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
 const ROUTER_CAMELOT_V2 = "0xc873fecbd354f5a56e00e710b90ef4201db2448d";
 const UNIV3_QUOTER      = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
 
-// Fees / gas
+// Fees
 const DEX_FEE_PCT = 0.003, SLIP_PCT = 0.0015, FLASH_PCT = 0.0005;
-const GAS_LIMIT   = 380000; let GAS_GWEI = 0.10;
 
 // ABIs
 const V2_ABI = ["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
@@ -201,14 +260,13 @@ const V3_QUOTER_ABI = [
   "function quoteExactInputSingle((address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut)"
 ];
 const V3_FEES = [500, 3000, 10000];
-const MIN_MID_OUT_WEI = ethers.BigNumber.from("1000000000000000"); // 0.001
 
 // Provider
 let READ_PROVIDER = new ethers.providers.JsonRpcProvider(RPC_URL);
 
-/* ========= SEED TOKENS (hand-curated; extend as needed) ========= */
+/* ========= TOKENS ========= */
 const TOKENS = {
-  WETH, WBTC, USDC, USDCe,
+  WETH, WBTC:"0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f", USDC, USDCe,
   USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
   DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
   ARB:"0x912ce59144191c1204e64559fe8253a0e49e6548",
@@ -248,7 +306,6 @@ const TOKENS = {
   BADGER:"0x3472a5a71965499acd81997a54bba8d852c6e53d",
   PLS:"0x51318b7d00db7acc4026c88c3952b66278b6a67f",
   TCR:"0x2409c4fbedE3E3bF1bEFb07603A8A65BaD22E7bA".toLowerCase()
-  // add more as needed…
 };
 const TOKEN_SYMBOLS = Object.keys(TOKENS);
 
@@ -341,7 +398,7 @@ async function quoteRoundTripAllDexes(amountWei, token){
   }
 
   // UniV3 (same-fee both legs)
-  for (const f of V3_FEES){
+  for (const f of [500,3000,10000]){
     try{
       const mid = await v3QuoteSingle(WETH, token, f, amountWei);
       if (mid.gte(MIN_MID_OUT_WEI)){
@@ -434,18 +491,17 @@ async function runScan(){
   try{
     if (scanning) return; scanning=true; stopFlag=false;
     $("#progPill").textContent="Preparing…";
-    tbody.innerHTML=""; updateSelectedTotal(); logEl.textContent="[SELF-TEST]\n";
+    tbody.innerHTML=""; updateSelectedTotal(); document.getElementById('log').textContent="[SELF-TEST]\n";
 
-    // Self test block
     log("• provider="+RPC_URL);
-    const netv = await READ_PROVIDER.getNetwork().catch(e=>({chainId:"?", name:"?"}));
+    const netv = await READ_PROVIDER.getNetwork().catch(()=>({chainId:"?", name:"?"}));
     log("• network="+(netv.chainId||"?")+" ("+(netv.name||"?")+")");
     const gas = await READ_PROVIDER.getGasPrice().catch(()=>null);
     log("• gasWei="+(gas?gas.toString():"?"));
 
     await Promise.all([fetchEthUsd(), fetchGasGwei()]);
     $("#tokensPill").textContent = "Tokens: " + TOKEN_SYMBOLS.length;
-    log(`[${new Date().toLocaleTimeString()}] CLICK Scan; tokens=${TOKEN_SYMBOLS.length}`);
+    log(`[${new Date().toLocaleTimeString()}] CLICK Scan; tokens=${TOKEN_SYMBOLS.length}; probes=0.008/0.02 WETH`);
 
     const n = Math.min(TOKEN_SYMBOLS.length, Number(document.getElementById("batch").value||160));
     const symbols = TOKEN_SYMBOLS.slice(0,n);
@@ -455,7 +511,6 @@ async function runScan(){
     for (const sym of symbols){
       if(stopFlag) break;
       $("#progPill").textContent = `Scanning ${processed+1}/${symbols.length} — ${sym}`;
-      log(`${sym}: quoting…`);
       const rows = await scanToken(sym);
       if (rows.length===0) log(`${sym}: no routes`);
       allRows.push(...rows);
@@ -476,7 +531,7 @@ async function runScan(){
   }
 }
 
-/* ========= EXECUTION (wallets: MetaMask + Trust) ========= */
+/* ========= EXECUTION (MetaMask + Trust Wallet) ========= */
 const CKFE_ABI = [
   {"inputs":[{"internalType":"address","name":"asset","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"components":[{"internalType":"address","name":"buyRouter","type":"address"},{"internalType":"address","name":"sellRouter","type":"address"},{"internalType":"address","name":"targetToken","type":"address"},{"internalType":"uint256","name":"minBuyOut","type":"uint256"},{"internalType":"uint256","name":"minSellOut","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"internalType":"struct CKFE.Route","name":"r","type":"tuple"}],"name":"startFlashTrade","outputs":[],"stateMutability":"nonpayable","type":"function"},
   {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"asset","type":"address"},{"indexed":false,"internalType":"uint256","name":"repaid","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"profit","type":"uint256"}],"name":"FlashCompleted","type":"event"}
@@ -511,7 +566,7 @@ async function connectWallet(){
   const addr = getExecAddr();
   __ckfe = new ethers.Contract(addr, CKFE_ABI, __signer);
   const box=document.getElementById("execContract"); if (box && !box.value) box.value = addr;
-  $("#rpcPill").textContent = "RPC: Alchemy";
+  document.getElementById("rpcPill").textContent = "RPC: Alchemy";
   log("Wallet connected: " + __account + " | CKFE: " + addr);
   return __ckfe;
 }
@@ -566,13 +621,10 @@ async function startFlashLoan(){
 function getLogText(){ return document.getElementById('log')?.textContent || ""; }
 async function copyLog(){
   const txt = getLogText();
-  try{
-    await navigator.clipboard.writeText(txt);
-    alert(`Log copied (${txt.length.toLocaleString()} chars).`);
-  }catch(_){
-    // Fallback for older browsers
-    const ta = document.createElement('textarea');
-    ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  try{ await navigator.clipboard.writeText(txt); alert(`Log copied (${txt.length.toLocaleString()} chars).`); }
+  catch(_){
+    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     alert(`Log copied (${txt.length.toLocaleString()} chars).`);
   }
 }
@@ -591,7 +643,7 @@ function clearLog(){ const el=document.getElementById('log'); if(el) el.textCont
 /* ========= UI WIRING ========= */
 document.getElementById("connectBtn").addEventListener("click", async ()=>{ try { await connectWallet(); } catch(e){ alert(e?.message||e); }});
 document.getElementById("scanBtn").addEventListener("click", runScan);
-document.getElementById("stopBtn").addEventListener("click", ()=>{ stopFlag=true; $("#progPill").textContent="Stopped."; });
+document.getElementById("stopBtn").addEventListener("click", ()=>{ stopFlag=true; $("#progPill").textContent="Stopped."); });
 document.getElementById("selectProfitable").addEventListener("click", ()=>{
   document.querySelectorAll("tr").forEach(tr=>{
     const cb=tr.querySelector(".pick");
@@ -601,10 +653,12 @@ document.getElementById("selectProfitable").addEventListener("click", ()=>{
 });
 document.getElementById("clearSel").addEventListener("click", ()=>{ document.querySelectorAll(".pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); });
 
-// NEW: log buttons
+// Log buttons
 document.getElementById("copyLogBtn").addEventListener("click", copyLog);
 document.getElementById("downloadLogBtn").addEventListener("click", downloadLog);
 document.getElementById("clearLogBtn").addEventListener("click", clearLog);
+document.getElementById("summarizeLogBtn").addEventListener("click", ()=>window.__summarizeErrors && __summarizeErrors());
+document.getElementById("downloadSummaryBtn").addEventListener("click", ()=>window.__downloadSummary && __downloadSummary());
 
 /* ======== BOOT SELF-TEST ======== */
 document.addEventListener("DOMContentLoaded", async ()=>{

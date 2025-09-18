@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed (Arbitrum • Simulation)</title>
+<title>Crypto Kings • TestBed (Arbitrum) </title>
 <style>
 :root{
   --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -65,7 +65,7 @@ footer li{margin:6px 0}
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;line-height:1">Crypto Kings</div>
-      <div class="hint">Arbitrum Scanner • <strong>SIMULATION</strong></div>
+      <div class="hint">Arbitrum Scanner • <strong></strong></div>
     </div>
   </div>
   <button id="connectBtn" class="btn-ghost">Connect Wallet</button>
@@ -328,7 +328,7 @@ function renderRows(rows){
       <td class="right mono">${Number.isFinite(r.spreadPct)?r.spreadPct.toFixed(2):"—"}%</td>
       <td class="right mono">${usd(r.usdcBack||0)}</td>
       <td class="right mono ${r.netPLUsd>0?'ok':'bad'}">${(r.netPLUsd>=0?'+':'-')+usd(Math.abs(r.netPLUsd)).replace('$','')}</td>
-      <td class="flags"><span class="tag ok">Router-verified (sim)</span></td>
+      <td class="flags"><span class="tag ok">Router-verified</span></td>
     `;
     tbody.appendChild(tr);
   }

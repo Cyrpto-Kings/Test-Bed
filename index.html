@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed (Arbitrum)</title>
+<title>Crypto Kings • TestBed (Arbitrum • Simulation)</title>
 <style>
 :root{
   --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -65,7 +65,7 @@ footer li{margin:6px 0}
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;line-height:1">Crypto Kings</div>
-      <div class="hint">Arbitrum Scanner • <strong>TEST BED</strong></div>
+      <div class="hint">Arbitrum Scanner • <strong>SIMULATION</strong></div>
     </div>
   </div>
   <button id="connectBtn" class="btn-ghost">Connect Wallet</button>
@@ -83,8 +83,8 @@ footer li{margin:6px 0}
     </div>
     <div class="row" style="margin-top:8px">
       <label class="hint">Loan target ($):</label>
-      <input id="loanUsd" type="number" min="50" step="10" value="500" title="Desired notional per probe in USD"/>
-      <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.20" title="Computed WETH (auto)"/>
+      <input id="loanUsd" type="number" min="50" step="50" value="500" title="Desired notional per probe in USD"/>
+      <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.200000" title="Computed WETH (auto)"/>
       <button id="fundBtn" class="btn-ghost" title="Wrap tiny ETH→WETH and send premium">Fund Premium</button>
       <button id="flashBtn" class="btn-primary">Start Flash Loan (WETH)</button>
     </div>
@@ -148,7 +148,7 @@ footer li{margin:6px 0}
         <button id="clearLogBtn" class="btn-mini btn-ghost" title="Clear the log">Clear</button>
       </div>
     </div>
-    <div id="log" class="logs">[boot] starting… (build)</div>
+    <div id="log" class="logs">[boot] starting… (simulation build)</div>
   </div>
 </div>
 
@@ -168,23 +168,6 @@ function log(m, cls){ const L=logEl(); const line=(cls?`<span class="${cls}">${m
 document.getElementById('copyLogBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText(logEl().innerText||""); alert("Log copied."); }catch{} };
 document.getElementById('downloadLogBtn').onclick=()=>{ const b=new Blob([logEl().innerText||""],{type:"text/plain"}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u;a.download=`ck-log-${Date.now()}.txt`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);};
 document.getElementById('clearLogBtn').onclick=()=>{ logEl().innerHTML=""; };
-
-/* ========= Sim constants (no RPC) ========= */
-const SIM = {
-  ETH_USD: 2500,
-  GAS_GWEI: 0.10,
-  GAS_LIMIT: 380000,
-  DEX_FEE: 0.003,     // per leg, visual only
-  SLIP: 0.0015,       // per leg
-  FLASH: 0.0005,      // one-off
-  PROFIT_RATE: 0.28,  // ~28% of rows show positive P/L
-  PROFIT_MEAN: 1.2,   // avg +$ P/L for winners
-  PROFIT_SPREAD: 0.8, // variability
-  ROWS_PER_TOKEN: 2,  // two routes per token
-  MAX_EXECUTE_ROWS: 8 // cap how many rows can be executed at once
-};
-document.getElementById("ethPill").textContent = "ETH: $"+SIM.ETH_USD.toLocaleString();
-document.getElementById("gasPill").textContent = "Gas: "+SIM.GAS_GWEI.toFixed(2)+" gwei (sim)";
 
 /* ========= Wallet connect (optional; MetaMask/Trust) ========= */
 function getInjected(){
@@ -210,20 +193,32 @@ document.getElementById("connectBtn").onclick=async()=>{
   }
 };
 
-/* ========= Tokens (120 symbols) ========= */
+/* ========= Sim constants (no RPC) ========= */
+const SIM = {
+  ETH_USD: 2500,
+  GAS_GWEI: 0.10,
+  GAS_LIMIT: 380000,
+  BASE_FEES: 0.003*2 + 0.0015*2 + 0.0005, // v2 buy/sell + slip + flash ~0.0055
+  PROFIT_RATE: 0.13,     // ~13% winners (tweak for more/less greens)
+  WIN_BPS_MEAN: 14,      // mean “edge” in bps on winners
+  WIN_BPS_SD: 9,         // bps stdev on winners
+  LOSS_BPS_MEAN: -35,    // mean bps on losers
+  LOSS_BPS_SD: 25,       // stdev losers
+  ROWS_PER_TOKEN: 2,
+  MAX_EXECUTE_ROWS: 8
+};
+document.getElementById("ethPill").textContent = "ETH: $"+SIM.ETH_USD.toLocaleString();
+document.getElementById("gasPill").textContent = "Gas: "+SIM.GAS_GWEI.toFixed(2)+" gwei (sim)";
+
+/* ========= Tokens (120 symbols + liquidity tiers) ========= */
 const STATIC_TOKENS = (()=>{
-  const base = [
-    "WETH","WBTC","USDC","USDCe","USDT","DAI","ARB","LINK","GMX","AAVE","RDNT","PENDLE","FRAX","CRV","BAL","UNI",
-    "wstETH","SNX","COMP","YFI","SUSHI","LUSD","MAGIC","GRT","DPX","RDPX","GRAIL","JOE","MKR","RPL","FXS","CVX",
-    "LQTY","STG","ANGLE","PERP","INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","HOP","ALCX","GNS","OP","ENS",
-    "BADGER","BNT","DODO","PENDLE2","ARBX","RDNT2","UNI2","GMX2","CRV2","BAL2","MIM","FRAX2","FRAX3","LDO","PEPE",
-    "PIRATE","RNDM","PUNK","DOGE","SHIB","FLOKI","BABYDOGE","AERO","SPARTA","GALA","IMX","APE","BLUR","ALEX","TIA",
-    "PYTH","JUP","W","BOME","ONDO","ENA","DEGEN","SAGA","ETHFI","XAI","AEVO","ALT","BEAM","ZRO","TON","TIA2",
-    "SUI","APT","ARB3","OP2","POL","MATIC","AVAX","FTM","NEAR","ATOM","SOL","BTC","BNB","OKB","HT","KCS","XRP","ADA"
-  ];
-  // Fill to at least 120
-  while (base.length < 120) base.push("TOK"+(base.length+1));
-  return base.slice(0,120);
+  const blue = ["WETH","WBTC","USDC","USDCe","USDT","DAI","ARB","LINK","GMX","AAVE","UNI","wstETH","SNX","COMP","CRV","BAL"];
+  const mid  = ["RDNT","PENDLE","FRAX","PENDLE2","GRT","DPX","RDPX","GRAIL","JOE","MKR","RPL","FXS","CVX","LQTY","STG","ANGLE","PERP","INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","HOP","ALCX","GNS","OP","ENS","BADGER","BNT","DODO"];
+  const tail = ["PEPE","PIRATE","RNDM","PUNK","DOGE","SHIB","FLOKI","BABYDOGE","AERO","SPARTA","GALA","IMX","APE","BLUR","ALEX","TIA","PYTH","JUP","W","BOME","ONDO","ENA","DEGEN","SAGA","ETHFI","XAI","AEVO","ALT","BEAM","ZRO","TON","SUI","APT","POL","MATIC","AVAX","FTM","NEAR","ATOM","SOL","BTC","BNB","OKB","HT","KCS","XRP","ADA"];
+  const fill = [];
+  while(blue.length+mid.length+tail.length+fill.length<120) fill.push("TOK"+(blue.length+mid.length+tail.length+fill.length+1));
+  const list=[...blue.map(s=>[s,"blue"]),...mid.map(s=>[s,"mid"]),...tail.map(s=>[s,"tail"]),...fill.map(s=>[s,"tail"])];
+  return list.slice(0,120);
 })();
 document.getElementById("tokensPill").textContent = "Tokens: "+STATIC_TOKENS.length;
 
@@ -245,40 +240,65 @@ document.getElementById("selectProfitable").onclick=()=>{
 };
 document.getElementById("clearSel").onclick=()=>{ document.querySelectorAll("#tbody .pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); };
 
-/* ========= Seeded RNG (stable per token per run) ========= */
-function xmur3(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h = (h<<13)|(h>>>19);} return ()=>{ h=Math.imul(h^ (h>>>16), 2246822507); h=Math.imul(h^ (h>>>13), 3266489909); return (h^ (h>>>16))>>>0; }; }
+/* ========= Seeded RNG ========= */
+function xmur3(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=(h<<13)|(h>>>19);} return ()=>{ h=Math.imul(h^(h>>>16),2246822507); h=Math.imul(h^(h>>>13),3266489909); return (h^(h>>>16))>>>0; }; }
 function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^(t>>>15), t|1); t^=t+Math.imul(t^(t>>>7), t|61); return ((t^(t>>>14))>>>0)/4294967296; } }
-function rngFor(token){ const seedFn=xmur3(token+":"+Date.now()); return mulberry32(seedFn()); }
+function rngFor(key){ const seed=xmur3(key+":"+Date.now())(); return mulberry32(seed); }
+function randN01(r){ // approx normal(0,1) via Irwin–Hall (sum of 6 uniforms)
+  let s=0; for(let i=0;i<6;i++) s+=r(); return (s-3)/Math.sqrt(0.5);
+}
 
-/* ========= Sim: compute a couple of routes per token ========= */
-function simulateRoutesForToken(sym, probeWeth){
-  const r = rngFor(sym);
-  const rows = [];
-  const routeDex = [["SUSHI v2","CAMELOT v2"],["CAMELOT v2","SUSHI v2"],["UniV3 0.3%","UniV3 0.3%"]];
+/* ========= Liquidity tiers affect fees & noise ========= */
+function tierInfo(tier){
+  if(tier==="blue") return { extraFees:0.0006, noiseBps:6, priceVar:0.004 };
+  if(tier==="mid")  return { extraFees:0.0015, noiseBps:12, priceVar:0.009 };
+  return               { extraFees:0.0030, noiseBps:22, priceVar:0.018 }; // tail
+}
+
+/* ========= Simulate realistic route quotes with scaling P/L ========= */
+const DEX_COMBOS=[["SUSHI v2","CAMELOT v2"],["CAMELOT v2","SUSHI v2"],["UniV3 0.3%","UniV3 0.3%"],["UniV3 1%","UniV3 1%"]];
+
+function simulateRoutesForToken(sym, tier, amountUsd, r){
+  const rows=[];
+  const t=tierInfo(tier);
+  const baseFees = SIM.BASE_FEES + t.extraFees;           // total pct cost
   for(let i=0;i<SIM.ROWS_PER_TOKEN;i++){
-    const [buyDex,sellDex]=routeDex[Math.floor(r()*routeDex.length)];
-    // base spread ~ -0.6% ... +0.6%
-    const spread = (r()-0.5)*0.012;
-    const fees = (SIM.DEX_FEE+SIM.SLIP)*2 + SIM.FLASH; // ~0.0055
-    // chance to be profitable
-    const isWin = r() < SIM.PROFIT_RATE;
-    const plUsd = isWin ? Math.max(0.01, SIM.PROFIT_MEAN + (r()-0.5)*SIM.PROFIT_SPREAD) : - (0.20 + (r())*1.2);
-    const amountUsd = probeWeth*SIM.ETH_USD;
-    // backWeth derived from desired PL (rough)
-    const netPLUsd = plUsd;
-    const netPLWeth = netPLUsd / SIM.ETH_USD;
-    const feesWeth = probeWeth * fees + (SIM.GAS_GWEI/1e9)*SIM.GAS_LIMIT / 1e18; // tiny gas
-    const backWeth = probeWeth + netPLWeth + feesWeth; // so after deducting fees we show target PL
-    const usdcBack = (backWeth*SIM.ETH_USD).toFixed(2);
+    const [buyDex,sellDex]=DEX_COMBOS[Math.floor(r()*DEX_COMBOS.length)];
+
+    // token “price” to show on UI (varies per route so rows aren't identical)
+    const tokenUsd = Math.max(0.05, 2 + (r()*480));       // anywhere between microcaps and majors
+    const buyPrice = tokenUsd * (1 + (r()-0.5)*t.priceVar);  // +/- var%
+    const sellPrice= tokenUsd * (1 + (r()-0.5)*t.priceVar);
+
+    // Draw an "edge" in bps (positive or negative) + noise from tier
+    const win = r() < SIM.PROFIT_RATE;
+    const mean = win ? SIM.WIN_BPS_MEAN : SIM.LOSS_BPS_MEAN;
+    const sd   = win ? SIM.WIN_BPS_SD   : SIM.LOSS_BPS_SD;
+    const edgeBps = mean + randN01(r)*sd + (r()-0.5)*t.noiseBps;
+
+    // Market impact: larger loans reduce realized edge (diminishing returns)
+    const impact = 1 / (1 + Math.max(0, amountUsd-500)/2500); // 1 at $500, ~0.67 at $2k, etc.
+    const realizedEdgePct = (edgeBps/10000) * impact;
+
+    // Net P/L scales with amount
+    const grossUsd = amountUsd * realizedEdgePct;
+    const feesUsd  = amountUsd * baseFees;
+    const netPLUsd = +(grossUsd - feesUsd).toFixed(2);
+
+    // USDC back ≈ principal + fees + P/L
+    const usdcBack = +(amountUsd + grossUsd).toFixed(2);
+
+    // Spread shown (sell/buy - 1)
+    const spreadPct = ((sellPrice/buyPrice)-1)*100 + (realizedEdgePct*100);
 
     rows.push({
-      tokenSym: sym,
-      tokenAddr: "0x"+(Math.floor(r()*1e16).toString(16)).padStart(40,"a"), // placeholder address-y
+      tokenSym:sym,
+      tokenAddr:"0x"+Math.floor(r()*1e16).toString(16).padStart(40,"a"),
       buyDex, sellDex,
-      usdcBack: Number(usdcBack),
+      usdcBack,
       netPLUsd,
-      ok: true,
-      spreadPct: ((backWeth/probeWeth)-1)*100
+      ok:true,
+      spreadPct
     });
   }
   return rows;
@@ -308,39 +328,40 @@ function renderRows(rows){
       <td class="right mono">${Number.isFinite(r.spreadPct)?r.spreadPct.toFixed(2):"—"}%</td>
       <td class="right mono">${usd(r.usdcBack||0)}</td>
       <td class="right mono ${r.netPLUsd>0?'ok':'bad'}">${(r.netPLUsd>=0?'+':'-')+usd(Math.abs(r.netPLUsd)).replace('$','')}</td>
-      <td class="flags"><span class="tag ok">Router-verified</span></td>
+      <td class="flags"><span class="tag ok">Router-verified (sim)</span></td>
     `;
     tbody.appendChild(tr);
   }
   updateSelectedTotal();
 }
 
-/* ========= Scan orchestrator (fast) ========= */
+/* ========= Scan orchestrator (fast, scalable with loan) ========= */
 let scanning=false, stopFlag=false;
 async function runScan(){
   if(scanning) return; scanning=true; stopFlag=false;
   try{
     const usdTarget=Number(document.getElementById("loanUsd").value||500);
-    const probeWeth = usdTarget / SIM.ETH_USD; // simple conversion
-    document.getElementById("wethAmt").value = probeWeth.toFixed(6);
+    const weth = usdTarget / SIM.ETH_USD;
+    document.getElementById("wethAmt").value = weth.toFixed(6);
 
     const want = Number(document.getElementById("batch").value||120);
     const symbols = STATIC_TOKENS.slice(0, want);
     document.getElementById("tokensPill").textContent="Tokens: "+symbols.length;
 
     const concur = Math.max(5, Math.min(30, Number(document.getElementById("concur").value||20)));
-    log(`[scan] (sim) tokens=${symbols.length} • concurrency=${concur} • probe=${probeWeth.toFixed(6)} WETH (~$${usdTarget})`);
+    log(`[scan] (sim) tokens=${symbols.length} • concurrency=${concur} • loan=$${usdTarget.toFixed(2)} (~${weth.toFixed(6)} WETH)`);
     document.getElementById("progPill").textContent="Scanning…";
 
     const queue=[...symbols]; const allRows=[]; let done=0;
     async function worker(){
       while(queue.length && !stopFlag){
-        const sym = queue.shift();
+        const [sym,tier] = queue.shift();
         document.getElementById("progPill").textContent=`Scanning ${done+1}/${symbols.length} — ${sym}`;
-        const rows = simulateRoutesForToken(sym, probeWeth);
+        const r=rngFor(sym);
+        const rows=simulateRoutesForToken(sym, tier, usdTarget, r);
         allRows.push(...rows);
         done++;
-        await new Promise(r=>setTimeout(r, 10)); // tiny yield for UI
+        await new Promise(res=>setTimeout(res, 8)); // tiny yield
       }
     }
     await Promise.all(Array.from({length:concur}, worker));
@@ -357,46 +378,47 @@ async function runScan(){
 document.getElementById("scanBtn").onclick=runScan;
 document.getElementById("stopBtn").onclick=()=>{ stopFlag=true; document.getElementById("progPill").textContent="Stopped."; };
 
-/* ========= “Execute Selected” (flow + hashes) ========= */
+/* ========= “Execute Selected” (staged mock flow + hashes) ========= */
 function randHex(n){ const chars="0123456789abcdef"; let s=""; for(let i=0;i<n;i++) s+=chars[Math.floor(Math.random()*16)]; return s; }
 function mockHash(){ return "0x"+randHex(64); }
 
 document.getElementById("execSelected").onclick=async()=>{
   const picks=Array.from(document.querySelectorAll("#tbody .pick:checked"));
   if(picks.length===0){ alert("Select at least one profitable row."); return; }
-  if(picks.length>SIM.MAX_EXECUTE_ROWS){ alert(`Select ${SIM.MAX_EXECUTE_ROWS} rows.`); return; }
+  if(picks.length>SIM.MAX_EXECUTE_ROWS){ alert(`Select ${SIM.MAX_EXECUTE_ROWS} rows or fewer for this demo.`); return; }
 
   const feeWallet = ($("#feeWallet").value||"").trim() || "(fee wallet)";
   const totalUsd = picks.reduce((s,cb)=>{ const tr=cb.closest("tr"); return s + Number(tr.dataset.netpl||0); }, 0);
+  const loanUsd=Number(document.getElementById("loanUsd").value||500);
+
   log(`[exec] starting batch of ${picks.length} route(s)…`);
   for(let i=0;i<picks.length;i++){
     const tr=picks[i].closest("tr");
     const sym=tr.dataset.token, buy=tr.dataset.buyDex, sell=tr.dataset.sellDex;
-    const loanUsd=Number(document.getElementById("loanUsd").value||500);
-    log(`— Route ${i+1}/${picks.length}: ${sym} (${buy} → ${sell})`);
 
-    const h1=mockHash(); log(`   • Borrowing ~$${loanUsd.toFixed(2)} (flash) … tx: ${h1}`);
-    await new Promise(r=>setTimeout(r, 350));
+    const h1=mockHash(); log(`— Route ${i+1}/${picks.length}: ${sym} (${buy} → ${sell})`);
+    log(`   • Borrowing ~$${loanUsd.toFixed(2)} (flash) … tx: ${h1}`);
+    await new Promise(r=>setTimeout(r, 320));
     const h2=mockHash(); log(`   • Buy ${sym} on ${buy} … tx: ${h2}`);
-    await new Promise(r=>setTimeout(r, 350));
+    await new Promise(r=>setTimeout(r, 320));
     const h3=mockHash(); log(`   • Sell ${sym} on ${sell} … tx: ${h3}`);
-    await new Promise(r=>setTimeout(r, 350));
+    await new Promise(r=>setTimeout(r, 320));
     const h4=mockHash(); log(`   • Repay flash + fee … tx: ${h4}`);
-    await new Promise(r=>setTimeout(r, 250));
+    await new Promise(r=>setTimeout(r, 220));
     const rowProfit=Number(tr.dataset.netpl||0);
     const h5=mockHash(); log(`   • Distribute profit ${usd(rowProfit)} → ${feeWallet} … tx: ${h5}`);
-    await new Promise(r=>setTimeout(r, 200));
+    await new Promise(r=>setTimeout(r, 180));
   }
   log(`[exec] complete. Batch profit: ${usd(totalUsd)}\n`);
 };
 
 /* ========= Self-test just refreshes status ========= */
 document.getElementById("selfTestBtn").onclick=()=>{
-  log("[self-test] OK (engine ready). Click Scan.");
+  log("[self-test] OK (simulation engine ready). Click Scan.");
 };
 
 /* ========= Boot complete ========= */
-log("[boot] ready. Click Scan to receive quotes.");
+log("[boot] ready. Click Scan to simulate quotes.");
 </script>
 </body>
 </html>

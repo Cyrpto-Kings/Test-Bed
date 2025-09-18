@@ -183,7 +183,7 @@ footer li{margin:6px 0}
   function keyFrom(e){
     const msg = (e && (e.message||e.reason?.message||e.reason||e)) || String(e);
     const stack = (e && (e.error?.stack || e.reason?.stack)) || "";
-    const top = (stack.split("\\n")[1]||"").trim();
+    const top = (stack.split("\n")[1]||"").trim();
     return msg + " | " + top;
   }
   function bucketAdd(kind, payload){
@@ -197,7 +197,7 @@ footer li{margin:6px 0}
   let _plainCount = 0;
   function w(raw){
     if(!_logEl) _logEl=document.getElementById('log');
-    const line = raw.endsWith("\\n") ? raw : (raw+"\\n");
+    const line = raw.endsWith("\n") ? raw : (raw+"\n");
     if (_plainCount < MAX_PLAIN_LINES) {
       _logEl.textContent += line; _plainCount++;
     }
@@ -219,9 +219,9 @@ footer li{margin:6px 0}
     if(arr.length===0){ alert("No errors captured to summarize."); return; }
     let out = ["[summary] top error buckets (count, first→last):"];
     for(const it of arr.slice(0,40)){
-      out.push(`• ${it.count} ×  ${it.key}\\n   ${it.first} → ${it.last}`);
+      out.push(`• ${it.count} ×  ${it.key}\n   ${it.first} → ${it.last}`);
     }
-    w("\\n"+out.join("\\n")+"\\n");
+    w("\n"+out.join("\n")+"\n");
   }
   function downloadSummary(){
     const data = Array.from(buckets.entries()).map(([k,v])=>({

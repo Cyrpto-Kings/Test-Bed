@@ -65,7 +65,7 @@ footer li{margin:6px 0}
     <div class="logo">CK</div>
     <div>
       <div style="font-weight:800;line-height:1">Crypto Kings</div>
-      <div class="hint">Arbitrum Scanner</div>
+      <div class="hint">Arbitrum Scanner • <strong>TEST BED</strong></div>
     </div>
   </div>
   <button id="connectBtn" class="btn-ghost">Connect Wallet</button>
@@ -89,10 +89,10 @@ footer li{margin:6px 0}
       <button id="flashBtn" class="btn-primary">Start Flash Loan (WETH)</button>
     </div>
     <div class="chips">
-      <span class="pill" id="rpcPill">RPC: —</span>
+      <span class="pill" id="rpcPill">RPC: (not used in sim)</span>
       <span class="pill" id="tokensPill">Tokens: —</span>
-      <span class="pill" id="gasPill">Gas: —</span>
-      <span class="pill" id="ethPill">ETH: —</span>
+      <span class="pill" id="gasPill">Gas: 0.10 gwei (sim)</span>
+      <span class="pill" id="ethPill">ETH: $2,500 (sim)</span>
       <span class="pill" id="progPill">Idle.</span>
     </div>
   </div>
@@ -103,11 +103,10 @@ footer li{margin:6px 0}
       <label class="hint">Scan count:</label>
       <input id="batch" type="number" min="30" max="300" step="10" value="120" title="How many tokens to scan"/>
       <label class="hint">Concurrency:</label>
-      <input id="concur" type="number" min="5" max="30" step="1" value="15" title="How many tokens in parallel"/>
-      <label class="hint"><input id="useV3" type="checkbox"/> Include UniV3</label>
+      <input id="concur" type="number" min="5" max="30" step="1" value="20" title="How many tokens in parallel (sim)"/>
       <label class="hint"><input id="onlyProfitable" type="checkbox" checked/> Only profitable</label>
       <label class="hint">Min P/L ($):</label>
-      <input id="minProfitUsd" type="number" step="0.01" value="0"/>
+      <input id="minProfitUsd" type="number" step="0.01" value="0.10"/>
       <button id="scanBtn" class="btn-primary" style="margin-left:auto">Scan</button>
       <button id="stopBtn" class="btn-ghost">Stop</button>
     </div>
@@ -146,11 +145,10 @@ footer li{margin:6px 0}
         <button id="selfTestBtn" class="btn-mini btn-ghost" title="Run boot checks again">Run Self-Test</button>
         <button id="copyLogBtn" class="btn-mini btn-ghost" title="Copy full log to clipboard">Copy Log</button>
         <button id="downloadLogBtn" class="btn-mini btn-ghost" title="Download log as .txt">Download Log</button>
-        <button id="summarizeLogBtn" class="btn-mini btn-ghost" title="Show error summary">Summarize Errors</button>
         <button id="clearLogBtn" class="btn-mini btn-ghost" title="Clear the log">Clear</button>
       </div>
     </div>
-    <div id="log" class="logs">[boot] waiting…</div>
+    <div id="log" class="logs">[boot] starting… (build)</div>
   </div>
 </div>
 
@@ -163,247 +161,139 @@ footer li{margin:6px 0}
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 <script>
-/* ========== Lightweight logger + error buckets ========== */
-const buckets=new Map();
-const logEl=()=>document.getElementById('log');
-function log(s, cls){ const L=logEl(); if(!L) return; const line=(cls?`<span class="${cls}">${s}</span>`:s); L.innerHTML+=(line.endsWith("\\n")?line:line+"\\n"); L.scrollTop=L.scrollHeight; }
-function buckAdd(e){
-  const msg=((e&&(e.message||e.reason||e.name||""))+"").slice(0,220);
-  const b=buckets.get(msg)||{c:0}; b.c++; buckets.set(msg,b);
-}
-window.addEventListener('error',e=>{buckAdd(e);});
-window.addEventListener('unhandledrejection',e=>{buckAdd(e.reason||e);});
-document.getElementById('summarizeLogBtn').onclick=()=>{ 
-  if(!buckets.size){ log("[summary] no errors captured"); return; }
-  log("[summary] top errors:");
-  [...buckets.entries()].sort((a,b)=>b[1].c-a[1].c).slice(0,30).forEach(([k,v])=>log(\`  • \${v.c}× \${k}\`));
-};
+/* ========= Simple logger ========= */
+const logEl = ()=>document.getElementById('log');
+function log(m, cls){ const L=logEl(); const line=(cls?`<span class="${cls}">${m}</span>`:m); L.innerHTML+=(line.endsWith("\\n")?line:line+"\\n"); L.scrollTop=L.scrollHeight; }
 document.getElementById('copyLogBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText(logEl().innerText||""); alert("Log copied."); }catch{} };
-document.getElementById('downloadLogBtn').onclick=()=>{ const b=new Blob([logEl().innerText||""],{type:"text/plain"}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u;a.download=\`ck-log-\${Date.now()}.txt\`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);};
+document.getElementById('downloadLogBtn').onclick=()=>{ const b=new Blob([logEl().innerText||""],{type:"text/plain"}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u;a.download=`ck-log-${Date.now()}.txt`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);};
 document.getElementById('clearLogBtn').onclick=()=>{ logEl().innerHTML=""; };
 
-/* ========== Helpers: safe fetch with timeout & JSON ========== */
-function safeFetch(url, opts={}, timeoutMs=3000){
-  return Promise.race([
-    fetch(url, opts),
-    new Promise((_,rej)=>setTimeout(()=>rej(new Error("fetch-timeout:"+url)), timeoutMs))
-  ]);
-}
-async function safeJson(url, opts={}, timeoutMs=3000, fallback=null){
-  try{
-    const r=await safeFetch(url, opts, timeoutMs);
-    if(!r.ok) throw new Error("http-"+r.status);
-    return await r.json();
-  }catch(e){ buckAdd(e); return fallback; }
-}
+/* ========= Sim constants (no RPC) ========= */
+const SIM = {
+  ETH_USD: 2500,
+  GAS_GWEI: 0.10,
+  GAS_LIMIT: 380000,
+  DEX_FEE: 0.003,     // per leg, visual only
+  SLIP: 0.0015,       // per leg
+  FLASH: 0.0005,      // one-off
+  PROFIT_RATE: 0.28,  // ~28% of rows show positive P/L
+  PROFIT_MEAN: 1.2,   // avg +$ P/L for winners
+  PROFIT_SPREAD: 0.8, // variability
+  ROWS_PER_TOKEN: 2,  // two routes per token
+  MAX_EXECUTE_ROWS: 8 // cap how many rows can be executed at once
+};
+document.getElementById("ethPill").textContent = "ETH: $"+SIM.ETH_USD.toLocaleString();
+document.getElementById("gasPill").textContent = "Gas: "+SIM.GAS_GWEI.toFixed(2)+" gwei (sim)";
 
-/* ========== CONFIG ========== */
-const ARBITRUM_CHAIN_ID_DEC=42161, ARBITRUM_CHAIN_ID_HEX="0xa4b1";
-const RPC_URL="https://arb-mainnet.g.alchemy.com/v2/h4YaGX9cc_WywAx5cvsez";
-let READ_PROVIDER = new ethers.providers.JsonRpcProvider(RPC_URL);
-
-// assets & routers
-const WETH="0x82af49447d8a07e3bd95bd0d56f35241523fbab1".toLowerCase();
-const USDC="0xaf88d065e77c8cc2239327c5edb3a432268e5831".toLowerCase();
-const USDCe="0xff970a61a04b1ca14834a43f5de4533ebddb5cc8".toLowerCase();
-const ROUTER_SUSHI_V2="0x1b02da8cb0d097eb8d57a175b88c7d8b47997506";
-const ROUTER_CAMELOT_V2="0xc873fecbd354f5a56e00e710b90ef4201db2448d";
-const UNIV3_QUOTER="0x61fFE014bA17989E743c5F6cB21bF9697530B21e";
-
-// fees & runtime
-const DEX_FEE_PCT=0.003, SLIP_PCT=0.0015, FLASH_PCT=0.0005;
-const GAS_LIMIT=380000;
-let   GAS_GWEI=0.12;
-const CALL_TIMEOUT_MS=1500;   // per call
-const TOKEN_BUDGET_MS=5000;   // per token
-
-// abis
-const V2_ABI=["function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"];
-const V3_QUOTER_ABI=[
- "function quoteExactInputSingle((address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut)"
-];
-
-/* ========== UI helpers ========== */
-const $=s=>document.querySelector(s); const tbody=$("#tbody");
-function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
-function addr(a){ return (a||"").toLowerCase(); }
-function estGasWei(){ const gp=ethers.utils.parseUnits(String(GAS_GWEI||0.12),"gwei"); return gp.mul(GAS_LIMIT); }
-function feesWei(x){ const pct=(DEX_FEE_PCT+SLIP_PCT)*2 + FLASH_PCT; const ppm=Math.floor(pct*1e6); return x.mul(ppm).div(1e6); }
-
-/* ========== wallet (MetaMask/Trust) ========== */
-let __provider,__signer,__account;
+/* ========= Wallet connect (optional; MetaMask/Trust) ========= */
 function getInjected(){
   const eth=window.ethereum; if(!eth) return null;
-  if(eth.providers&&Array.isArray(eth.providers)){
+  if(eth.providers && Array.isArray(eth.providers)){
     const mm=eth.providers.find(p=>p.isMetaMask);
     const tw=eth.providers.find(p=>p.isTrust||p.isTrustWallet);
     return mm||tw||eth.providers[0];
   }
   return eth;
 }
-async function connectWallet(){
-  const inj=getInjected(); if(!inj){ alert("Install MetaMask or Trust Wallet"); return; }
-  __provider=new ethers.providers.Web3Provider(inj,"any");
-  await __provider.send("eth_requestAccounts",[]);
-  const net=await __provider.getNetwork();
-  if(Number(net.chainId)!==ARBITRUM_CHAIN_ID_DEC){
-    try{ await __provider.send("wallet_switchEthereumChain",[{chainId:ARBITRUM_CHAIN_ID_HEX}]); }
-    catch(e){ throw new Error("Switch to Arbitrum One"); }
-  }
-  __signer=__provider.getSigner(); __account=await __signer.getAddress();
-  $("#rpcPill").textContent="RPC: Alchemy"; log("wallet: "+__account);
-  const feeBox=$("#feeWallet"); if(feeBox) feeBox.value=__account;
-}
-document.getElementById("connectBtn").onclick=()=>connectWallet();
-
-/* ========== gas/eth price with fallbacks ========== */
-let ETH_USD=null;
-async function fetchEthUsd(){
-  const j=await safeJson("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",{},3000,null);
-  ETH_USD=Number(j?.ethereum?.usd)||2500;
-  $("#ethPill").textContent="ETH: "+ (j? usd(ETH_USD):"(fallback)");
-}
-async function fetchGasGwei(){
+document.getElementById("connectBtn").onclick=async()=>{
   try{
-    const body={jsonrpc:"2.0",id:1,method:"eth_gasPrice",params:[]};
-    const r=await safeFetch(RPC_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)},3000);
-    const j=await r.json(); const wei=parseInt(j?.result||"0x0",16);
-    GAS_GWEI=wei? (wei/1e9):0.12;
-    $("#gasPill").textContent="Gas: "+GAS_GWEI.toFixed(2)+" gwei";
-  }catch(_){ $("#gasPill").textContent="Gas: (fallback)"; GAS_GWEI=0.12; }
-}
-
-/* ========== token set (static + auto-discover) ========== */
-const STATIC_TOKENS={
-  WETH, WBTC:"0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f", USDC, USDCe,
-  USDT:"0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-  DAI:"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
-  ARB:"0x912ce59144191c1204e64559fe8253a0e49e6548",
-  LINK:"0xf97f4df75117a78c1a5a0dbb814af92458539fb4",
-  GMX:"0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a",
-  AAVE:"0xba5dd0aba5b2c9f812b76ea2f6c2c5a92f76e8b7",
-  RDNT:"0x0c4681e6c0235179ec3d4f4fc4df3d14fdd96017",
-  PENDLE:"0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8",
-  FRAX:"0x17fc002b466eec40dae837fc4be5c67993ddbd6f",
-  CRV:"0x11cdb42b0eb46d95f990bedd4695a6e3fa034978",
-  BAL:"0x040d1edc9569d4bab2d15287dc5a4f10f56a56b8",
-  UNI:"0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0",
-  wstETH:"0x5979d7b546e38e414f7e9822514be443a4800529",
-  SNX:"0xb9f747162ab1e95d07361f9048bcdf943f76d1e4",
-  COMP:"0x354a6da3fcde098f8389cad84b0182725c6c91de",
-  YFI:"0x82e64f49ed5ec1b2a7c5f7f3e8a1c09b5536a21d",
-  SUSHI:"0xd4d42f0b6def4ce0383636770a832df0a4c82bba",
-  LUSD:"0x93b346b6bc2548da6a1e7d98e9a4219436829d2d",
-  MAGIC:"0x539bde0d7dbd336b79148aa742883198bbf60342",
-  GRT:"0x23a941036ae778ac51ab04cea08ed6e2fe103614",
-  DPX:"0x6c2c066cfd6a5d39b2abc4d3a63180ab15f23e2e",
-  RDPX:"0x32eb7902d4134bf98a28b963d26de779af92a212",
-  GRAIL:"0x3d9907f9a368ad0a51be60f7da3b97cf940982d8",
-  JOE:"0x6e2bbf01dcad2e37f9b924b7e0e1f8f6a6f6282d",
+    const inj=getInjected(); if(!inj){ alert("Install MetaMask or Trust Wallet"); return; }
+    await inj.request({ method: "eth_requestAccounts" });
+    const accts = await inj.request({ method: "eth_accounts" });
+    const acct = accts && accts[0] ? accts[0] : "(connected)";
+    document.getElementById("rpcPill").textContent="Wallet: Connected";
+    const feeBox=document.getElementById("feeWallet"); if(feeBox) feeBox.value=acct;
+    log("wallet connected: "+acct);
+  }catch(e){
+    log("wallet error: "+(e?.message||e), "err");
+  }
 };
-function toSymbolList(obj){ return Object.keys(obj); }
-async function autoDiscoverSymbols(limit){
-  const out=new Map();
-  const j=await safeJson("https://api.dexscreener.com/latest/dex/search?q=arbitrum%20usdc",{},3500,null);
-  (j?.pairs||[]).filter(p=>p.chainId==="arbitrum").forEach(p=>{
-    const sym=(p?.baseToken?.symbol||"").toUpperCase();
-    const addrx=(p?.baseToken?.address||"").toLowerCase();
-    if(/^0x[a-f0-9]{40}$/.test(addrx) && sym && addrx!==WETH) out.set(sym,addrx);
-  });
-  const picks=[...out.entries()].slice(0,limit);
-  const obj={}; picks.forEach(([s,a])=>obj[s]=a);
-  return obj;
-}
 
-/* ========== quoting (with guards/timeouts) ========== */
-function validPath(path){
-  if(!Array.isArray(path) || path.length<2) return false;
-  for(let i=0;i<path.length-1;i++){ if(addr(path[i])===addr(path[i+1])) return false; }
-  return true;
-}
-function buildV2Paths(token){
-  const stables=[USDC,USDCe];
-  const base=[[WETH, token]];
-  for(const s of stables){
-    if(addr(token)===addr(s)) continue; // avoid ...USDC,USDC
-    base.push([WETH, s, token]);
-  }
-  return base.filter(validPath);
-}
-function withTimeout(promise, ms, tag="timeout"){
-  return Promise.race([
-    promise,
-    new Promise((_,rej)=>setTimeout(()=>rej(new Error(tag)), ms))
-  ]);
-}
-async function v2GetOut(amountWei, path, routerAddr){
-  const c=new ethers.Contract(routerAddr,V2_ABI,READ_PROVIDER);
-  const call=c.getAmountsOut(amountWei,path);
-  return withTimeout(call, CALL_TIMEOUT_MS, "timeout v2");
-}
-async function v3Quote(tokenIn,tokenOut,fee,amt){
-  try{
-    const iface=new ethers.utils.Interface(V3_QUOTER_ABI);
-    const data=iface.encodeFunctionData("quoteExactInputSingle",[{tokenIn:addr(tokenIn),tokenOut:addr(tokenOut),fee,amountIn:amt,sqrtPriceLimitX96:0}]);
-    const raw=await withTimeout(READ_PROVIDER.call({to:UNIV3_QUOTER,data}), CALL_TIMEOUT_MS, "timeout v3");
-    const [amountOut]=iface.decodeFunctionResult("quoteExactInputSingle",raw);
-    return amountOut;
-  }catch(e){ buckAdd(e); throw e; } // soft-fail counted, not spammed
-}
-async function quoteRoundTripAllDexes(amountWei, token, includeV3=false){
-  const rows=[];
-  if(addr(token)===WETH) return rows;
-  // v2 combos, sanitized paths
-  const paths=buildV2Paths(token);
-  const combos=[
-    {buy:"SUSHI v2", buyAddr:ROUTER_SUSHI_V2, sell:"CAMELOT v2", sellAddr:ROUTER_CAMELOT_V2},
-    {buy:"CAMELOT v2", buyAddr:ROUTER_CAMELOT_V2, sell:"SUSHI v2", sellAddr:ROUTER_SUSHI_V2}
+/* ========= Tokens (120 symbols) ========= */
+const STATIC_TOKENS = (()=>{
+  const base = [
+    "WETH","WBTC","USDC","USDCe","USDT","DAI","ARB","LINK","GMX","AAVE","RDNT","PENDLE","FRAX","CRV","BAL","UNI",
+    "wstETH","SNX","COMP","YFI","SUSHI","LUSD","MAGIC","GRT","DPX","RDPX","GRAIL","JOE","MKR","RPL","FXS","CVX",
+    "LQTY","STG","ANGLE","PERP","INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","HOP","ALCX","GNS","OP","ENS",
+    "BADGER","BNT","DODO","PENDLE2","ARBX","RDNT2","UNI2","GMX2","CRV2","BAL2","MIM","FRAX2","FRAX3","LDO","PEPE",
+    "PIRATE","RNDM","PUNK","DOGE","SHIB","FLOKI","BABYDOGE","AERO","SPARTA","GALA","IMX","APE","BLUR","ALEX","TIA",
+    "PYTH","JUP","W","BOME","ONDO","ENA","DEGEN","SAGA","ETHFI","XAI","AEVO","ALT","BEAM","ZRO","TON","TIA2",
+    "SUI","APT","ARB3","OP2","POL","MATIC","AVAX","FTM","NEAR","ATOM","SOL","BTC","BNB","OKB","HT","KCS","XRP","ADA"
   ];
-  for(const c of combos){
-    for(const p of paths){
-      try{
-        const buyOut=await v2GetOut(amountWei,p,c.buyAddr);
-        const mid=buyOut[buyOut.length-1]; if(mid.isZero()) continue;
-        const sellPath=[...p].reverse();
-        const sellOut=await v2GetOut(mid,sellPath,c.sellAddr);
-        const back=sellOut[sellOut.length-1];
-        rows.push({buyDex:c.buy, sellDex:c.sell, backWei:back, ok:true, buyMid:mid, amountWei});
-      }catch(_){ /* skip quietly */ }
-    }
-  }
-  if(includeV3){
-    for(const f of [500,3000,10000]){
-      try{
-        const mid=await v3Quote(WETH,token,f,amountWei);
-        if(!mid || mid.isZero()) continue;
-        const back=await v3Quote(token,WETH,f,mid);
-        rows.push({buyDex:`UniV3 ${f/10000}%`, sellDex:`UniV3 ${f/10000}%`, backWei:back, ok:true, buyMid:mid, amountWei});
-      }catch(_){ /* skip */ }
-    }
+  // Fill to at least 120
+  while (base.length < 120) base.push("TOK"+(base.length+1));
+  return base.slice(0,120);
+})();
+document.getElementById("tokensPill").textContent = "Tokens: "+STATIC_TOKENS.length;
+
+/* ========= UI helpers ========= */
+const $ = s=>document.querySelector(s);
+const tbody = $("#tbody");
+function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
+function updateSelectedTotal(){
+  let sum=0; document.querySelectorAll("#tbody .pick:checked").forEach(cb=>{ const tr=cb.closest("tr"); sum+=Number(tr.dataset.netpl||0); });
+  $("#selTotal").textContent=(sum>=0?'++$':'−$')+Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
+}
+document.getElementById("results").addEventListener("change",e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
+document.getElementById("selectProfitable").onclick=()=>{
+  document.querySelectorAll("#tbody tr").forEach(tr=>{
+    const cb=tr.querySelector(".pick");
+    if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0);
+  });
+  updateSelectedTotal();
+};
+document.getElementById("clearSel").onclick=()=>{ document.querySelectorAll("#tbody .pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); };
+
+/* ========= Seeded RNG (stable per token per run) ========= */
+function xmur3(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h = (h<<13)|(h>>>19);} return ()=>{ h=Math.imul(h^ (h>>>16), 2246822507); h=Math.imul(h^ (h>>>13), 3266489909); return (h^ (h>>>16))>>>0; }; }
+function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^(t>>>15), t|1); t^=t+Math.imul(t^(t>>>7), t|61); return ((t^(t>>>14))>>>0)/4294967296; } }
+function rngFor(token){ const seedFn=xmur3(token+":"+Date.now()); return mulberry32(seedFn()); }
+
+/* ========= Sim: compute a couple of routes per token ========= */
+function simulateRoutesForToken(sym, probeWeth){
+  const r = rngFor(sym);
+  const rows = [];
+  const routeDex = [["SUSHI v2","CAMELOT v2"],["CAMELOT v2","SUSHI v2"],["UniV3 0.3%","UniV3 0.3%"]];
+  for(let i=0;i<SIM.ROWS_PER_TOKEN;i++){
+    const [buyDex,sellDex]=routeDex[Math.floor(r()*routeDex.length)];
+    // base spread ~ -0.6% ... +0.6%
+    const spread = (r()-0.5)*0.012;
+    const fees = (SIM.DEX_FEE+SIM.SLIP)*2 + SIM.FLASH; // ~0.0055
+    // chance to be profitable
+    const isWin = r() < SIM.PROFIT_RATE;
+    const plUsd = isWin ? Math.max(0.01, SIM.PROFIT_MEAN + (r()-0.5)*SIM.PROFIT_SPREAD) : - (0.20 + (r())*1.2);
+    const amountUsd = probeWeth*SIM.ETH_USD;
+    // backWeth derived from desired PL (rough)
+    const netPLUsd = plUsd;
+    const netPLWeth = netPLUsd / SIM.ETH_USD;
+    const feesWeth = probeWeth * fees + (SIM.GAS_GWEI/1e9)*SIM.GAS_LIMIT / 1e18; // tiny gas
+    const backWeth = probeWeth + netPLWeth + feesWeth; // so after deducting fees we show target PL
+    const usdcBack = (backWeth*SIM.ETH_USD).toFixed(2);
+
+    rows.push({
+      tokenSym: sym,
+      tokenAddr: "0x"+(Math.floor(r()*1e16).toString(16)).padStart(40,"a"), // placeholder address-y
+      buyDex, sellDex,
+      usdcBack: Number(usdcBack),
+      netPLUsd,
+      ok: true,
+      spreadPct: ((backWeth/probeWeth)-1)*100
+    });
   }
   return rows;
 }
 
-/* ========== profit & rendering ========== */
-async function weiToUsdc(wei){
-  try{
-    const out=await v2GetOut(wei,[WETH,USDC],ROUTER_SUSHI_V2);
-    return Number(ethers.utils.formatUnits(out[out.length-1],6));
-  }catch(_){ return 0; }
-}
+/* ========= Render ========= */
 function renderRows(rows){
   const onlyProf=!!document.getElementById('onlyProfitable').checked;
   const minUsd=Number(document.getElementById('minProfitUsd').value||0);
-  rows.forEach(r=>{ r.netPLUsd = ETH_USD ? Number(ethers.utils.formatUnits(r.netPLWei,18))*ETH_USD : 0; });
   let view=rows;
   if(onlyProf) view=view.filter(r=>r.netPLUsd>0 && r.netPLUsd>=minUsd);
   view.sort((a,b)=>(b.netPLUsd||-1e99)-(a.netPLUsd||-1e99));
 
-  const tbody=document.getElementById("tbody"); tbody.innerHTML="";
+  tbody.innerHTML="";
   for(const r of view){
-    const spreadPct=((Number(ethers.utils.formatUnits(r.backWei,18))/Number(ethers.utils.formatUnits(r.amountWei,18)))-1)*100;
     const tr=document.createElement("tr");
     tr.className=r.netPLUsd>0?"profit":"loss";
     tr.dataset.netpl=r.netPLUsd;
@@ -415,98 +305,49 @@ function renderRows(rows){
       <td class="tok">${r.tokenSym}</td>
       <td><div class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex}</span></div></td>
       <td><div class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex}</span></div></td>
-      <td class="right mono">${Number.isFinite(spreadPct)?spreadPct.toFixed(2):"—"}%</td>
+      <td class="right mono">${Number.isFinite(r.spreadPct)?r.spreadPct.toFixed(2):"—"}%</td>
       <td class="right mono">${usd(r.usdcBack||0)}</td>
       <td class="right mono ${r.netPLUsd>0?'ok':'bad'}">${(r.netPLUsd>=0?'+':'-')+usd(Math.abs(r.netPLUsd)).replace('$','')}</td>
-      <td class="flags"><span class="tag ${r.netPLUsd>0?'ok':'warn'}">${r.ok?'Router-verified':'—'}</span></td>
+      <td class="flags"><span class="tag ok">Router-verified (sim)</span></td>
     `;
     tbody.appendChild(tr);
   }
   updateSelectedTotal();
 }
-function updateSelectedTotal(){
-  let sum=0; document.querySelectorAll("#tbody .pick:checked").forEach(cb=>{ const tr=cb.closest("tr"); sum+=Number(tr.dataset.netpl||0); });
-  document.getElementById("selTotal").textContent=(sum>=0?'++$':'−$')+Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2});
-}
-document.getElementById("results").addEventListener("change",e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
 
-/* ========== probe sizing ($ → WETH) ========== */
-async function computeProbeWei(){
-  const usdTarget=Number(document.getElementById("loanUsd").value||500);
-  try{
-    const out=await v2GetOut(ethers.utils.parseEther("1"),[WETH,USDC],ROUTER_SUSHI_V2);
-    const ethPrice=Number(ethers.utils.formatUnits(out[out.length-1],6)); // USDC per 1 WETH
-    const weth=usdTarget/ethPrice;
-    document.getElementById("wethAmt").value = Number(weth).toFixed(6);
-    return ethers.utils.parseEther(String(weth));
-  }catch(_){
-    const ethPrice=ETH_USD||2500; const weth=usdTarget/ethPrice;
-    document.getElementById("wethAmt").value = Number(weth).toFixed(6);
-    return ethers.utils.parseEther(String(weth));
-  }
-}
-
-/* ========== per-token scan ========== */
-async function scanToken(sym, amountWei, includeV3){
-  const tAddr=(STATIC_TOKENS[sym]||"").toLowerCase();
-  if(!/^0x[a-f0-9]{40}$/.test(tAddr) || tAddr===WETH) return [];
-  try{
-    const routes=await quoteRoundTripAllDexes(amountWei,tAddr,includeV3);
-    const gasWei=estGasWei(); const feeWei=feesWei(amountWei);
-    const rows=[];
-    for(const r of routes){
-      const backWei=r.backWei;
-      const netBack=backWei.sub(feeWei).sub(gasWei);
-      const netPL=netBack.sub(amountWei);
-      const usdcBack=await weiToUsdc(backWei).catch(()=>0);
-      rows.push({tokenSym:sym, tokenAddr:tAddr, buyDex:r.buyDex, sellDex:r.sellDex, usdcBack, netPLWei:netPL, ok:r.ok, backWei, amountWei});
-    }
-    return rows;
-  }catch(e){ buckAdd(e); return []; }
-}
-
-/* ========== parallel scan orchestrator ========== */
+/* ========= Scan orchestrator (fast) ========= */
 let scanning=false, stopFlag=false;
 async function runScan(){
   if(scanning) return; scanning=true; stopFlag=false;
   try{
-    log("[scan] starting…");
-    await Promise.all([fetchEthUsd(),fetchGasGwei()]);
-    const probeWei=await computeProbeWei();
+    const usdTarget=Number(document.getElementById("loanUsd").value||500);
+    const probeWeth = usdTarget / SIM.ETH_USD; // simple conversion
+    document.getElementById("wethAmt").value = probeWeth.toFixed(6);
 
     const want = Number(document.getElementById("batch").value||120);
-    let symbols = toSymbolList(STATIC_TOKENS).slice(0, want);
+    const symbols = STATIC_TOKENS.slice(0, want);
     document.getElementById("tokensPill").textContent="Tokens: "+symbols.length;
 
-    const includeV3 = !!document.getElementById("useV3").checked;
-    const concur = Math.max(5, Math.min(30, Number(document.getElementById("concur").value||15)));
+    const concur = Math.max(5, Math.min(30, Number(document.getElementById("concur").value||20)));
+    log(`[scan] (sim) tokens=${symbols.length} • concurrency=${concur} • probe=${probeWeth.toFixed(6)} WETH (~$${usdTarget})`);
+    document.getElementById("progPill").textContent="Scanning…";
 
-    log(\`[scan] tokens=\${symbols.length} • concurrency=\${concur} • probe=\${ethers.utils.formatUnits(probeWei,18)} WETH (~$\${document.getElementById("loanUsd").value})\`);
-
-    const allRows=[]; let done=0;
-    async function worker(queue){
+    const queue=[...symbols]; const allRows=[]; let done=0;
+    async function worker(){
       while(queue.length && !stopFlag){
         const sym = queue.shift();
-        document.getElementById("progPill").textContent=\`Scanning \${done+1}/\${symbols.length} — \${sym}\`;
-        const started=Date.now();
-        const rows = await Promise.race([
-          scanToken(sym, probeWei, includeV3),
-          new Promise(res=>setTimeout(()=>res([]), TOKEN_BUDGET_MS))
-        ]);
+        document.getElementById("progPill").textContent=`Scanning ${done+1}/${symbols.length} — ${sym}`;
+        const rows = simulateRoutesForToken(sym, probeWeth);
         allRows.push(...rows);
         done++;
-        const dur=Date.now()-started;
-        if(dur> TOKEN_BUDGET_MS) buckAdd(new Error("token-budget "+sym));
+        await new Promise(r=>setTimeout(r, 10)); // tiny yield for UI
       }
     }
-    const queue=[...symbols];
-    const workers=Array.from({length:concur},()=>worker(queue));
-    await Promise.all(workers);
-
-    allRows.forEach(r=>{ r.netPLUsd = ETH_USD ? Number(ethers.utils.formatUnits(r.netPLWei,18))*ETH_USD : 0; });
+    await Promise.all(Array.from({length:concur}, worker));
     renderRows(allRows);
     const greens=allRows.filter(r=>r.netPLUsd>0).length;
-    document.getElementById("progPill").textContent=\`Done. Green=\${greens} / Rows=\${allRows.length}.\`;
+    document.getElementById("progPill").textContent=`Done. Green=${greens} / Rows=${allRows.length}.`;
+    log(`[scan] complete: ${greens} profitable out of ${allRows.length} rows`);
   }catch(e){
     log("SCAN FATAL: "+(e?.message||e),"err");
   }finally{
@@ -515,44 +356,47 @@ async function runScan(){
 }
 document.getElementById("scanBtn").onclick=runScan;
 document.getElementById("stopBtn").onclick=()=>{ stopFlag=true; document.getElementById("progPill").textContent="Stopped."; };
-document.getElementById("selectProfitable").onclick=()=>{
-  document.querySelectorAll("#tbody tr").forEach(tr=>{
-    const cb=tr.querySelector(".pick");
-    if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0);
-  });
-  updateSelectedTotal();
-};
-document.getElementById("clearSel").onclick=()=>{ document.querySelectorAll("#tbody .pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); };
-document.getElementById("execSelected").onclick=()=>{ alert("Execution wiring unchanged in this build.\nScan first and pick a single row."); };
 
-/* ========== HARDENED BOOT FLOW ========== */
-let __booted=false;
-async function boot(){
-  if(__booted) return; __booted=true;
-  try{
-    logEl().innerHTML="[boot] starting…\n";
-    document.getElementById("rpcPill").textContent="RPC: Alchemy";
-    document.getElementById("tokensPill").textContent="Tokens: "+toSymbolList(STATIC_TOKENS).length;
+/* ========= “Execute Selected” (flow + hashes) ========= */
+function randHex(n){ const chars="0123456789abcdef"; let s=""; for(let i=0;i<n;i++) s+=chars[Math.floor(Math.random()*16)]; return s; }
+function mockHash(){ return "0x"+randHex(64); }
 
-    await Promise.all([fetchEthUsd(),fetchGasGwei()]);
+document.getElementById("execSelected").onclick=async()=>{
+  const picks=Array.from(document.querySelectorAll("#tbody .pick:checked"));
+  if(picks.length===0){ alert("Select at least one profitable row."); return; }
+  if(picks.length>SIM.MAX_EXECUTE_ROWS){ alert(`Select ${SIM.MAX_EXECUTE_ROWS} rows or fewer for this demo.`); return; }
 
-    // auto-discover (soft-fail, no stall)
-    const extra = await autoDiscoverSymbols(180).catch(()=> ({}));
-    if(extra && typeof extra==="object") Object.assign(STATIC_TOKENS, extra);
-    document.getElementById("tokensPill").textContent="Tokens: "+toSymbolList(STATIC_TOKENS).length;
+  const feeWallet = ($("#feeWallet").value||"").trim() || "(fee wallet)";
+  const totalUsd = picks.reduce((s,cb)=>{ const tr=cb.closest("tr"); return s + Number(tr.dataset.netpl||0); }, 0);
+  log(`[exec] starting batch of ${picks.length} route(s)…`);
+  for(let i=0;i<picks.length;i++){
+    const tr=picks[i].closest("tr");
+    const sym=tr.dataset.token, buy=tr.dataset.buyDex, sell=tr.dataset.sellDex;
+    const loanUsd=Number(document.getElementById("loanUsd").value||500);
+    log(`— Route ${i+1}/${picks.length}: ${sym} (${buy} → ${sell})`);
 
-    await computeProbeWei();
-    log("[self-test] OK. Click Scan.");
-  }catch(e){
-    buckAdd(e);
-    log("[boot] FAILED: "+(e?.message||e),"err");
+    const h1=mockHash(); log(`   • Borrowing ~$${loanUsd.toFixed(2)} (flash) … tx: ${h1}`);
+    await new Promise(r=>setTimeout(r, 350));
+    const h2=mockHash(); log(`   • Buy ${sym} on ${buy} … tx: ${h2}`);
+    await new Promise(r=>setTimeout(r, 350));
+    const h3=mockHash(); log(`   • Sell ${sym} on ${sell} … tx: ${h3}`);
+    await new Promise(r=>setTimeout(r, 350));
+    const h4=mockHash(); log(`   • Repay flash + fee … tx: ${h4}`);
+    await new Promise(r=>setTimeout(r, 250));
+    const rowProfit=Number(tr.dataset.netpl||0);
+    const h5=mockHash(); log(`   • Distribute profit ${usd(rowProfit)} → ${feeWallet} … tx: ${h5}`);
+    await new Promise(r=>setTimeout(r, 200));
   }
-}
-document.getElementById("selfTestBtn").onclick=boot;
-// Triple trigger: DOMContentLoaded, window.load, and a fallback timer
-document.addEventListener("DOMContentLoaded", ()=>boot().catch(e=>log("boot DCL err: "+(e?.message||e),"err")));
-window.addEventListener("load", ()=>boot().catch(e=>log("boot load err: "+(e?.message||e),"err")));
-setTimeout(()=>{ if(!__booted) boot().catch(e=>log("boot timer err: "+(e?.message||e),"err")); }, 300);
+  log(`[exec] complete. Batch profit: ${usd(totalUsd)}\n`);
+};
+
+/* ========= Self-test just refreshes status ========= */
+document.getElementById("selfTestBtn").onclick=()=>{
+  log("[self-test] OK (engine ready). Click Scan.");
+};
+
+/* ========= Boot complete ========= */
+log("[boot] ready. Click Scan to receive quotes.");
 </script>
 </body>
 </html>

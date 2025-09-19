@@ -1,553 +1,290 @@
-<!DOCTYPE html>
+Here’s a single-file HTML page that looks like it’s loading, then surfaces a JavaScript error and shows:
+
+“Crypto Kings Test Bed – JSON Error – AWS Blockchain Integration Error”.
+
+Just save as index.html and open it.
+
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crypto Kings • TestBed (Arbitrum • Live Prices)</title>
-<style>
-:root{ --bg:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
-  --card:#f9fafb; --ok:#059669; --warn:#b45309; --bad:#e11d48; --g1:#2563eb; --g2:#7c3aed; }
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-header{background:#111;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
-.brand{display:flex;gap:10px;align-items:center}
-.logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#4f46e5,#22c55e);display:grid;place-items:center;font-weight:800}
-.container{max-width:1200px;margin:0 auto;padding:16px}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.hint{color:var(--muted);font-size:12px}
-.subhint{color:#6b7280;font-size:12px;display:block;margin-top:2px}
-input[type=text],input[type=number]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:160px}
-button{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
-.btn-primary{color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 8px 24px rgba(37,99,235,.2)}
-.btn-ghost{background:#eef2f7;color:#111}
-.btn-mini{padding:6px 10px;border-radius:8px;font-weight:600}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.pill{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;color:#111}
-.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:10px}
-table{width:100%;border-collapse:collapse;table-layout:fixed}
-thead th{background:#f3f4f6;border-bottom:1px solid var(--line);padding:10px 12px;color:#374151;font-weight:700}
-tbody td{border-bottom:1px solid var(--line);padding:10px 12px;vertical-align:top}
-.right{text-align:right}
-.mono{font-variant-numeric:tabular-nums}
-tr.profit{background:#ecfdf5}
-tr.loss{background:#fff1f2}
-.ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
-.tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:12px;background:#fff}
-.logs{background:#0b1220;color:#a7f3d0;border:1px solid #0f1b34;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:320px;overflow:auto}
-.logs .err{color:#fecaca}
-footer{background:#111;color:#ddd;padding:24px}
-.foot{max-width:1200px;margin:0 auto;display:grid;gap:18px;grid-template-columns:repeat(4,1fr)}
-footer h4{color:#fff;margin:0 0 10px;font-size:16px}
-footer ul{list-style:none;margin:0;padding:0}
-footer li{margin:6px 0}
-@media(max-width:800px){ .foot{grid-template-columns:1fr 1fr} }
-@media(max-width:560px){ .foot{grid-template-columns:1fr} }
-@media(max-width:720px){
-  thead{display:none}
-  tbody tr{display:grid;grid-template-columns:1fr 1fr;grid-row-gap:6px;padding:10px 12px}
-  tbody td{border:0;padding:0}
-  td.sel{grid-column:1/-1;order:-3;margin-bottom:4px}
-  td.tok{grid-column:1/-1;font-weight:700;order:-2}
-  td.flags{grid-column:1/-1;order:-1;margin-top:6px}
-  .cell{display:flex;justify-content:space-between;gap:8px}
-  .lbl{color:#6b7280;font-size:12px;margin-right:8px}
-  .val{text-align:right}
-  .toolbar .btn-primary,.toolbar .btn-ghost{width:100%}
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crypto Kings Test Bed – JSON Error</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #111826;
+      --text: #e5f0ff;
+      --muted: #9bb3d1;
+      --accent: #5ac8fa;
+      --error: #ff4d4f;
+      --warn: #f5a623;
+      --ring: rgba(90,200,250,0.25);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 70% 0%, #0f1623 0%, var(--bg) 55%);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+    }
+    .card {
+      width: min(720px, 92vw);
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow:
+        0 10px 30px rgba(0,0,0,0.35),
+        0 0 0 8px var(--ring);
+      backdrop-filter: blur(6px);
+      position: relative;
+      overflow: hidden;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: conic-gradient(from 180deg, #5ac8fa, #7b61ff, #10d2a0, #5ac8fa);
+      position: relative;
+    }
+    .logo::after {
+      content: "CK";
+      position: absolute; inset: 0;
+      display: grid; place-items: center;
+      font-weight: 900; letter-spacing: 0.5px;
+      color: #0b0f14; font-size: 14px;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+    }
+    h1 {
+      font-size: clamp(18px, 2.4vw, 24px);
+      margin: 0;
+    }
+    .sub { color: var(--muted); margin-top: 2px; font-size: 14px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 18px;
+      margin-top: 16px;
+    }
+    .row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);
+    }
+    .row:last-child { border-bottom: 0; }
+    .key { color: var(--muted); font-size: 13px; }
+    .val { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .spinner {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 3px solid rgba(90,200,250,0.2);
+      border-top-color: var(--accent);
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading {
+      display: flex; align-items: center; gap: 8px; color: var(--muted);
+      margin-top: 10px;
+    }
+    .dots::after {
+      content: "…";
+      animation: dotty 1.5s steps(4, end) infinite;
+      display: inline-block; width: 1ch; overflow: hidden;
+    }
+    @keyframes dotty {
+      0% { content: " "; }
+      25% { content: "."; }
+      50% { content: ".."; }
+      75% { content: "..."; }
+      100% { content: " "; }
+    }
+    .error {
+      display: none;
+      margin-top: 16px;
+      background: rgba(255,77,79,0.08);
+      border: 1px solid rgba(255,77,79,0.4);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .error h2 {
+      margin: 0 0 8px 0; font-size: 16px; color: var(--error);
+    }
+    .trace {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 12px; line-height: 1.5;
+      white-space: pre-wrap;
+      color: #ffd6d6;
+    }
+    .actions {
+      display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;
+    }
+    .btn {
+      background: #1a2436;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform .08s ease, background .2s ease, border-color .2s ease;
+      user-select: none;
+    }
+    .btn:hover { background: #1e2a41; border-color: rgba(255,255,255,0.2); }
+    .btn:active { transform: translateY(1px) scale(0.995); }
+    .btn.primary { background: #213250; border-color: #34548c; }
+    .badge {
+      display: inline-block; padding: 3px 8px; border-radius: 999px;
+      font-size: 11px; border: 1px solid rgba(255,255,255,0.14);
+      color: var(--muted); background: rgba(255,255,255,0.03);
+    }
+    footer {
+      margin-top: 18px; color: var(--muted); font-size: 12px;
+      display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap;
+    }
+    code.inline { font-family: ui-monospace, Menlo, Consolas, monospace; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 8px; }
+  </style>
 </head>
 <body>
-<header>
-  <div class="brand">
-    <div class="logo">CK</div>
-    <div>
-      <div style="font-weight:800;line-height:1">Crypto Kings</div>
-      <div class="hint">Arbitrum Scanner • <strong>Live Prices</strong></div>
-    </div>
-  </div>
-  <button id="connectBtn" class="btn-ghost">Connect Wallet</button>
-</header>
-
-<div class="container">
-  <!-- Contract Settings -->
-  <div class="panel">
-    <div style="font-weight:700;margin-bottom:8px">Contract Settings</div>
-    <div class="row">
-      <input id="execContract" type="text" placeholder="Executor contract address (0x…)" style="min-width:360px" value="0x43327acEAd76dCD48A09cc93A509a2FE7b1f0f5c"/>
-      <input id="feeWallet" type="text" placeholder="Profit wallet (0x…)" style="min-width:320px"/>
-      <input id="payoutWalletB" type="text" placeholder="2nd profit wallet (optional)" style="min-width:320px"/>
-      <input id="splitPctB" type="number" min="0" max="100" step="1" value="0" title="% of profit to wallet B"/>
-    </div>
-    <div class="row" style="margin-top:8px">
-      <label class="hint">Loan target ($):</label>
-      <input id="loanUsd" type="number" min="50" step="50" value="500" title="Desired notional per probe in USD"/>
-      <input id="wethAmt" type="number" min="0.00001" step="0.00001" value="0.200000" title="Computed WETH (auto)"/>
-      <button id="fundBtn" class="btn-ghost">Fund Premium</button>
-      <button id="flashBtn" class="btn-primary">Start Flash Loan (WETH)</button>
-    </div>
-    <div class="chips">
-      <span class="pill" id="rpcPill">RPC: Alchemy</span>
-      <span class="pill" id="tokensPill">Tokens: —</span>
-      <span class="pill" id="gasPill">Gas: 0.10 gwei</span>
-      <span class="pill" id="ethPill">ETH: $—</span>
-      <span class="pill" id="progPill">Idle.</span>
-    </div>
-  </div>
-
-  <!-- Scan Panel -->
-  <div class="panel">
-    <div class="row">
-      <label class="hint">Scan count:</label>
-      <input id="batch" type="number" min="30" max="300" step="10" value="120" title="How many tokens to scan"/>
-      <label class="hint">Concurrency:</label>
-      <input id="concur" type="number" min="5" max="30" step="1" value="20" title="How many tokens in parallel"/>
-      <label class="hint"><input id="onlyProfitable" type="checkbox" checked/> Only profitable</label>
-      <label class="hint">Min P/L ($):</label>
-      <input id="minProfitUsd" type="number" step="0.01" value="0.10"/>
-      <label class="hint">Live prices:</label>
-      <input id="liveToggle" type="checkbox" checked/>
-      <label class="hint">Update every (s):</label>
-      <input id="pollSec" type="number" min="5" step="1" value="8" style="width:72px"/>
-      <button id="scanBtn" class="btn-primary" style="margin-left:auto">Scan</button>
-      <button id="stopBtn" class="btn-ghost">Stop</button>
-    </div>
-  </div>
-
-  <!-- Results Panel -->
-  <div class="panel">
-    <div class="toolbar">
-      <button id="selectProfitable" class="btn-ghost">Select all profitable</button>
-      <button id="clearSel" class="btn-ghost">Clear</button>
-      <span id="selTotal" class="pill">++$0</span>
-      <button id="execSelected" class="btn-primary" style="margin-left:auto">Execute Selected</button>
-    </div>
-    <table id="results">
-      <thead>
-        <tr>
-          <th style="width:42px">Select</th>
-          <th>Token</th>
-          <th>Buy (DEX @ $)</th>
-          <th>Sell (DEX @ $)</th>
-          <th class="right">Spread %</th>
-          <th class="right">USDC Back</th>
-          <th class="right">Net P/L</th>
-          <th>Executable?</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
-
-  <!-- Logs Panel -->
-  <div class="panel">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <div style="font-weight:700">Details / Logs</div>
-      <div class="row">
-        <button id="selfTestBtn" class="btn-mini btn-ghost">Run Self-Test</button>
-        <button id="copyLogBtn" class="btn-mini btn-ghost">Copy Log</button>
-        <button id="downloadLogBtn" class="btn-mini btn-ghost">Download Log</button>
-        <button id="clearLogBtn" class="btn-mini btn-ghost">Clear</button>
+  <main class="card" role="main" aria-busy="true">
+    <div class="brand" aria-label="Brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <h1>Crypto Kings Test Bed</h1>
+        <div class="sub">JSON Error &mdash; AWS Blockchain Integration Error</div>
       </div>
+      <span class="badge" style="margin-left:auto;">Status: Initializing</span>
     </div>
-    <div id="log" class="logs">[boot] starting… (live prices)</div>
-  </div>
-</div>
 
-<footer>
-  <div class="foot">
-    <div><h4>Crypto Kings</h4><ul><li>Arbitrage Scanner</li><li>DeFi Tools</li><li>Risk Analysis</li></ul></div>
-    <div><h4>Company</h4><ul><li>Who we are</li><li>What we do</li><li>Connect with us</li></ul></div>
-    <div><h4>Resources</h4><ul><li>Docs</li><li>Blog</li><li>Support</li></ul></div>
-    <div><h4>Legal</h4><ul><li>Privacy</li><li>Terms</li><li>Disclaimer</li></ul></div>
-  </div>
-</footer>
+    <section class="panel" id="loading-panel" aria-live="polite">
+      <div class="row">
+        <div class="key">Module</div>
+        <div class="val">aws-blockchain-integration@preview</div>
+      </div>
+      <div class="row">
+        <div class="key">Environment</div>
+        <div class="val">production-eu-west-2</div>
+      </div>
+      <div class="row">
+        <div class="key">Request Id</div>
+        <div class="val" id="rid">—</div>
+      </div>
 
-<script>
-/* ========= Logger ========= */
-const logEl = ()=>document.getElementById('log');
-function log(m, cls){ const L=logEl(); const line=(cls?`<span class="${cls}">${m}</span>`:m); L.innerHTML+=(line.endsWith("\\n")?line:line+"\\n"); L.scrollTop=L.scrollHeight; }
-document.getElementById('copyLogBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText(logEl().innerText||""); alert("Log copied."); }catch{} };
-document.getElementById('downloadLogBtn').onclick=()=>{ const b=new Blob([logEl().innerText||""],{type:"text/plain"}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u;a.download=`ck-log-${Date.now()}.txt`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);};
-document.getElementById('clearLogBtn').onclick=()=>{ logEl().innerHTML=""; };
+      <div class="loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <div>Connecting to AWS Blockchain &amp; parsing JSON<span class="dots"></span></div>
+      </div>
+    </section>
 
-/* ========= Wallet connect (MetaMask/Trust) ========= */
-function getInjected(){
-  const eth=window.ethereum; if(!eth) return null;
-  if(eth.providers && Array.isArray(eth.providers)){
-    const mm=eth.providers.find(p=>p.isMetaMask);
-    const tw=eth.providers.find(p=>p.isTrust||p.isTrustWallet);
-    return mm||tw||eth.providers[0];
-  }
-  return eth;
-}
-document.getElementById("connectBtn").onclick=async()=>{
-  try{
-    const inj=getInjected(); if(!inj){ alert("Install MetaMask or Trust Wallet"); return; }
-    await inj.request({ method: "eth_requestAccounts" });
-    const accts = await inj.request({ method: "eth_accounts" });
-    const acct = accts && accts[0] ? accts[0] : "(connected)";
-    document.getElementById("rpcPill").textContent="Wallet: Connected";
-    const feeBox=document.getElementById("feeWallet"); if(feeBox) feeBox.value=acct;
-    log("wallet connected: "+acct);
-  }catch(e){ log("wallet error: "+(e?.message||e), "err"); }
-};
+    <section class="error" id="error-panel" role="alert">
+      <h2>Unhandled JavaScript Exception</h2>
+      <div class="trace" id="trace"></div>
+      <div class="actions">
+        <button class="btn primary" id="retry">Retry</button>
+        <button class="btn" id="copyLog">Copy error log</button>
+      </div>
+    </section>
 
-/* ========= Sim constants ========= */
-const SIM = {
-  BASE_FEES: 0.003*2 + 0.0015*2 + 0.0005, // ~0.0055
-  PROFIT_RATE: 0.12, WIN_BPS_MEAN: 16, WIN_BPS_SD: 8, LOSS_BPS_MEAN: -38, LOSS_BPS_SD: 22,
-  MIN_GREEN_RATE: 0.12, MIN_GREEN_ABS: 12, ROWS_PER_TOKEN: 2, MAX_EXECUTE_ROWS: 8,
-  PRICE_SENSITIVITY: 0.55 // how much P/L shifts vs live price % change (0..1+)
-};
-let ETH_USD = 2500; // live-filled below
+    <footer>
+      <div>© Crypto Kings</div>
+      <div>Build: <code class="inline">ck-testbed/edge</code></div>
+    </footer>
+  </main>
 
-/* ========= Known symbol -> CoinGecko id ========= */
-const CG_IDS = {
-  ETH:"ethereum", WETH:"ethereum", WBTC:"wrapped-bitcoin", BTC:"bitcoin",
-  USDC:"usd-coin", USDCe:"usd-coin", USDT:"tether", DAI:"dai",
-  ARB:"arbitrum", LINK:"chainlink", GMX:"gmx", AAVE:"aave", UNI:"uniswap",
-  SNX:"synthetix-network-token", CRV:"curve-dao-token", BAL:"balancer",
-  wstETH:"wrapped-steth", COMP:"compound-governance-token", RDNT:"radiant-capital",
-  PENDLE:"pendle", FRAX:"frax", LUSD:"liquity-usd", MAGIC:"treasure",
-  GRT:"the-graph", DPX:"dopex", RDPX:"dopex-rebate-token", GRAIL:"camelot-token",
-  MKR:"maker", RPL:"rocket-pool", FXS:"fxs", CVX:"convex-finance", LQTY:"liquity",
-  STG:"stargate-finance", ANGLE:"angle-protocol", PERP:"perpetual-protocol",
-  INCH:"1inch", VELO:"velodrome-finance", AURA:"aura-finance", BOND:"barnbridge",
-  OP:"optimism", ENS:"ethereum-name-service", BADGER:"badger-dao", BNT:"bancor", DODO:"dodo"
-};
-/* tokens list with tiers (for sim variety) */
-const STATIC_TOKENS = (()=>{
-  const blue = ["WETH","WBTC","USDC","USDCe","USDT","DAI","ARB","LINK","GMX","AAVE","UNI","wstETH","SNX","COMP","CRV","BAL"];
-  const mid  = ["RDNT","PENDLE","FRAX","PENDLE2","GRT","DPX","RDPX","GRAIL","JOE","MKR","RPL","FXS","CVX","LQTY","STG","ANGLE","PERP","INCH","VELO","AURA","BOND","UMAMI","TCR","PLS","HOP","ALCX","GNS","OP","ENS","BADGER","BNT","DODO"];
-  const tail = ["PEPE","PIRATE","RNDM","PUNK","DOGE","SHIB","FLOKI","BABYDOGE","AERO","SPARTA","GALA","IMX","APE","BLUR","ALEX","TIA","PYTH","JUP","W","BOME","ONDO","ENA","DEGEN","SAGA","ETHFI","XAI","AEVO","ALT","BEAM","ZRO","TON","SUI","APT","POL","MATIC","AVAX","FTM","NEAR","ATOM","SOL","BTC","BNB","OKB","HT","KCS","XRP","ADA"];
-  const fill = [];
-  while(blue.length+mid.length+tail.length+fill.length<120) fill.push("TOK"+(blue.length+mid.length+tail.length+fill.length+1));
-  const list=[...blue.map(s=>[s,"blue"]),...mid.map(s=>[s,"mid"]),...tail.map(s=>[s,"tail"]),...fill.map(s=>[s,"tail"])];
-  return list.slice(0,120);
-})();
-
-/* ========= UI helpers ========= */
-const $ = s=>document.querySelector(s);
-const tbody = $("#tbody");
-function usd(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
-function updateSelectedTotal(){ let sum=0; document.querySelectorAll("#tbody .pick:checked").forEach(cb=>{ const tr=cb.closest("tr"); sum+=Number(tr.dataset.netpl||0); }); $("#selTotal").textContent=(sum>=0?'++$':'−$')+Math.abs(sum).toLocaleString(undefined,{maximumFractionDigits:2}); }
-document.getElementById("results").addEventListener("change",e=>{ if(e.target.classList.contains("pick")) updateSelectedTotal(); });
-document.getElementById("selectProfitable").onclick=()=>{ document.querySelectorAll("#tbody tr").forEach(tr=>{ const cb=tr.querySelector(".pick"); if(cb) cb.checked = (Number(tr.dataset.netpl||-1e99)>0); }); updateSelectedTotal(); };
-document.getElementById("clearSel").onclick=()=>{ document.querySelectorAll("#tbody .pick").forEach(cb=>cb.checked=false); updateSelectedTotal(); };
-
-/* ========= RNG + noise helpers ========= */
-function xmur3(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=(h<<13)|(h>>>19);} return ()=>{ h=Math.imul(h^(h>>>16),2246822507); h=Math.imul(h^(h>>>13),3266489909); return (h^(h>>>16))>>>0; }; }
-function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^(t>>>15), t|1); t^=t+Math.imul(t^(t>>>7), t|61); return ((t^(t>>>14))>>>0)/4294967296; } }
-function rngFor(key){ const seed=xmur3(key+":"+Date.now())(); return mulberry32(seed); }
-function randN01(r){ let s=0; for(let i=0;i<6;i++) s+=r(); return (s-3)/Math.sqrt(0.5); }
-function tierInfo(tier){ if(tier==="blue") return { extraFees:0.0006, noiseBps:6, priceVar:0.004 };
-  if(tier==="mid") return { extraFees:0.0015, noiseBps:12, priceVar:0.009 };
-  return { extraFees:0.0030, noiseBps:22, priceVar:0.018 }; }
-
-/* ========= DEX combos ========= */
-const DEX_COMBOS=[["SUSHI v2","CAMELOT v2"],["CAMELOT v2","SUSHI v2"],["UniV3 0.3%","UniV3 0.3%"],["UniV3 1%","UniV3 1%"]];
-
-/* ========= Live price store ========= */
-let LIVE = { // symbol -> {price, ts}
-  ETH: {price:ETH_USD, ts:Date.now()}
-};
-let CURRENT_ROWS = []; // rows rendered (for live recompute)
-let baseScanTimestamp = Date.now();
-
-/* ========= Price fetch (CoinGecko) ========= */
-async function fetchCgPrices(symbols){
-  // Map wanted symbols to CoinGecko ids
-  const ids = new Set();
-  let needEth = false;
-  symbols.forEach(s=>{
-    const id = CG_IDS[s];
-    if (id) ids.add(id);
-    if (s==="WETH" || s==="ETH") needEth = true;
-  });
-  if (needEth) ids.add("ethereum");
-  if (!ids.size) return;
-
-  const url = "https://api.coingecko.com/api/v3/simple/price?ids="+encodeURIComponent(Array.from(ids).join(","))+"&vs_currencies=usd";
-  try{
-    const r = await fetch(url, {cache:"no-store"});
-    const j = await r.json();
-    // update ETH
-    if (j.ethereum && Number.isFinite(j.ethereum.usd)) {
-      ETH_USD = Number(j.ethereum.usd);
-      $("#ethPill").textContent = "ETH: $"+ETH_USD.toLocaleString();
+  <script>
+    // Utility: random-ish request id
+    function genRid() {
+      return 'req_' + Math.random().toString(36).slice(2, 10) + '-' + Date.now().toString(36);
     }
-    // push into LIVE
-    for (const [sym, id] of Object.entries(CG_IDS)){
-      const rec = j[id];
-      if (rec && Number.isFinite(rec.usd)){
-        LIVE[sym] = { price: Number(rec.usd), ts: Date.now() };
-      }
+
+    // Simulate a JSON parse failure & surface "AWS Blockchain Integration Error"
+    function simulateErrorSequence() {
+      const rid = genRid();
+      document.getElementById('rid').textContent = rid;
+
+      // Fake async "loading" then explode.
+      setTimeout(() => {
+        try {
+          // Intentionally invalid JSON to trigger a parse error
+          const bad = "{ integration: 'aws', ok: false, reason: AWS_Blockchain_Error }";
+          JSON.parse(bad); // <-- throws
+
+          // (never reached)
+          console.info('Connected to AWS Blockchain Gateway.');
+        } catch (err) {
+          const message = "AWS Blockchain Integration Error: JSON payload malformed";
+          const composite = new Error(message);
+          composite.cause = err;
+
+          // Log detailed error to console
+          console.groupCollapsed('%cCrypto Kings Test Bed%c – Exception', 'color:#5ac8fa;font-weight:bold;', 'color:#9bb3d1;');
+          console.log('RequestId:', rid);
+          console.log('Endpoint:', 'aws:managed-blockchain:eu-west-2');
+          console.error(composite);
+          console.groupEnd();
+
+          // Also throw a separate JS error for realism (shows as uncaught in DevTools)
+          setTimeout(() => { throw new Error("Uncaught ReferenceError: awsClient is not defined"); }, 0);
+
+          // Show in UI
+          showError(composite, rid);
+        }
+      }, 1400);
     }
-  }catch(e){
-    log("price feed error: "+(e?.message||e), "err");
-  }
-}
 
-/* ========= Simulation core ========= */
-function simulateRoutesForToken(sym, tier, amountUsd, r){
-  const rows=[];
-  const t=tierInfo(tier);
-  const baseFees = SIM.BASE_FEES + t.extraFees;
-  for(let i=0;i<SIM.ROWS_PER_TOKEN;i++){
-    const [buyDex,sellDex]=DEX_COMBOS[Math.floor(r()*DEX_COMBOS.length)];
-    const tokenUsdGuess = Math.max(0.05, 2 + (r()*480));
-    const liveP = LIVE[sym]?.price ?? LIVE.WETH?.price ?? tokenUsdGuess; // fallbacks
-    const buyPrice = liveP * (1 + (r()-0.5)*t.priceVar);
-    const sellPrice= liveP * (1 + (r()-0.5)*t.priceVar);
+    function showError(error, rid) {
+      const loading = document.getElementById('loading-panel');
+      const errPanel = document.getElementById('error-panel');
+      const trace = document.getElementById('trace');
 
-    const win = r() < SIM.PROFIT_RATE;
-    const mean = win ? SIM.WIN_BPS_MEAN : SIM.LOSS_BPS_MEAN;
-    const sd   = win ? SIM.WIN_BPS_SD   : SIM.LOSS_BPS_SD;
-    const edgeBps = mean + randN01(r)*sd + (r()-0.5)*t.noiseBps;
+      loading.style.display = 'none';
+      errPanel.style.display = 'block';
 
-    const impact = 1 / (1 + Math.max(0, amountUsd-500)/2500);
-    const realizedEdgePct = (edgeBps/10000) * impact;
+      const stack = [
+        `RequestId: ${rid}`,
+        `Type: ${error.name || 'Error'}`,
+        `Message: ${error.message}`,
+        '',
+        'Stack Trace:',
+        (error.stack || '(no stack available)')
+      ].join('\n');
 
-    const grossUsd = amountUsd * realizedEdgePct;
-    const feesUsd  = amountUsd * baseFees;
-    const netPLUsd0 = +(grossUsd - feesUsd).toFixed(2); // base at scan time
-    const usdcBack0 = +(amountUsd + grossUsd).toFixed(2);
-    const spreadPct0 = ((sellPrice/buyPrice)-1)*100 + (realizedEdgePct*100);
+      trace.textContent = stack;
+      document.querySelector('.badge').textContent = 'Status: Error';
+      document.querySelector('main').setAttribute('aria-busy', 'false');
+    }
 
-    rows.push({
-      tokenSym:sym,
-      tokenAddr:"0x"+Math.floor(r()*1e16).toString(16).padStart(40,"a"),
-      buyDex, sellDex,
-      basePrice: liveP,
-      usdcBack: usdcBack0,
-      netPLUsd: netPLUsd0,
-      baseNetPLUsd: netPLUsd0,
-      baseFeesPct: baseFees,
-      realizedEdgePct,
-      amountUsd,
-      ok:true,
-      spreadPct: spreadPct0
+    // Buttons
+    document.getElementById('retry').addEventListener('click', () => {
+      // Reset panels
+      document.getElementById('error-panel').style.display = 'none';
+      const loading = document.getElementById('loading-panel');
+      loading.style.display = 'block';
+      document.querySelector('.badge').textContent = 'Status: Initializing';
+      // Run again
+      simulateErrorSequence();
     });
-  }
-  return rows;
-}
 
-/* ensure some greens exist */
-function enforceGreens(rows, amountUsd){
-  const greens = rows.filter(r=>r.baseNetPLUsd>0).length;
-  const target = Math.max(Math.floor(rows.length * SIM.MIN_GREEN_RATE), SIM.MIN_GREEN_ABS);
-  if(greens >= target) return;
-  const need = target - greens;
-  const sorted = rows.slice().sort((a,b)=> (a.baseNetPLUsd - b.baseNetPLUsd));
-  let patched=0;
-  for(const r of sorted){
-    if(patched>=need) break;
-    if(r.baseNetPLUsd <= 0){
-      const minP = Math.max(0.08, 0.0010 * r.amountUsd);
-      const maxP = Math.max(0.40, 0.0035 * r.amountUsd);
-      const bump = +(minP + Math.random()*(maxP-minP)).toFixed(2);
-      r.baseNetPLUsd = bump;
-      r.netPLUsd = bump;
-      r.usdcBack = +(r.amountUsd + bump).toFixed(2);
-      r._patched = true;
-      patched++;
-    }
-  }
-}
-
-/* ========= Rendering ========= */
-function renderRows(rows){
-  const onlyProf=!!document.getElementById('onlyProfitable').checked;
-  const minUsd=Number(document.getElementById('minProfitUsd').value||0);
-  let view=rows;
-  if(onlyProf) view=view.filter(r=>r.netPLUsd>0 && r.netPLUsd>=minUsd);
-  view.sort((a,b)=>(b.netPLUsd||-1e99)-(a.netPLUsd||-1e99));
-
-  tbody.innerHTML="";
-  for(const r of view){
-    const tr=document.createElement("tr");
-    tr.className=r.netPLUsd>0?"profit":"loss";
-    tr.dataset.netpl=r.netPLUsd;
-    tr.dataset.token=r.tokenSym;
-    tr.dataset.tokenAddr=r.tokenAddr||"";
-    tr.dataset.buyDex=r.buyDex; tr.dataset.sellDex=r.sellDex;
-    tr.dataset.basePrice=r.basePrice;
-    tr.dataset.baseNet=r.baseNetPLUsd;
-    tr.dataset.amount=r.amountUsd;
-    tr.dataset.feesPct=r.baseFeesPct;
-    tr.dataset.edgePct=r.realizedEdgePct;
-
-    const priceNow = LIVE[r.tokenSym]?.price;
-    const priceText = Number.isFinite(priceNow) ? "$"+priceNow.toLocaleString(undefined,{maximumFractionDigits:6}) : "—";
-
-    tr.innerHTML=`
-      <td class="sel"><input type="checkbox" class="pick" ${r.netPLUsd>0?"checked":""}></td>
-      <td class="tok">
-        ${r.tokenSym}
-        <span class="subhint" data-price-for="${r.tokenSym}">Live: ${priceText}</span>
-      </td>
-      <td><div class="cell"><span class="lbl">Buy</span><span class="val">${r.buyDex}</span></div></td>
-      <td><div class="cell"><span class="lbl">Sell</span><span class="val">${r.sellDex}</span></div></td>
-      <td class="right mono"><span class="spread">${Number.isFinite(r.spreadPct)?r.spreadPct.toFixed(2):"—"}</span>%</td>
-      <td class="right mono"><span class="usdcBack">${usd(r.usdcBack||0)}</span></td>
-      <td class="right mono ${r.netPLUsd>0?'ok':'bad'}"><span class="netpl">${(r.netPLUsd>=0?'+':'-')+usd(Math.abs(r.netPLUsd)).replace('$','')}</span></td>
-      <td class="flags"><span class="tag ok">${r._patched?'confirmed':'Router-verified'}</span></td>
-    `;
-    tbody.appendChild(tr);
-  }
-  updateSelectedTotal();
-  CURRENT_ROWS = view; // track what’s on screen for live updates
-}
-
-/* ========= Recompute rows from live prices ========= */
-function applyLivePrices(){
-  // Update price labels
-  document.querySelectorAll('[data-price-for]').forEach(el=>{
-    const sym = el.getAttribute('data-price-for');
-    const p = LIVE[sym]?.price;
-    if (Number.isFinite(p)) el.textContent = "Live: $"+p.toLocaleString(undefined,{maximumFractionDigits:6});
-  });
-
-  // Adjust each visible row’s net P/L based on token price change since scan
-  for(const r of CURRENT_ROWS){
-    const pNow = LIVE[r.tokenSym]?.price;
-    if (!Number.isFinite(pNow) || !Number.isFinite(r.basePrice)) continue;
-
-    // % change since scan
-    const pct = (pNow / r.basePrice) - 1; // e.g., 0.002 = +0.2%
-    // New net P/L = base + sensitivity * amount * pct
-    const delta = SIM.PRICE_SENSITIVITY * r.amountUsd * pct;
-    const net = +(r.baseNetPLUsd + delta).toFixed(2);
-    const usdcBack = +(r.amountUsd + Math.max(0, net)).toFixed(2); // simple illustrative relation
-
-    // update in DOM
-    const tr = Array.from(tbody.children).find(row=>row.dataset && row.dataset.token===r.tokenSym && row.dataset.amount==r.amountUsd);
-    if (!tr) continue;
-    tr.dataset.netpl = net;
-    const netCell = tr.querySelector('.netpl');
-    const backCell= tr.querySelector('.usdcBack');
-    if (netCell && backCell){
-      netCell.textContent = (net>=0?'+':'-') + usd(Math.abs(net)).replace('$','');
-      netCell.parentElement.className = "right mono " + (net>=0?'ok':'bad');
-      backCell.textContent = usd(usdcBack);
-    }
-    tr.className = net>=0 ? "profit" : "loss";
-  }
-  updateSelectedTotal();
-}
-
-/* ========= Price polling control ========= */
-let priceTimer = null;
-function startPriceFeed(symbolUniverse){
-  stopPriceFeed();
-  const poll = async ()=>{
-    await fetchCgPrices(symbolUniverse);
-    applyLivePrices();
-  };
-  poll(); // immediate
-  const sec = Math.max(5, Number(document.getElementById('pollSec').value||8));
-  priceTimer = setInterval(poll, sec*1000);
-}
-function stopPriceFeed(){ if(priceTimer){ clearInterval(priceTimer); priceTimer=null; }}
-
-/* ========= Scan orchestrator ========= */
-let scanning=false, stopFlag=false;
-async function runScan(){
-  if(scanning) return; scanning=true; stopFlag=false;
-  try{
-    const usdTarget=Number(document.getElementById("loanUsd").value||500);
-    const want = Number(document.getElementById("batch").value||120);
-    const symbols = STATIC_TOKENS.slice(0, want);
-    $("#tokensPill").textContent="Tokens: "+symbols.length;
-
-    // seed live with ETH first
-    await fetchCgPrices(["ETH"]);
-
-    const concur = Math.max(5, Math.min(30, Number(document.getElementById("concur").value||20)));
-    log(`[scan] (sim+live) tokens=${symbols.length} • concurrency=${concur} • loan=$${usdTarget.toFixed(2)}`);
-    $("#progPill").textContent="Scanning…";
-    baseScanTimestamp = Date.now();
-
-    // prefetch prices for known IDs among this batch (for better initial accuracy)
-    const batchSyms = symbols.map(s=>s[0]);
-    await fetchCgPrices(batchSyms);
-
-    const queue=[...symbols]; const allRows=[]; let done=0;
-    async function worker(){
-      while(queue.length && !stopFlag){
-        const [sym,tier] = queue.shift();
-        $("#progPill").textContent=`Scanning ${done+1}/${symbols.length} — ${sym}`;
-        const r=rngFor(sym);
-        const rows=simulateRoutesForToken(sym, tier, usdTarget, r);
-        allRows.push(...rows);
-        done++;
-        await new Promise(res=>setTimeout(res, 6));
+    document.getElementById('copyLog').addEventListener('click', async () => {
+      const text = document.getElementById('trace').textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        const btn = document.getElementById('copyLog');
+        const old = btn.textContent;
+        btn.textContent = 'Copied ✓';
+        setTimeout(() => btn.textContent = old, 1200);
+      } catch {
+        alert('Clipboard unavailable. Select and copy manually.');
       }
-    }
-    await Promise.all(Array.from({length:concur}, worker));
+    });
 
-    enforceGreens(allRows, usdTarget);
-    renderRows(allRows);
-
-    const greens=allRows.filter(r=>r.netPLUsd>0).length;
-    $("#progPill").textContent=`Done. Green=${greens} / Rows=${allRows.length}.`;
-    log(`[scan] complete: ${greens} profitable out of ${allRows.length} rows`);
-
-    // Kick off live feed if enabled
-    if (document.getElementById('liveToggle').checked){
-      const universe = Array.from(new Set(batchSyms.filter(s=>CG_IDS[s]))); // only ones we can price
-      startPriceFeed(universe);
-    }else{
-      stopPriceFeed();
-    }
-  }catch(e){
-    log("SCAN FATAL: "+(e?.message||e),"err");
-  }finally{
-    scanning=false;
-  }
-}
-document.getElementById("scanBtn").onclick=runScan;
-document.getElementById("stopBtn").onclick=()=>{ stopFlag=true; $("#progPill").textContent="Stopped."; stopPriceFeed(); };
-
-/* ========= Execute Selected (mock staged) ========= */
-function randHex(n){ const chars="0123456789abcdef"; let s=""; for(let i=0;i<n;i++) s+=chars[Math.floor(Math.random()*16)]; return s; }
-function mockHash(){ return "0x"+randHex(64); }
-document.getElementById("execSelected").onclick=async()=>{
-  const picks=Array.from(document.querySelectorAll("#tbody .pick:checked"));
-  if(picks.length===0){ alert("Select at least one profitable row."); return; }
-  if(picks.length>SIM.MAX_EXECUTE_ROWS){ alert(`Select ${SIM.MAX_EXECUTE_ROWS} rows maximum.`); return; }
-
-  const feeWallet = ($("#feeWallet").value||"").trim() || "(fee wallet)";
-  const totalUsd = picks.reduce((s,cb)=>{ const tr=cb.closest("tr"); return s + Number(tr.dataset.netpl||0); }, 0);
-  const loanUsd=Number($("#loanUsd").value||500);
-
-  log(`[exec] starting batch of ${picks.length} route(s)…`);
-  for(let i=0;i<picks.length;i++){
-    const tr=picks[i].closest("tr");
-    const sym=tr.dataset.token, buy=tr.dataset.buyDex, sell=tr.dataset.sellDex;
-
-    const h1=mockHash(); log(`— Route ${i+1}/${picks.length}: ${sym} (${buy} → ${sell})`);
-    log(`   • Borrowing ~$${loanUsd.toFixed(2)} (flash) … tx: ${h1}`);
-    await new Promise(r=>setTimeout(r, 320));
-    const h2=mockHash(); log(`   • Buy ${sym} on ${buy} … tx: ${h2}`);
-    await new Promise(r=>setTimeout(r, 320));
-    const h3=mockHash(); log(`   • Sell ${sym} on ${sell} … tx: ${h3}`);
-    await new Promise(r=>setTimeout(r, 320));
-    const h4=mockHash(); log(`   • Repay flash + fee … tx: ${h4}`);
-    await new Promise(r=>setTimeout(r, 220));
-    const rowProfit=Number(tr.dataset.netpl||0);
-    const h5=mockHash(); log(`   • Distribute profit ${usd(rowProfit)} → ${feeWallet} … tx: ${h5}`);
-    await new Promise(r=>setTimeout(r, 180));
-  }
-  log(`[exec] complete. Batch profit: ${usd(totalUsd)}\n`);
-};
-
-/* ========= Self-test ========= */
-document.getElementById("selfTestBtn").onclick=()=>{ log("[self-test] OK (live price engine ready). Click Scan."); };
-
-/* ========= Initial price seed (ETH) ========= */
-(async()=>{ await fetchCgPrices(["ETH"]); log("[boot] ready. Click Scan to get quotes with live pricing."); })();
-</script>
+    // Kick things off
+    simulateErrorSequence();
+  </script>
 </body>
 </html>

@@ -3,33 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Crypto Kings Portal</title>
+  <title>Vaulture Portal</title>
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --brand-bg:#0b0b0b;
+      --brand-fg:#ffffff;
+      --brand-accent:#f5c518;
+      --brand-accent-hover:#d9ae12;
+      --brand-accent-20:rgba(245,197,24,0.2);
+    }
+  </style>
 </head>
 <body class="min-h-screen flex flex-col bg-gray-50">
   <!-- Header -->
-  <header class="bg-black text-white shadow-md w-screen">
-    <div class="container mx-auto px-4 md:px-8 flex justify-between items-center h-12">
+  <header class="bg-[var(--brand-bg)] text-[var(--brand-fg)] shadow-md w-screen">
+    <div class="container mx-auto px-4 md:px-8 flex justify-between items-center h-14">
       <!-- Brand (logo only) -->
       <a class="flex items-center" href="#">
-        <img src=\"./035E9CC5-0A09-4352-ACD7-7B89F83B32D6.png\" alt=\"Crypto Kings Logo\" class=\"w-10 h-10 md:w-12 md:h-12 rounded-full\" />
+        <img src="./035E9CC5-0A09-4352-ACD7-7B89F83B32D6.png" alt="Vaulture Logo" class="w-14 h-14 md:w-16 md:h-16 rounded-full" />
       </a>
 
-      <!-- Desktop nav + version -->
+      <!-- Desktop nav + login + version -->
       <div class="hidden md:flex items-center space-x-6">
         <nav class="flex items-center space-x-6">
-          <a href="#" class="hover:text-yellow-400">Home</a>
-          <a href="#" class="hover:text-yellow-400">Tools</a>
-          <a href="#" class="hover:text-yellow-400">Investor Area</a>
-          <a href="#" class="hover:text-yellow-400">Contact</a>
+          <a href="#who" class="hover:text-[var(--brand-accent)]">Who We Are</a>
+          <a href="#what" class="hover:text-[var(--brand-accent)]">What We Do</a>
+          <a href="#investors" class="hover:text-[var(--brand-accent)]">Investor Relations</a>
+          <a href="#connect" class="hover:text-[var(--brand-accent)]">Connect With Us</a>
         </nav>
-        <span class="text-xs px-2 py-1 rounded bg-yellow-500/20 border border-yellow-500 text-yellow-400">v10.1.1</span>
+        <!-- Login form -->
+        <form class="flex items-center space-x-2">
+          <input type="text" placeholder="Username" class="px-2 py-1 rounded text-black text-sm" />
+          <input type="password" placeholder="Password" class="px-2 py-1 rounded text-black text-sm" />
+          <button type="submit" class="px-3 py-1 bg-[var(--brand-accent)] text-black rounded hover:bg-[var(--brand-accent-hover)] text-sm">Login</button>
+        </form>
+        <span class="text-xs px-2 py-1 rounded border text-[var(--brand-accent)]" style="border-color:var(--brand-accent)">v10.1.1</span>
       </div>
 
       <!-- Burger (mobile only) -->
       <button id="burger" aria-label="Open menu"
-              class="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-lg border border-yellow-500 text-yellow-500">
+              class="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-lg border text-[var(--brand-accent)]"
+              style="border-color:var(--brand-accent)">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
@@ -38,61 +54,61 @@
     <!-- Mobile dropdown -->
     <div id="mobileMenu" class="md:hidden hidden pb-4">
       <div class="container mx-auto px-4">
-        <nav class="space-y-2 bg-neutral-900 rounded-xl p-4 border border-yellow-500">
+        <nav class="space-y-2 bg-neutral-900 rounded-xl p-4 border" style="border-color:var(--brand-accent)">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs px-2 py-1 rounded bg-yellow-500/20 border border-yellow-500 text-yellow-400">v10.1.1</span>
+            <span class="text-xs px-2 py-1 rounded border text-[var(--brand-accent)]" style="border-color:var(--brand-accent)">v10.1.1</span>
             <span class="text-xs text-gray-400">Menu</span>
           </div>
-          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#">Home</a>
-          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#">Tools</a>
-          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#">Investor Area</a>
-          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#">Contact</a>
+          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#who">Who We Are</a>
+          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#what">What We Do</a>
+          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#investors">Investor Relations</a>
+          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#connect">Connect With Us</a>
+          <form class="flex flex-col space-y-2 pt-2">
+            <input type="text" placeholder="Username" class="px-2 py-1 rounded text-black text-sm" />
+            <input type="password" placeholder="Password" class="px-2 py-1 rounded text-black text-sm" />
+            <button type="submit" class="px-3 py-1 bg-[var(--brand-accent)] text-black rounded hover:bg-[var(--brand-accent-hover)] text-sm">Login</button>
+          </form>
         </nav>
       </div>
     </div>
   </header>
 
-  <!-- Hero -->
-  <section class=\"relative w-screen h-[60px] bg-black\"></section>
-
-  
-
   <!-- Main Content -->
-  <main class="flex-1 py-12 md:py-16 px-4 md:px-8 max-w-7xl mx-auto space-y-12">
+  <main class="flex-1 py-8 md:py-12 px-4 md:px-8 max-w-7xl mx-auto space-y-12">
     <!-- Profit Wallet -->
-    <div class="rounded-2xl shadow-lg border-yellow-400 border bg-white">
+    <div class="rounded-2xl shadow-lg border bg-white" style="border-color:var(--brand-accent)">
       <div class="p-6 grid md:grid-cols-5 gap-6 items-center">
         <div class="md:col-span-2">
-          <h3 class="text-xl font-bold text-yellow-400">Profit Wallet</h3>
+          <h3 class="text-xl font-bold text-[var(--brand-accent)]">Profit Wallet</h3>
           <p class="text-gray-600 mt-1">Read-only. Updated live from chain.</p>
           <div class="mt-3 flex flex-wrap items-center gap-3">
             <code class="bg-gray-100 px-3 py-1 rounded">0x1234...ABCD</code>
-            <button class="px-3 py-1 rounded bg-yellow-500 text-black hover:bg-yellow-600">Copy</button>
+            <button class="px-3 py-1 rounded bg-[var(--brand-accent)] text-black hover:bg-[var(--brand-accent-hover)]">Copy</button>
             <a href="#" class="text-blue-600 hover:underline">View on Arbiscan</a>
           </div>
         </div>
         <div>
           <p class="text-sm text-gray-500 mb-2">Currency</p>
-          <div class="inline-flex rounded-xl overflow-hidden border border-yellow-400">
-            <button class="px-4 py-2 text-sm font-medium bg-yellow-500 text-black">GBP</button>
+          <div class="inline-flex rounded-xl overflow-hidden border" style="border-color:var(--brand-accent)">
+            <button class="px-4 py-2 text-sm font-medium bg-[var(--brand-accent)] text-black">GBP</button>
             <button class="px-4 py-2 text-sm font-medium hover:bg-gray-100">USD</button>
           </div>
         </div>
         <div>
           <p class="text-sm text-gray-500">Balance (WETH)</p>
-          <p class="text-2xl font-bold text-yellow-600">12.48</p>
+          <p class="text-2xl font-bold text-[var(--brand-accent)]">12.48</p>
           <p class="text-xs text-gray-500">≈ £24,210</p>
         </div>
         <div>
           <p class="text-sm text-gray-500">Balance (USDC)</p>
-          <p class="text-2xl font-bold text-yellow-600">18,940</p>
+          <p class="text-2xl font-bold text-[var(--brand-accent)]">18,940</p>
           <p class="text-xs text-gray-500">≈ £18,940</p>
         </div>
       </div>
     </div>
 
     <!-- PnL Summary -->
-    <div class="rounded-2xl shadow-lg border-yellow-400 border bg-white">
+    <div class="rounded-2xl shadow-lg border bg-white" style="border-color:var(--brand-accent)">
       <div class="p-6 grid md:grid-cols-3 gap-6">
         <div>
           <p class="text-sm text-gray-500">Today PnL</p>
@@ -115,25 +131,25 @@
     <!-- Feature Cards -->
     <div class="grid md:grid-cols-3 gap-8">
       <div class="rounded-2xl shadow-lg bg-white p-6">
-        <h3 class="text-xl font-bold text-yellow-400 mb-2">Live Trading Logs</h3>
+        <h3 class="text-xl font-bold text-[var(--brand-accent)] mb-2">Live Trading Logs</h3>
         <p class="text-gray-600">Track real-time trades and profits from our flash loan executor bot.</p>
       </div>
       <div class="rounded-2xl shadow-lg bg-white p-6">
-        <h3 class="text-xl font-bold text-yellow-400 mb-2">Investor Dashboard</h3>
+        <h3 class="text-xl font-bold text-[var(--brand-accent)] mb-2">Investor Dashboard</h3>
         <p class="text-gray-600">Secure login to monitor performance, PnL, and profit wallet balances.</p>
       </div>
       <div class="rounded-2xl shadow-lg bg-white p-6">
-        <h3 class="text-xl font-bold text-yellow-400 mb-2">DeFi Tools</h3>
-        <p class="text-gray-600">Access price scanners, arbitrage visualisers, and exclusive CK utilities.</p>
+        <h3 class="text-xl font-bold text-[var(--brand-accent)] mb-2">DeFi Tools</h3>
+        <p class="text-gray-600">Access price scanners, arbitrage visualisers, and exclusive Vaulture utilities.</p>
       </div>
     </div>
 
     <!-- Live Trade Log -->
     <section>
-      <h3 class="text-2xl font-bold text-yellow-400 mb-4">Live Trade Log</h3>
-      <div class="overflow-x-auto bg-white rounded-2xl shadow-lg border border-yellow-400">
+      <h3 class="text-2xl font-bold text-[var(--brand-accent)] mb-4">Live Trade Log</h3>
+      <div class="overflow-x-auto bg-white rounded-2xl shadow-lg border" style="border-color:var(--brand-accent)">
         <table class="w-full text-left text-gray-700">
-          <thead class="bg-yellow-100">
+          <thead class="bg-[var(--brand-accent-20)]">
             <tr>
               <th class="px-4 py-2">Time</th>
               <th class="px-4 py-2">Route</th>
@@ -164,33 +180,33 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-black text-gray-300 py-8 w-screen">
+  <footer class="bg-[var(--brand-bg)] text-[var(--brand-fg)] py-8 w-screen">
     <div class="container mx-auto grid md:grid-cols-4 gap-8 px-4 md:px-8">
       <div>
-        <h4 class="text-yellow-400 font-bold mb-4">About Us</h4>
-        <p>Crypto Kings is building next-gen DeFi tools and investor-grade dashboards for transparency and profit.</p>
+        <h4 class="font-bold mb-4 text-[var(--brand-accent)]">About Us</h4>
+        <p>Vaulture is building next-gen DeFi tools and investor-grade dashboards for transparency and profit.</p>
       </div>
       <div>
-        <h4 class="text-yellow-400 font-bold mb-4">Quick Links</h4>
+        <h4 class="font-bold mb-4 text-[var(--brand-accent)]">Quick Links</h4>
         <ul class="space-y-2">
-          <li><a href="#" class="hover:text-white">Home</a></li>
-          <li><a href="#" class="hover:text-white">Investor Area</a></li>
-          <li><a href="#" class="hover:text-white">DeFi Tools</a></li>
+          <li><a href="#who" class="hover:underline">Who We Are</a></li>
+          <li><a href="#investors" class="hover:underline">Investor Relations</a></li>
+          <li><a href="#what" class="hover:underline">What We Do</a></li>
         </ul>
       </div>
       <div>
-        <h4 class="text-yellow-400 font-bold mb-4">Contact</h4>
+        <h4 class="font-bold mb-4 text-[var(--brand-accent)]">Contact</h4>
         <ul class="space-y-2">
-          <li>Email: info@cryptokings.io</li>
-          <li>Telegram: @CryptoKings</li>
-          <li>Twitter: @CryptoKings</li>
+          <li>Email: info@vaulture.io</li>
+          <li>Telegram: @Vaulture</li>
+          <li>Twitter: @Vaulture</li>
         </ul>
       </div>
       <div>
-        <h4 class="text-yellow-400 font-bold mb-4">Newsletter</h4>
+        <h4 class="font-bold mb-4 text-[var(--brand-accent)]">Newsletter</h4>
         <p class="mb-2">Sign up for updates and news.</p>
         <input type="email" placeholder="Your email" class="p-2 w-full rounded mb-2 text-black" />
-        <button class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded">Subscribe</button>
+        <button class="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent-hover)] text-black font-bold py-2 rounded">Subscribe</button>
       </div>
     </div>
   </footer>

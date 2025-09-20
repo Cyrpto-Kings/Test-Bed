@@ -18,13 +18,12 @@
 </head>
 <body class="min-h-screen flex flex-col bg-gray-50 overflow-x-hidden">
   <!-- Header -->
-  <header class="bg-[var(--brand-bg)] text-[var(--brand-fg)] shadow-md w-full">
-    <div class="container mx-auto px-4 md:px-8 flex justify-between items-center h-14">
+  <header class="bg-[var(--brand-bg)] text-[var(--brand-fg)] shadow-md fixed top-0 left-0 right-0 z-50">
+    <div class="flex justify-between items-center h-14" style="padding-left:max(env(safe-area-inset-left),1rem); padding-right:max(env(safe-area-inset-right),1rem);">
       <!-- Brand (logo only) -->
       <a class="flex items-center" href="#">
         <img src="./035E9CC5-0A09-4352-ACD7-7B89F83B32D6.png" alt="Vaulture Logo" class="w-14 h-14 md:w-16 md:h-16 rounded-full" />
       </a>
-
       <!-- Desktop nav + login + version -->
       <div class="hidden md:flex items-center space-x-6">
         <nav class="flex items-center space-x-6">
@@ -33,7 +32,6 @@
           <a href="#investors" class="hover:text-[var(--brand-accent)]">Investor Relations</a>
           <a href="#connect" class="hover:text-[var(--brand-accent)]">Connect With Us</a>
         </nav>
-        <!-- Login form -->
         <form class="flex items-center space-x-2">
           <input type="text" placeholder="Username" class="px-2 py-1 rounded text-black text-sm" />
           <input type="password" placeholder="Password" class="px-2 py-1 rounded text-black text-sm" />
@@ -41,7 +39,6 @@
         </form>
         <span class="text-xs px-2 py-1 rounded border text-[var(--brand-accent)]" style="border-color:var(--brand-accent)">v10.1.1</span>
       </div>
-
       <!-- Burger (mobile only) -->
       <button id="burger" aria-label="Open menu"
               class="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-lg border text-[var(--brand-accent)]"
@@ -52,34 +49,32 @@
       </button>
     </div>
     <!-- Mobile dropdown -->
-    <div id="mobileMenu" class="md:hidden hidden pb-4">
-      <div class="container mx-auto px-4">
-        <nav class="space-y-2 bg-neutral-900 rounded-xl p-4 border" style="border-color:var(--brand-accent)">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs px-2 py-1 rounded border text-[var(--brand-accent)]" style="border-color:var(--brand-accent)">v10.1.1</span>
-            <span class="text-xs text-gray-400">Menu</span>
-          </div>
-          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#who">Who We Are</a>
-          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#what">What We Do</a>
-          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#investors">Investor Relations</a>
-          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#connect">Connect With Us</a>
-          <form class="flex flex-col space-y-2 pt-2">
-            <input type="text" placeholder="Username" class="px-2 py-1 rounded text-black text-sm" />
-            <input type="password" placeholder="Password" class="px-2 py-1 rounded text-black text-sm" />
-            <button type="submit" class="px-3 py-1 bg-[var(--brand-accent)] text-black rounded hover:bg-[var(--brand-accent-hover)] text-sm">Login</button>
-          </form>
-        </nav>
-      </div>
+    <div id="mobileMenu" class="md:hidden hidden pb-4 px-4">
+      <nav class="space-y-2 bg-neutral-900 rounded-xl p-4 border" style="border-color:var(--brand-accent)">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs px-2 py-1 rounded border text-[var(--brand-accent)]" style="border-color:var(--brand-accent)">v10.1.1</span>
+          <span class="text-xs text-gray-400">Menu</span>
+        </div>
+        <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#who">Who We Are</a>
+        <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#what">What We Do</a>
+        <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#investors">Investor Relations</a>
+        <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#connect">Connect With Us</a>
+        <form class="flex flex-col space-y-2 pt-2">
+          <input type="text" placeholder="Username" class="px-2 py-1 rounded text-black text-sm" />
+          <input type="password" placeholder="Password" class="px-2 py-1 rounded text-black text-sm" />
+          <button type="submit" class="px-3 py-1 bg-[var(--brand-accent)] text-black rounded hover:bg-[var(--brand-accent-hover)] text-sm">Login</button>
+        </form>
+      </nav>
     </div>
   </header>
 
   <!-- Full width hero image -->
-  <div class="w-full">
+  <div class="w-full mt-14">
     <img src='https://picsum.photos/1600/360?random=3' alt='Crypto background' class='w-full h-64 object-cover'/>
   </div>
 
   <!-- Main Content -->
-  <main class="flex-1 py-8 md:py-12 px-4 md:px-8 max-w-7xl mx-auto space-y-12">
+  <main class="pt-16 flex-1 py-8 md:py-12 px-4 md:px-8 max-w-7xl mx-auto space-y-12">
     <!-- Profit Wallet -->
     <div class="rounded-2xl shadow-lg border bg-white" style="border-color:var(--brand-accent)">
       <div class="p-6 grid md:grid-cols-5 gap-6 items-center">

@@ -1,176 +1,174 @@
-import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-
-export default function Home() {
-  return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-black text-white py-4 px-8 flex justify-between items-center shadow-md">
-        <div className="flex items-center space-x-4">
-          <Image src="/logo.jpeg" alt="Crypto Kings Logo" width={60} height={60} />
-          <h1 className="text-2xl font-bold text-yellow-400">Crypto Kings</h1>
-        </div>
-        <nav className="space-x-6">
-          <a href="#" className="hover:text-yellow-400">Home</a>
-          <a href="#" className="hover:text-yellow-400">Tools</a>
-          <a href="#" className="hover:text-yellow-400">Investor Area</a>
-          <a href="#" className="hover:text-yellow-400">Contact</a>
-        </nav>
-      </header>
-
-      {/* Hero Section */}
-      <section className="relative w-full h-[360px] bg-black flex items-center justify-center overflow-hidden">
-        <Image src="/logo.jpeg" alt="Watermark Logo" layout="fill" objectFit="contain" className="opacity-10" />
-        <h2 className="text-5xl font-extrabold text-yellow-400 drop-shadow-lg relative z-10">
-          Welcome to Crypto Kings
-        </h2>
-      </section>
-
-      {/* Content Grid */}
-      <main className="flex-1 py-16 px-8 max-w-7xl mx-auto space-y-12">
-        {/* Profit Wallet Panel */}
-        <Card className="rounded-2xl shadow-lg border-yellow-400 border">
-          <CardContent className="p-6 grid md:grid-cols-5 gap-6 items-center">
-            <div className="col-span-2">
-              <h3 className="text-xl font-bold text-yellow-400">Profit Wallet</h3>
-              <p className="text-gray-600 mt-1">Read-only. Updated live from chain.</p>
-              <div className="mt-3 flex items-center space-x-3">
-                <code className="bg-gray-100 px-3 py-1 rounded">0x1234...ABCD</code>
-                <Button className="bg-yellow-500 text-black hover:bg-yellow-600">Copy</Button>
-                <a href="#" className="text-blue-600 hover:underline">View on Arbiscan</a>
-              </div>
-            </div>
-            {/* Currency Toggle */}
-            <div className="col-span-1">
-              <p className="text-sm text-gray-500 mb-2">Currency</p>
-              <div className="inline-flex rounded-xl overflow-hidden border border-yellow-400">
-                <button className="px-4 py-2 text-sm font-medium bg-yellow-500 text-black">GBP</button>
-                <button className="px-4 py-2 text-sm font-medium hover:bg-gray-100">USD</button>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Balance (WETH)</p>
-              <p className="text-2xl font-bold text-yellow-600">12.48</p>
-              <p className="text-xs text-gray-500">≈ £24,210</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Balance (USDC)</p>
-              <p className="text-2xl font-bold text-yellow-600">18,940</p>
-              <p className="text-xs text-gray-500">≈ £18,940</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* PnL Summary Strip */}
-        <Card className="rounded-2xl shadow-lg border-yellow-400 border">
-          <CardContent className="p-6 grid md:grid-cols-3 gap-6">
-            <div>
-              <p className="text-sm text-gray-500">Today PnL</p>
-              <p className="text-2xl font-bold text-green-600">+£1,240</p>
-              <p className="text-xs text-gray-500">3 wins · 1 loss</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Week PnL</p>
-              <p className="text-2xl font-bold text-green-600">+£6,380</p>
-              <p className="text-xs text-gray-500">18 wins · 7 losses</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">All-time PnL</p>
-              <p className="text-2xl font-bold text-green-600">+£22,910</p>
-              <p className="text-xs text-gray-500">Win rate 71%</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Three feature cards */}
-        <div className="grid md:grid-cols-3 gap-8">
-          <Card className="rounded-2xl shadow-lg">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-yellow-400 mb-2">Live Trading Logs</h3>
-              <p className="text-gray-600">Track real-time trades and profits from our flash loan executor bot.</p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl shadow-lg">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-yellow-400 mb-2">Investor Dashboard</h3>
-              <p className="text-gray-600">Secure login to monitor performance, PnL, and profit wallet balances.</p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl shadow-lg">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-yellow-400 mb-2">DeFi Tools</h3>
-              <p className="text-gray-600">Access price scanners, arbitrage visualisers, and exclusive CK utilities.</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Live Trade Log Table */}
-        <section>
-          <h3 className="text-2xl font-bold text-yellow-400 mb-4">Live Trade Log</h3>
-          <div className="overflow-x-auto bg-white rounded-2xl shadow-lg border border-yellow-400">
-            <table className="w-full text-left text-gray-700">
-              <thead className="bg-yellow-100">
-                <tr>
-                  <th className="px-4 py-2">Time</th>
-                  <th className="px-4 py-2">Route</th>
-                  <th className="px-4 py-2">Loan Size</th>
-                  <th className="px-4 py-2">Net PnL</th>
-                  <th className="px-4 py-2">Tx Hash</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t">
-                  <td className="px-4 py-2">12:45:33</td>
-                  <td className="px-4 py-2">Sushi → Camelot</td>
-                  <td className="px-4 py-2">2.0 WETH</td>
-                  <td className="px-4 py-2 text-green-600 font-bold">+0.031 WETH</td>
-                  <td className="px-4 py-2"><a href="#" className="text-blue-600 hover:underline">0xabc...123</a></td>
-                </tr>
-                <tr className="border-t">
-                  <td className="px-4 py-2">12:47:10</td>
-                  <td className="px-4 py-2">Camelot → Sushi</td>
-                  <td className="px-4 py-2">5.0 WETH</td>
-                  <td className="px-4 py-2 text-red-600 font-bold">-0.002 WETH</td>
-                  <td className="px-4 py-2"><a href="#" className="text-blue-600 hover:underline">0xdef...456</a></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-black text-gray-300 py-12 px-8 grid md:grid-cols-4 gap-8">
-        <div>
-          <h4 className="text-yellow-400 font-bold mb-4">About Us</h4>
-          <p>Crypto Kings is building next-gen DeFi tools and investor-grade dashboards for transparency and profit.</p>
-        </div>
-        <div>
-          <h4 className="text-yellow-400 font-bold mb-4">Quick Links</h4>
-          <ul className="space-y-2">
-            <li><a href="#" className="hover:text-white">Home</a></li>
-            <li><a href="#" className="hover:text-white">Investor Area</a></li>
-            <li><a href="#" className="hover:text-white">DeFi Tools</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-yellow-400 font-bold mb-4">Contact</h4>
-          <ul className="space-y-2">
-            <li>Email: info@cryptokings.io</li>
-            <li>Telegram: @CryptoKings</li>
-            <li>Twitter: @CryptoKings</li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-yellow-400 font-bold mb-4">Newsletter</h4>
-          <p className="mb-2">Sign up for updates and news.</p>
-          <input type="email" placeholder="Your email" className="p-2 w-full rounded mb-2 text-black" />
-          <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold">Subscribe</Button>
-        </div>
-      </footer>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Kings Portal</title>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex flex-col bg-gray-50">
+  <!-- Header -->
+  <header class="bg-black text-white py-4 px-8 flex justify-between items-center shadow-md">
+    <div class="flex items-center space-x-4">
+      <img src="logo.jpeg" alt="Crypto Kings Logo" class="w-12 h-12 rounded-full" />
+      <h1 class="text-2xl font-bold text-yellow-400">Crypto Kings</h1>
     </div>
-  );
-}
+    <nav class="space-x-6">
+      <a href="#" class="hover:text-yellow-400">Home</a>
+      <a href="#" class="hover:text-yellow-400">Tools</a>
+      <a href="#" class="hover:text-yellow-400">Investor Area</a>
+      <a href="#" class="hover:text-yellow-400">Contact</a>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative w-full h-[300px] bg-black flex items-center justify-center overflow-hidden">
+    <img src="logo.jpeg" alt="Watermark Logo"
+         class="absolute inset-0 w-full h-full object-contain opacity-10" />
+    <h2 class="text-5xl font-extrabold text-yellow-400 drop-shadow-lg relative z-10">
+      Welcome to Crypto Kings
+    </h2>
+  </section>
+
+  <!-- Main Content -->
+  <main class="flex-1 py-16 px-8 max-w-7xl mx-auto space-y-12">
+
+    <!-- Profit Wallet -->
+    <div class="rounded-2xl shadow-lg border-yellow-400 border bg-white">
+      <div class="p-6 grid md:grid-cols-5 gap-6 items-center">
+        <div class="col-span-2">
+          <h3 class="text-xl font-bold text-yellow-400">Profit Wallet</h3>
+          <p class="text-gray-600 mt-1">Read-only. Updated live from chain.</p>
+          <div class="mt-3 flex items-center space-x-3">
+            <code class="bg-gray-100 px-3 py-1 rounded">0x1234...ABCD</code>
+            <button class="px-3 py-1 rounded bg-yellow-500 text-black hover:bg-yellow-600">Copy</button>
+            <a href="#" class="text-blue-600 hover:underline">View on Arbiscan</a>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500 mb-2">Currency</p>
+          <div class="inline-flex rounded-xl overflow-hidden border border-yellow-400">
+            <button class="px-4 py-2 text-sm font-medium bg-yellow-500 text-black">GBP</button>
+            <button class="px-4 py-2 text-sm font-medium hover:bg-gray-100">USD</button>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Balance (WETH)</p>
+          <p class="text-2xl font-bold text-yellow-600">12.48</p>
+          <p class="text-xs text-gray-500">≈ £24,210</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Balance (USDC)</p>
+          <p class="text-2xl font-bold text-yellow-600">18,940</p>
+          <p class="text-xs text-gray-500">≈ £18,940</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PnL Summary -->
+    <div class="rounded-2xl shadow-lg border-yellow-400 border bg-white">
+      <div class="p-6 grid md:grid-cols-3 gap-6">
+        <div>
+          <p class="text-sm text-gray-500">Today PnL</p>
+          <p class="text-2xl font-bold text-green-600">+£1,240</p>
+          <p class="text-xs text-gray-500">3 wins · 1 loss</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Week PnL</p>
+          <p class="text-2xl font-bold text-green-600">+£6,380</p>
+          <p class="text-xs text-gray-500">18 wins · 7 losses</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">All-time PnL</p>
+          <p class="text-2xl font-bold text-green-600">+£22,910</p>
+          <p class="text-xs text-gray-500">Win rate 71%</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="rounded-2xl shadow-lg bg-white p-6">
+        <h3 class="text-xl font-bold text-yellow-400 mb-2">Live Trading Logs</h3>
+        <p class="text-gray-600">Track real-time trades and profits from our flash loan executor bot.</p>
+      </div>
+      <div class="rounded-2xl shadow-lg bg-white p-6">
+        <h3 class="text-xl font-bold text-yellow-400 mb-2">Investor Dashboard</h3>
+        <p class="text-gray-600">Secure login to monitor performance, PnL, and profit wallet balances.</p>
+      </div>
+      <div class="rounded-2xl shadow-lg bg-white p-6">
+        <h3 class="text-xl font-bold text-yellow-400 mb-2">DeFi Tools</h3>
+        <p class="text-gray-600">Access price scanners, arbitrage visualisers, and exclusive CK utilities.</p>
+      </div>
+    </div>
+
+    <!-- Live Trade Log -->
+    <section>
+      <h3 class="text-2xl font-bold text-yellow-400 mb-4">Live Trade Log</h3>
+      <div class="overflow-x-auto bg-white rounded-2xl shadow-lg border border-yellow-400">
+        <table class="w-full text-left text-gray-700">
+          <thead class="bg-yellow-100">
+            <tr>
+              <th class="px-4 py-2">Time</th>
+              <th class="px-4 py-2">Route</th>
+              <th class="px-4 py-2">Loan Size</th>
+              <th class="px-4 py-2">Net PnL</th>
+              <th class="px-4 py-2">Tx Hash</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-t">
+              <td class="px-4 py-2">12:45:33</td>
+              <td class="px-4 py-2">Sushi → Camelot</td>
+              <td class="px-4 py-2">2.0 WETH</td>
+              <td class="px-4 py-2 text-green-600 font-bold">+0.031 WETH</td>
+              <td class="px-4 py-2"><a href="#" class="text-blue-600 hover:underline">0xabc...123</a></td>
+            </tr>
+            <tr class="border-t">
+              <td class="px-4 py-2">12:47:10</td>
+              <td class="px-4 py-2">Camelot → Sushi</td>
+              <td class="px-4 py-2">5.0 WETH</td>
+              <td class="px-4 py-2 text-red-600 font-bold">-0.002 WETH</td>
+              <td class="px-4 py-2"><a href="#" class="text-blue-600 hover:underline">0xdef...456</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-black text-gray-300 py-12 px-8 grid md:grid-cols-4 gap-8">
+    <div>
+      <h4 class="text-yellow-400 font-bold mb-4">About Us</h4>
+      <p>Crypto Kings is building next-gen DeFi tools and investor-grade dashboards for transparency and profit.</p>
+    </div>
+    <div>
+      <h4 class="text-yellow-400 font-bold mb-4">Quick Links</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="hover:text-white">Home</a></li>
+        <li><a href="#" class="hover:text-white">Investor Area</a></li>
+        <li><a href="#" class="hover:text-white">DeFi Tools</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-yellow-400 font-bold mb-4">Contact</h4>
+      <ul class="space-y-2">
+        <li>Email: info@cryptokings.io</li>
+        <li>Telegram: @CryptoKings</li>
+        <li>Twitter: @CryptoKings</li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-yellow-400 font-bold mb-4">Newsletter</h4>
+      <p class="mb-2">Sign up for updates and news.</p>
+      <input type="email" placeholder="Your email"
+             class="p-2 w-full rounded mb-2 text-black" />
+      <button class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded">
+        Subscribe
+      </button>
+    </div>
+  </footer>
+</body>
+</html>

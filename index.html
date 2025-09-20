@@ -9,18 +9,42 @@
 </head>
 <body class="min-h-screen flex flex-col bg-gray-50">
   <!-- Header -->
-  <header class="bg-black text-white py-4 shadow-md">
-    <div class="max-w-7xl mx-auto flex justify-between items-center px-8">
-      <div class="flex items-center space-x-4">
-        <img src="./035E9CC5-0A09-4352-ACD7-7B89F83B32D6.png" alt="Crypto Kings Logo" class="w-12 h-12 rounded-full" />
-        <h1 class="text-2xl font-bold text-yellow-400">Crypto Kings</h1>
+  <header class="bg-black text-white">
+    <div class="max-w-7xl mx-auto px-4 md:px-8">
+      <div class="h-16 flex items-center justify-between">
+        <!-- Brand -->
+        <a class="flex items-center space-x-3" href="#">
+          <img src="./035E9CC5-0A09-4352-ACD7-7B89F83B32D6.png" alt="Crypto Kings Logo" class="w-10 h-10 rounded-full" />
+          <span class="text-2xl font-bold text-yellow-400">Crypto Kings</span>
+        </a>
+
+        <!-- Desktop nav -->
+        <nav class="hidden md:flex items-center space-x-8">
+          <a href="#" class="hover:text-yellow-400">Home</a>
+          <a href="#" class="hover:text-yellow-400">Tools</a>
+          <a href="#" class="hover:text-yellow-400">Investor Area</a>
+          <a href="#" class="hover:text-yellow-400">Contact</a>
+        </nav>
+
+        <!-- Burger (mobile only) -->
+        <button id="burger" aria-label="Open menu"
+                class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-yellow-500 text-yellow-500">
+          <!-- icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
       </div>
-      <nav class="space-x-6">
-        <a href="#" class="hover:text-yellow-400">Home</a>
-        <a href="#" class="hover:text-yellow-400">Tools</a>
-        <a href="#" class="hover:text-yellow-400">Investor Area</a>
-        <a href="#" class="hover:text-yellow-400">Contact</a>
-      </nav>
+      <!-- Mobile dropdown -->
+      <div id="mobileMenu" class="md:hidden hidden pb-4">
+        <nav class="space-y-2 bg-neutral-900 rounded-xl p-4 border border-yellow-500">
+          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#">Home</a>
+          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#">Tools</a>
+          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#">Investor Area</a>
+          <a class="block px-3 py-2 rounded hover:bg-neutral-800" href="#">Contact</a>
+        </nav>
+      </div>
     </div>
   </header>
 
@@ -35,15 +59,15 @@
   </section>
 
   <!-- Main Content -->
-  <main class="flex-1 py-16 px-8 max-w-7xl mx-auto space-y-12">
+  <main class="flex-1 py-12 md:py-16 px-4 md:px-8 max-w-7xl mx-auto space-y-12">
 
     <!-- Profit Wallet -->
     <div class="rounded-2xl shadow-lg border-yellow-400 border bg-white">
       <div class="p-6 grid md:grid-cols-5 gap-6 items-center">
-        <div class="col-span-2">
+        <div class="md:col-span-2">
           <h3 class="text-xl font-bold text-yellow-400">Profit Wallet</h3>
           <p class="text-gray-600 mt-1">Read-only. Updated live from chain.</p>
-          <div class="mt-3 flex items-center space-x-3">
+          <div class="mt-3 flex flex-wrap items-center gap-3">
             <code class="bg-gray-100 px-3 py-1 rounded">0x1234...ABCD</code>
             <button class="px-3 py-1 rounded bg-yellow-500 text-black hover:bg-yellow-600">Copy</button>
             <a href="#" class="text-blue-600 hover:underline">View on Arbiscan</a>
@@ -143,7 +167,7 @@
 
   <!-- Footer -->
   <footer class="bg-black text-gray-300 py-12">
-    <div class="max-w-7xl mx-auto grid md:grid-cols-4 gap-8 px-8">
+    <div class="max-w-7xl mx-auto grid md:grid-cols-4 gap-8 px-4 md:px-8">
       <div>
         <h4 class="text-yellow-400 font-bold mb-4">About Us</h4>
         <p>Crypto Kings is building next-gen DeFi tools and investor-grade dashboards for transparency and profit.</p>
@@ -172,5 +196,18 @@
       </div>
     </div>
   </footer>
+
+  <!-- tiny burger script -->
+  <script>
+    const burger = document.getElementById('burger');
+    const menu = document.getElementById('mobileMenu');
+    if (burger && menu) {
+      burger.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+      });
+      // Close after clicking a link (optional)
+      menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => menu.classList.add('hidden')));
+    }
+  </script>
 </body>
 </html>
